@@ -2,10 +2,10 @@ package services
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 
 	"github.com/go-playground/validator/v10"
@@ -45,7 +45,7 @@ func (s *TeacherServiceImpl) CreateTeacher(teacher *models.Teacher) (*models.Tea
 
 	id, err := s.teacherStore.Create(teacher)
 	if err != nil {
-		log.Printf("Error creating teacher: %v", err)
+		logger.GetGlobalLogger().Errorf("Error creating teacher: %v", err)
 		return nil, ErrInternal
 	}
 	teacher.ID = id

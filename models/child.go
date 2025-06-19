@@ -12,6 +12,7 @@ type Child struct {
 	FirstName                string    `json:"first_name" validate:"required,min=1,max=100"`
 	LastName                 string    `json:"last_name" validate:"required,min=1,max=100"`
 	Birthdate                time.Time `json:"birthdate" validate:"required,childbirthdate"` // Custom validation for age range
+	Gender                   string    `json:"gender" validate:"required,oneof=male female other"`
 	GroupID                *int       `json:"group_id"`                                   // Pointer for nullable foreign key
 	FamilyLanguage         *string    `json:"family_language"`
 	MigrationBackground    *bool      `json:"migration_background"`

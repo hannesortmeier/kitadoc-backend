@@ -3,9 +3,8 @@ package services
 import (
 	"errors"
 	"time"
-	"log"
-
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 
 	"github.com/go-playground/validator/v10"
@@ -42,7 +41,7 @@ func NewChildService(childStore data.ChildStore, groupStore data.GroupStore) *Ch
 // CreateChild creates a new child.
 func (s *ChildServiceImpl) CreateChild(child *models.Child) (*models.Child, error) {
 	if err := s.validate.Struct(child); err != nil {
-		log.Printf("Validation error: %v", err)
+		logger.GetGlobalLogger().Errorf("Validation error: %v", err)
 		return nil, ErrInvalidInput
 	}
 
@@ -52,7 +51,7 @@ func (s *ChildServiceImpl) CreateChild(child *models.Child) (*models.Child, erro
 			if errors.Is(err, data.ErrNotFound) {
 				return nil, ErrNotFound // Group not found
 			}
-			log.Printf("Error checking group existence: %v", err)
+			logger.GetGlobalLogger().Errorf("Error checking group existence: %v", err)
 			return nil, ErrInternal
 		}
 	}

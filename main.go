@@ -1,64 +1,51 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	"kitadoc-backend/config"
 	"kitadoc-backend/data"
-	"kitadoc-backend/models"
+	"kitadoc-backend/handlers"
+	"kitadoc-backend/internal/logger"
+	"kitadoc-backend/middleware"
 	"kitadoc-backend/services"
 
+	"github.com/sirupsen/logrus" // Keep logrus for now, as it's used in the logger package
 	_ "github.com/mattn/go-sqlite3" // Import the SQLite driver
 )
 
-func main() {
-	// Delete the existing database file if it exists
-	_, err := os.Stat("./data/kindergarten.db")
-	if err == nil {
-		err = os.Remove("./data/kindergarten.db")
-		if err != nil {
-			log.Fatalf("Failed to delete existing database file: %v", err)
-		}
-		fmt.Println("Existing database file deleted successfully.")
-	} else if !os.IsNotExist(err) {
-		log.Fatalf("Failed to check existing database file: %v", err)
-	}
+// App holds the application's services and router.
+type App struct {
+	AuthHandler               *handlers.AuthHandler
+	ChildHandler              *handlers.ChildHandler
+	TeacherHandler            *handlers.TeacherHandler
+	GroupHandler              *handlers.GroupHandler
+	CategoryHandler           *handlers.CategoryHandler
+	AssignmentHandler         *handlers.AssignmentHandler
+	DocumentationEntryHandler *handlers.DocumentationEntryHandler
+	AudioRecordingHandler     *handlers.AudioRecordingHandler
+	DocumentGenerationHandler *handlers.DocumentGenerationHandler
+	BulkOperationsHandler *handlers.BulkOperationsHandler
+	Router                *http.ServeMux
+	Config                *config.Config // Add Config to App struct
+}
 
-	// Open SQLite database connection
-	db, err := sql.Open("sqlite3", "./data/kindergarten.db")
-	if err != nil {
-		log.Fatalf("Failed to open database: %v", err)
-	}
-	defer db.Close()
-
-	// Ping the database to verify connection
-	err = db.Ping()
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	fmt.Println("Successfully connected to the database!")
-
-	// Execute the schema to create tables if they don't exist
-	schemaSQL, err := data.ReadSQLSchema("database/data_model.sql")
-	if err != nil {
-		log.Fatalf("Failed to read schema file: %v", err)
-	}
-
-	_, err = db.Exec(schemaSQL)
-	if err != nil {
-		log.Fatalf("Failed to execute schema: %v", err)
-	}
-	fmt.Println("Database schema initialized successfully!")
-
+// NewApp initializes a new App with all handlers and services.
+func NewApp(db *sql.DB, cfg *config.Config) *App {
 	// Initialize DAL
 	dal := data.NewDAL(db)
 
 	// Initialize Services
-	userService := services.NewUserService(dal.Users)
+	userService := services.NewUserService(dal.Users, cfg)
 	childService := services.NewChildService(dal.Children, dal.Groups)
 	teacherService := services.NewTeacherService(dal.Teachers)
 	groupService := services.NewGroupService(dal.Groups)
@@ -67,205 +54,182 @@ func main() {
 	documentationEntryService := services.NewDocumentationEntryService(dal.DocumentationEntries, dal.Children, dal.Teachers, dal.Categories, dal.Users)
 	audioRecordingService := services.NewAudioRecordingService(dal.AudioRecordings, dal.DocumentationEntries)
 
-	// --- Demonstration of Service Layer operations ---
+	// Initialize Handlers
+	authHandler := handlers.NewAuthHandler(userService)
+	childHandler := handlers.NewChildHandler(childService)
+	teacherHandler := handlers.NewTeacherHandler(teacherService)
+	groupHandler := handlers.NewGroupHandler(groupService)
+	categoryHandler := handlers.NewCategoryHandler(categoryService)
+	assignmentHandler := handlers.NewAssignmentHandler(assignmentService)
+	documentationEntryHandler := handlers.NewDocumentationEntryHandler(documentationEntryService)
+	audioRecordingHandler := handlers.NewAudioRecordingHandler(audioRecordingService, cfg)
+	documentGenerationHandler := handlers.NewDocumentGenerationHandler(documentationEntryService)
+	bulkOperationsHandler := handlers.NewBulkOperationsHandler(childService)
 
-	// 1. Register a new user
-	fmt.Println("\n--- User Service Demonstration ---")
-	newUser, err := userService.RegisterUser("testuser", "password123", "teacher")
+	return &App{
+		AuthHandler:               authHandler,
+		ChildHandler:              childHandler,
+		TeacherHandler:            teacherHandler,
+		GroupHandler:              groupHandler,
+		CategoryHandler:           categoryHandler,
+		AssignmentHandler:         assignmentHandler,
+		DocumentationEntryHandler: documentationEntryHandler,
+		AudioRecordingHandler: audioRecordingHandler,
+		DocumentGenerationHandler: documentGenerationHandler,
+		BulkOperationsHandler: bulkOperationsHandler,
+		Router:                http.NewServeMux(),
+		Config:                cfg, // Assign config to App struct
+	}
+}
+
+// routes sets up all the HTTP routes and applies middleware.
+func (app *App) routes() {
+	// Public routes
+	app.Router.Handle("POST /api/v1/auth/register", middleware.RequestIDMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AuthHandler.RegisterUser)))))
+	app.Router.Handle("POST /api/v1/auth/login", middleware.RequestIDMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AuthHandler.Login)))))
+	app.Router.Handle("GET /health", middleware.RequestIDMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(healthCheckHandler)))))
+
+	// Authenticated routes (Teacher and Admin roles)
+	authMiddleware := middleware.Authenticate(app.AuthHandler.UserService, app.Config)
+
+	// Auth Endpoints
+	app.Router.Handle("POST /api/v1/auth/logout", middleware.RequestIDMiddleware(authMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AuthHandler.Logout))))))
+	app.Router.Handle("GET /api/v1/auth/me", middleware.RequestIDMiddleware(authMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AuthHandler.GetMe))))))
+
+	// Children Management Endpoints
+	app.Router.Handle("POST /api/v1/children", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.ChildHandler.CreateChild)))))))
+	app.Router.Handle("GET /api/v1/children", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.ChildHandler.GetAllChildren)))))))
+	app.Router.Handle("GET /api/v1/children/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.ChildHandler.GetChildByID)))))))
+	app.Router.Handle("PUT /api/v1/children/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.ChildHandler.UpdateChild)))))))
+	app.Router.Handle("DELETE /api/v1/children/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.ChildHandler.DeleteChild)))))))
+
+	// Teachers Management Endpoints
+	app.Router.Handle("POST /api/v1/teachers", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.CreateTeacher)))))))
+	app.Router.Handle("GET /api/v1/teachers", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.GetAllTeachers)))))))
+	app.Router.Handle("GET /api/v1/teachers/{teacher_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.GetTeacherByID)))))))
+	app.Router.Handle("PUT /api/v1/teachers/{teacher_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.UpdateTeacher)))))))
+	app.Router.Handle("DELETE /api/v1/teachers/{teacher_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.DeleteTeacher)))))))
+
+	// Groups Management Endpoints
+	app.Router.Handle("POST /api/v1/groups", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.CreateGroup)))))))
+	app.Router.Handle("GET /api/v1/groups", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.GetAllGroups)))))))
+	app.Router.Handle("GET /api/v1/groups/{group_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.GetGroupByID)))))))
+	app.Router.Handle("PUT /api/v1/groups/{group_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.UpdateGroup)))))))
+	app.Router.Handle("DELETE /api/v1/groups/{group_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.DeleteGroup)))))))
+
+	// Categories Management Endpoints
+	app.Router.Handle("POST /api/v1/categories", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.CategoryHandler.CreateCategory)))))))
+	app.Router.Handle("GET /api/v1/categories", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.CategoryHandler.GetAllCategories)))))))
+	app.Router.Handle("PUT /api/v1/categories/{category_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.CategoryHandler.UpdateCategory)))))))
+	app.Router.Handle("DELETE /api/v1/categories/{category_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.CategoryHandler.DeleteCategory)))))))
+
+	// Child-Teacher Assignments Endpoints
+	app.Router.Handle("POST /api/v1/assignments", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AssignmentHandler.CreateAssignment)))))))
+	app.Router.Handle("GET /api/v1/assignments/child/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AssignmentHandler.GetAssignmentsByChildID)))))))
+	app.Router.Handle("PUT /api/v1/assignments/{assignment_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AssignmentHandler.UpdateAssignment)))))))
+	app.Router.Handle("DELETE /api/v1/assignments/{assignment_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AssignmentHandler.DeleteAssignment)))))))
+
+	// Documentation Entries Endpoints
+	app.Router.Handle("POST /api/v1/documentation", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.CreateDocumentationEntry)))))))
+	app.Router.Handle("GET /api/v1/documentation/child/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.GetDocumentationEntriesByChildID)))))))
+	app.Router.Handle("PUT /api/v1/documentation/{entry_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.UpdateDocumentationEntry)))))))
+	app.Router.Handle("DELETE /api/v1/documentation/{entry_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.DeleteDocumentationEntry)))))))
+	app.Router.Handle("PUT /api/v1/documentation/{entry_id}/approve", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.ApproveDocumentationEntry)))))))
+
+	// Audio Recordings Endpoints
+	app.Router.Handle("POST /api/v1/audio/upload", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AudioRecordingHandler.UploadAudio)))))))
+
+	// Document Generation Endpoints
+	app.Router.Handle("GET /api/v1/documents/child-report/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentGenerationHandler.GenerateChildReport)))))))
+	
+	// Bulk Operations Endpoints
+	app.Router.Handle("POST /api/v1/bulk/import-children", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.BulkOperationsHandler.ImportChildren)))))))
+}
+
+func main() {
+	// Load configuration
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		if errors.Is(err, services.ErrAlreadyExists) {
-			fmt.Println("User 'testuser' already exists. Skipping registration.")
-			token, err := userService.LoginUser("testuser", "password123") // Attempt to log in if exists
-			if err != nil {
-				log.Fatalf("Failed to log in existing user: %v", err)
-			}
-			newUser, err = userService.GetCurrentUser(token)
-			if err != nil {
-				log.Fatalf("Failed to get user details for existing user: %v", err)
-			}
-		} else {
-			log.Fatalf("Failed to register user: %v", err)
+		logrus.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Set up structured logging
+	logLevel, err := logrus.ParseLevel(cfg.Log.Level)
+	if err != nil {
+		logrus.Fatalf("Invalid log level in configuration: %v", err)
+	}
+
+	var logFormatter logrus.Formatter
+	switch cfg.Log.Format {
+	case "json":
+		logFormatter = &logrus.JSONFormatter{}
+	case "text":
+		logFormatter = &logrus.TextFormatter{
+			FullTimestamp: true,
 		}
-	} else {
-		fmt.Printf("Registered user: %+v\n", newUser)
+	default:
+		logrus.Fatalf("Unsupported log format: %s. Must be 'json' or 'text'.", cfg.Log.Format)
 	}
+	logger.InitGlobalLogger(logLevel, logFormatter)
 
-	// 2. Login the user
-	token, err := userService.LoginUser("testuser", "password123")
-	if err != nil {
-		log.Fatalf("Failed to login user: %v", err)
-	}
-	fmt.Printf("Logged in successfully. JWT Token: %s\n", token)
+	logger.GetGlobalLogger().Infof("Application starting in %s environment...", cfg.Environment)
 
-	// 3. Get current user from token
-	currentUser, err := userService.GetCurrentUser(token)
+	// Open SQLite database connection
+	db, err := sql.Open("sqlite3", cfg.Database.DSN)
 	if err != nil {
-		log.Fatalf("Failed to get current user from token: %v", err)
+		logger.GetGlobalLogger().Fatalf("Failed to open database: %v", err)
 	}
-	fmt.Printf("Current user from token: %+v\n", currentUser)
-
-	// 4. Create a new group
-	fmt.Println("\n--- Group Service Demonstration ---")
-	newGroup := &models.Group{
-		Name: "Demonstration Group",
-	}
-	createdGroup, err := groupService.CreateGroup(newGroup)
-	if err != nil {
-		if errors.Is(err, services.ErrAlreadyExists) {
-			fmt.Println("Group 'Demonstration Group' already exists. Skipping creation.")
-			// Attempt to fetch the existing group
-			allGroups, err := groupService.GetAllGroups()
-			if err != nil {
-				log.Fatalf("Failed to get all groups: %v", err)
-			}
-			for _, g := range allGroups {
-				if g.Name == "Demonstration Group" {
-					createdGroup = &g
-					break
-				}
-			}
-			if createdGroup == nil {
-				log.Fatalf("Failed to find existing 'Demonstration Group'")
-			}
-		} else {
-			log.Fatalf("Failed to create group: %v", err)
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.GetGlobalLogger().Errorf("Failed to close database connection: %v", err)
 		}
-	} else {
-		fmt.Printf("Created group: %+v\n", createdGroup)
+	}()
+
+	// Ping the database to verify connection
+	err = db.Ping()
+	if err != nil {
+		logger.GetGlobalLogger().Fatalf("Failed to connect to database: %v", err)
+	}
+	logger.GetGlobalLogger().Info("Successfully connected to the database!")
+
+	// Initialize App
+	app := NewApp(db, cfg)
+	app.routes() // Setup routes
+
+	// Start HTTP server
+	server := &http.Server{
+		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
+		Handler:      middleware.CORS(app.Router), // Apply CORS middleware globally
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
 
-	// 5. Create a new child
-	fmt.Println("\n--- Child Service Demonstration ---")
-	newChild := &models.Child{
-		FirstName:     "Service",
-		LastName:      "Child",
-		Birthdate:     time.Date(2020, 5, 10, 0, 0, 0, 0, time.UTC),
-		GroupID:       &createdGroup.ID,
-		AdmissionDate: time.Now(),
-	}
-	createdChild, err := childService.CreateChild(newChild)
-	if err != nil {
-		log.Fatalf("Failed to create child via service: %v", err)
-	}
-	fmt.Printf("Created child via service: %+v\n", createdChild)
+	// Graceful shutdown
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 
-	// 6. Get child by ID
-	fetchedChild, err := childService.GetChildByID(createdChild.ID)
-	if err != nil {
-		log.Fatalf("Failed to get child by ID via service: %v", err)
-	}
-	fmt.Printf("Fetched child via service: %+v\n", fetchedChild)
-
-	// 7. Create a new teacher
-	fmt.Println("\n--- Teacher Service Demonstration ---")
-	newTeacher := &models.Teacher{
-		FirstName: "Service",
-		LastName:  "Teacher",
-	}
-	createdTeacher, err := teacherService.CreateTeacher(newTeacher)
-	if err != nil {
-		log.Fatalf("Failed to create teacher via service: %v", err)
-	}
-	fmt.Printf("Created teacher via service: %+v\n", createdTeacher)
-
-	// 8. Create a new category
-	fmt.Println("\n--- Category Service Demonstration ---")
-	newCategory := &models.Category{
-		Name: "Service Category",
-	}
-	createdCategory, err := categoryService.CreateCategory(newCategory)
-	if err != nil {
-		if errors.Is(err, services.ErrAlreadyExists) {
-			fmt.Println("Category 'Service Category' already exists. Skipping creation.")
-			// Attempt to fetch the existing category
-			allCategories, err := categoryService.GetAllCategories()
-			if err != nil {
-				log.Fatalf("Failed to get all categories: %v", err)
-			}
-			for _, c := range allCategories {
-				if c.Name == "Service Category" {
-					createdCategory = &c
-					break
-				}
-			}
-			if createdCategory == nil {
-				log.Fatalf("Failed to find existing 'Service Category'")
-			}
-		} else {
-			log.Fatalf("Failed to create category: %v", err)
+	go func() {
+		logger.GetGlobalLogger().Infof("Server starting on %s", server.Addr)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.GetGlobalLogger().Fatalf("Could not listen on %s: %v", server.Addr, err)
 		}
-	} else {
-		fmt.Printf("Created category via service: %+v\n", createdCategory)
-	}
+	}()
 
-	// 9. Create an assignment
-	fmt.Println("\n--- Assignment Service Demonstration ---")
-	newAssignment := &models.Assignment{
-		ChildID:   createdChild.ID,
-		TeacherID: createdTeacher.ID,
-		StartDate: time.Now(),
-	}
-	createdAssignment, err := assignmentService.CreateAssignment(newAssignment)
-	if err != nil {
-		log.Fatalf("Failed to create assignment via service: %v", err)
-	}
-	fmt.Printf("Created assignment via service: %+v\n", createdAssignment)
+	<-done
+	logger.GetGlobalLogger().Info("Attempting graceful shutdown...")
 
-	// 10. Create a documentation entry
-	fmt.Println("\n--- Documentation Entry Service Demonstration ---")
-	newEntry := &models.DocumentationEntry{
-		ChildID:                createdChild.ID,
-		TeacherID:              createdTeacher.ID,
-		CategoryID:             createdCategory.ID,
-		ObservationDate:        time.Now(),
-		ObservationDescription: "This is a test documentation entry created via the service layer.",
-	}
-	createdEntry, err := documentationEntryService.CreateDocumentationEntry(newEntry)
-	if err != nil {
-		log.Fatalf("Failed to create documentation entry via service: %v", err)
-	}
-	fmt.Printf("Created documentation entry via service: %+v\n", createdEntry)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// 11. Approve documentation entry
-	err = documentationEntryService.ApproveDocumentationEntry(createdEntry.ID, currentUser.ID)
-	if err != nil {
-		log.Fatalf("Failed to approve documentation entry: %v", err)
+	if err := server.Shutdown(ctx); err != nil {
+		logger.GetGlobalLogger().Fatalf("Server shutdown failed: %v", err)
 	}
-	fmt.Printf("Documentation entry %d approved by user %d.\n", createdEntry.ID, currentUser.ID)
+	logger.GetGlobalLogger().Info("Server gracefully shut down.")
+}
 
-	// 12. Upload audio recording (placeholder)
-	fmt.Println("\n--- Audio Recording Service Demonstration ---")
-	newAudioRecording := &models.AudioRecording{
-		DocumentationEntryID: createdEntry.ID,
-		DurationSeconds:      60,
-		FilePath:             "/path/to/audio/file.mp3", // Placeholder path
-	}
-	// Simulate file content
-	dummyFileContent := []byte("dummy audio data")
-	uploadedRecording, err := audioRecordingService.UploadAudioRecording(newAudioRecording, dummyFileContent)
-	if err != nil {
-		log.Fatalf("Failed to upload audio recording: %v", err)
-	}
-	fmt.Printf("Uploaded audio recording: %+v\n", uploadedRecording)
-
-	// 13. Generate child report (placeholder)
-	fmt.Println("\n--- Report Generation Demonstration ---")
-	reportContent, err := documentationEntryService.GenerateChildReport(createdChild.ID)
-	if err != nil {
-		fmt.Printf("Failed to generate child report (expected placeholder error): %v\n", err)
-	} else {
-		fmt.Printf("Generated child report with %d bytes of content.\n", len(reportContent))
-	}
-
-	// 14. Bulk import children (placeholder)
-	fmt.Println("\n--- Bulk Import Demonstration ---")
-	dummyImportContent := []byte("child1,child2,child3")
-	err = childService.BulkImportChildren(dummyImportContent)
-	if err != nil {
-		fmt.Printf("Failed to bulk import children (expected placeholder error): %v\n", err)
-	} else {
-		fmt.Println("Bulk import of children successful.")
-	}
-
-	fmt.Println("\nService layer demonstration complete.")
+// healthCheckHandler provides a simple health check endpoint.
+func healthCheckHandler(writer http.ResponseWriter, request *http.Request) {
+	writer.WriteHeader(http.StatusOK)
+	json.NewEncoder(writer).Encode(map[string]string{"status": "ok"})
 }

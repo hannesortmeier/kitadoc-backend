@@ -2,9 +2,8 @@ package services
 
 import (
 	"errors"
-	"log"
-
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 
 	"github.com/go-playground/validator/v10"
@@ -45,13 +44,13 @@ func (s *CategoryServiceImpl) CreateCategory(category *models.Category) (*models
 		return nil, ErrAlreadyExists
 	}
 	if err != nil && !errors.Is(err, data.ErrNotFound) {
-		log.Printf("Error checking category name uniqueness: %v", err)
+		logger.GetGlobalLogger().Errorf("Error checking category name uniqueness: %v", err)
 		return nil, ErrInternal
 	}
 
 	id, err := s.categoryStore.Create(category)
 	if err != nil {
-		log.Printf("Error creating category: %v", err)
+		logger.GetGlobalLogger().Errorf("Error creating category: %v", err)
 		return nil, ErrInternal
 	}
 	category.ID = id

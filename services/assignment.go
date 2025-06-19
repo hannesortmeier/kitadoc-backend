@@ -1,11 +1,12 @@
 package services
 
+
 import (
 	"errors"
-	"log"
 	"time"
 
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 
 	"github.com/go-playground/validator/v10"
@@ -18,6 +19,34 @@ type AssignmentService interface {
 	UpdateAssignment(assignment *models.Assignment) error
 	DeleteAssignment(id int) error
 	GetAssignmentHistoryForChild(childID int) ([]models.Assignment, error)
+}
+
+// UpdateAssignment updates an existing assignment.
+func (s *AssignmentServiceImpl) UpdateAssignment(assignment *models.Assignment) error {
+	if err := models.ValidateAssignment(*assignment); err != nil {
+		return ErrInvalidInput
+	}
+
+	// Fetch existing assignment to ensure it exists
+	_, err := s.assignmentStore.GetByID(assignment.ID)
+	if err != nil {
+		if errors.Is(err, data.ErrNotFound) {
+			return ErrNotFound
+		}
+		logger.GetGlobalLogger().Errorf("Error fetching assignment by ID %d: %v", assignment.ID, err)
+		return ErrInternal
+	}
+
+	assignment.UpdatedAt = time.Now()
+	err = s.assignmentStore.Update(assignment)
+	if err != nil {
+		if errors.Is(err, data.ErrNotFound) {
+			return ErrNotFound
+		}
+		logger.GetGlobalLogger().Errorf("Error updating assignment: %v", err)
+		return ErrInternal
+	}
+	return nil
 }
 
 // AssignmentServiceImpl implements AssignmentService.
@@ -41,6 +70,7 @@ func NewAssignmentService(assignmentStore data.AssignmentStore, childStore data.
 // CreateAssignment creates a new assignment.
 func (s *AssignmentServiceImpl) CreateAssignment(assignment *models.Assignment) (*models.Assignment, error) {
 	if err := models.ValidateAssignment(*assignment); err != nil {
+		logger.GetGlobalLogger().Errorf("Error validating assignment: %v", err)
 		return nil, ErrInvalidInput
 	}
 
@@ -50,7 +80,7 @@ func (s *AssignmentServiceImpl) CreateAssignment(assignment *models.Assignment) 
 		if errors.Is(err, data.ErrNotFound) {
 			return nil, errors.New("child not found")
 		}
-		log.Printf("Error fetching child by ID %d: %v", assignment.ChildID, err)
+		logger.GetGlobalLogger().Errorf("Error fetching child by ID %d: %v", assignment.ChildID, err)
 		return nil, ErrInternal
 	}
 
@@ -60,7 +90,7 @@ func (s *AssignmentServiceImpl) CreateAssignment(assignment *models.Assignment) 
 		if errors.Is(err, data.ErrNotFound) {
 			return nil, errors.New("teacher not found")
 		}
-		log.Printf("Error fetching teacher by ID %d: %v", assignment.TeacherID, err)
+		logger.GetGlobalLogger().Errorf("Error fetching teacher by ID %d: %v", assignment.TeacherID, err)
 		return nil, ErrInternal
 	}
 
@@ -79,7 +109,7 @@ func (s *AssignmentServiceImpl) CreateAssignment(assignment *models.Assignment) 
 
 	id, err := s.assignmentStore.Create(assignment)
 	if err != nil {
-		log.Printf("Error creating assignment: %v", err)
+		logger.GetGlobalLogger().Errorf("Error creating assignment: %v", err)
 		return nil, ErrInternal
 	}
 	assignment.ID = id

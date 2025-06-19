@@ -2,10 +2,10 @@ package services
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 
 	"github.com/go-playground/validator/v10"
@@ -46,7 +46,7 @@ func (s *GroupServiceImpl) CreateGroup(group *models.Group) (*models.Group, erro
 		return nil, ErrAlreadyExists
 	}
 	if err != nil && !errors.Is(err, data.ErrNotFound) {
-		log.Printf("Error checking group name uniqueness: %v", err)
+		logger.GetGlobalLogger().Errorf("Error checking group name uniqueness: %v", err)
 		return nil, ErrInternal
 	}
 

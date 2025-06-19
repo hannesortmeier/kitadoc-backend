@@ -1,10 +1,13 @@
 package services
 
 import (
+	"context"
 	"errors"
-	"log"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
+	"kitadoc-backend/config"
 	"kitadoc-backend/data"
 	"kitadoc-backend/models"
 
@@ -13,48 +16,48 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// JWTSecret is the secret key for JWT token generation and validation.
-// In a real application, this should be loaded from environment variables or a secure configuration.
-const JWTSecret = "supersecretjwtkeythatshouldbeverylongandcomplex"
-
 // UserService defines the interface for user-related business logic operations.
 type UserService interface {
-	RegisterUser(username, password, role string) (*models.User, error)
-	LoginUser(username, password string) (string, error) // Returns JWT token
-	GetCurrentUser(tokenString string) (*models.User, error)
-	UpdateUser(user *models.User) error
-	DeleteUser(id int) error
+	RegisterUser(logger *logrus.Entry, username, password, role string) (*models.User, error)
+	LoginUser(logger *logrus.Entry, username, password string) (string, error) // Returns JWT token
+	GetCurrentUser(logger *logrus.Entry, tokenString string) (*models.User, error)
+	GetUserByID(logger *logrus.Entry, ctx context.Context, id int) (*models.User, error)
+	UpdateUser(logger *logrus.Entry, user *models.User) error
+	DeleteUser(logger *logrus.Entry, id int) error
 }
 
 // UserServiceImpl implements UserService.
 type UserServiceImpl struct {
 	userStore data.UserStore
 	validate  *validator.Validate
+	config    *config.Config // Add config to service
 }
 
 // NewUserService creates a new UserServiceImpl.
-func NewUserService(userStore data.UserStore) *UserServiceImpl {
+func NewUserService(userStore data.UserStore, cfg *config.Config) *UserServiceImpl {
 	return &UserServiceImpl{
 		userStore: userStore,
 		validate:  validator.New(),
+		config:    cfg,
 	}
 }
 
 // RegisterUser registers a new user after hashing the password.
-func (s *UserServiceImpl) RegisterUser(username, password, role string) (*models.User, error) {
+func (s *UserServiceImpl) RegisterUser(logger *logrus.Entry, username, password, role string) (*models.User, error) {
 	// Check if user already exists
 	_, err := s.userStore.GetUserByUsername(username)
 	if err == nil {
+		logger.WithField("username", username).Warn("User already exists during registration attempt")
 		return nil, ErrAlreadyExists
 	}
 	if !errors.Is(err, data.ErrNotFound) {
-		log.Printf("Error checking if user exists: %v", err)
+		logger.WithError(err).WithField("username", username).Error("Error checking if user exists during registration")
 		return nil, ErrInternal
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Printf("Error hashing password: %v", err)
+		logger.WithError(err).Error("Error hashing password during registration")
 		return nil, ErrInternal
 	}
 
@@ -67,30 +70,35 @@ func (s *UserServiceImpl) RegisterUser(username, password, role string) (*models
 	}
 
 	if err := models.ValidateUser(*user); err != nil {
+		logger.WithError(err).Warn("Invalid user data provided during registration")
 		return nil, ErrInvalidInput
 	}
 
 	id, err := s.userStore.Create(user)
 	if err != nil {
-		log.Printf("Error creating user: %v", err)
+		logger.WithError(err).Error("Error creating user in store")
 		return nil, ErrInternal
 	}
 	user.ID = id
+	logger.WithField("user_id", user.ID).Info("User registered successfully")
 	return user, nil
 }
 
 // LoginUser authenticates a user and generates a JWT token.
-func (s *UserServiceImpl) LoginUser(username, password string) (string, error) {
+func (s *UserServiceImpl) LoginUser(logger *logrus.Entry, username, password string) (string, error) {
 	user, err := s.userStore.GetUserByUsername(username)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.WithField("username", username).Warn("Login attempt with invalid credentials: user not found")
 			return "", ErrInvalidCredentials
 		}
+		logger.WithError(err).WithField("username", username).Error("Error fetching user by username during login")
 		return "", ErrInternal
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
+		logger.WithField("username", username).Warn("Login attempt with invalid credentials: password mismatch")
 		return "", ErrInvalidCredentials
 	}
 
@@ -102,29 +110,33 @@ func (s *UserServiceImpl) LoginUser(username, password string) (string, error) {
 		"exp":      time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
 	})
 
-	tokenString, err := token.SignedString([]byte(JWTSecret))
+	tokenString, err := token.SignedString([]byte(s.config.Server.JWTSecret)) // Use JWTSecret from config
 	if err != nil {
+		logger.WithError(err).Error("Error signing JWT token")
 		return "", ErrInternal
 	}
-
+	logger.WithField("user_id", user.ID).Info("User logged in successfully, JWT generated")
 	return tokenString, nil
 }
 
 // GetCurrentUser parses a JWT token and returns the corresponding user.
-func (s *UserServiceImpl) GetCurrentUser(tokenString string) (*models.User, error) {
+func (s *UserServiceImpl) GetCurrentUser(logger *logrus.Entry, tokenString string) (*models.User, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			logger.WithField("signing_method", token.Method).Warn("Unexpected signing method for JWT")
 			return nil, errors.New("unexpected signing method")
 		}
-		return []byte(JWTSecret), nil
+		return []byte(s.config.Server.JWTSecret), nil // Use JWTSecret from config
 	})
 
 	if err != nil {
+		logger.WithError(err).Warn("Error parsing JWT token")
 		return nil, ErrAuthenticationFailed
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
+		logger.Warn("Invalid or expired JWT token claims")
 		return nil, ErrAuthenticationFailed
 	}
 
@@ -137,13 +149,14 @@ func (s *UserServiceImpl) GetCurrentUser(tokenString string) (*models.User, erro
 		Username: username,
 		Role:     role,
 	}
-
+	logger.WithField("user_id", user.ID).Debug("Current user fetched from JWT")
 	return user, nil
 }
 
 // UpdateUser updates an existing user.
-func (s *UserServiceImpl) UpdateUser(user *models.User) error {
+func (s *UserServiceImpl) UpdateUser(logger *logrus.Entry, user *models.User) error {
 	if err := models.ValidateUser(*user); err != nil {
+		logger.WithError(err).Warn("Invalid input for UpdateUser")
 		return ErrInvalidInput
 	}
 
@@ -151,8 +164,10 @@ func (s *UserServiceImpl) UpdateUser(user *models.User) error {
 	existingUser, err := s.userStore.GetByID(user.ID)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.WithField("user_id", user.ID).Warn("User not found for update")
 			return ErrNotFound
 		}
+		logger.WithError(err).WithField("user_id", user.ID).Error("Error fetching existing user for update")
 		return ErrInternal
 	}
 
@@ -160,6 +175,7 @@ func (s *UserServiceImpl) UpdateUser(user *models.User) error {
 	if user.PasswordHash != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.PasswordHash), bcrypt.DefaultCost)
 		if err != nil {
+			logger.WithError(err).Error("Error hashing new password during user update")
 			return ErrInternal
 		}
 		user.PasswordHash = string(hashedPassword)
@@ -171,21 +187,42 @@ func (s *UserServiceImpl) UpdateUser(user *models.User) error {
 	err = s.userStore.Update(user)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.WithField("user_id", user.ID).Warn("User not found during update in store")
 			return ErrNotFound
 		}
+		logger.WithError(err).WithField("user_id", user.ID).Error("Error updating user in store")
 		return ErrInternal
 	}
+	logger.WithField("user_id", user.ID).Info("User updated successfully")
 	return nil
 }
 
 // DeleteUser deletes a user by ID.
-func (s *UserServiceImpl) DeleteUser(id int) error {
+func (s *UserServiceImpl) DeleteUser(logger *logrus.Entry, id int) error {
 	err := s.userStore.Delete(id)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.WithField("user_id", id).Warn("User not found for deletion")
 			return ErrNotFound
 		}
+		logger.WithError(err).WithField("user_id", id).Error("Error deleting user from store")
 		return ErrInternal
 	}
+	logger.WithField("user_id", id).Info("User deleted successfully")
 	return nil
+}
+
+// GetUserByID fetches a user by ID.
+func (s *UserServiceImpl) GetUserByID(logger *logrus.Entry, ctx context.Context, id int) (*models.User, error) {
+	user, err := s.userStore.GetByID(id)
+	if err != nil {
+		if errors.Is(err, data.ErrNotFound) {
+			logger.WithField("user_id", id).Warn("User not found by ID")
+			return nil, ErrNotFound
+		}
+		logger.WithError(err).WithField("user_id", id).Error("Error fetching user by ID from store")
+		return nil, ErrInternal
+	}
+	logger.WithField("user_id", id).Debug("User fetched by ID successfully")
+	return user, nil
 }

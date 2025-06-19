@@ -3,8 +3,7 @@ package data
 import (
 	"database/sql"
 	"errors"
-	"log"
-
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 )
 
@@ -32,12 +31,12 @@ func (s *SQLUserStore) Create(user *models.User) (int, error) {
 	query := `INSERT INTO users (username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
 	result, err := s.db.Exec(query, user.Username, user.PasswordHash, user.Role, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
-		log.Printf("Error inserting user: %v", err)
+		logger.GetGlobalLogger().Errorf("Error inserting user: %v", err)
 		return -1, err
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-		log.Printf("Error getting last insert ID: %v", err)
+		logger.GetGlobalLogger().Errorf("Error getting last insert ID: %v", err)
 		return -1, err
 	}
 	return int(id), nil
@@ -51,7 +50,7 @@ func (s *SQLUserStore) GetByID(id int) (*models.User, error) {
 	err := row.Scan(&user.ID, &user.Username, &user.PasswordHash, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			log.Printf("User with ID %d not found", id)
+			logger.GetGlobalLogger().Infof("User with ID %d not found", id)
 			return nil, ErrNotFound
 		}
 		return nil, err
