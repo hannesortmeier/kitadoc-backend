@@ -107,8 +107,8 @@ jobs:
       - name: Add version suffix
         if: steps.version.outputs.version != ''
         run: |
-          mv bin/kitadoc-backend-linux-amd64 bin/kitadoc-backend-linux-amd64${{ steps.version.outputs.version }}
-          mv bin/kitadoc-backend-linux-arm64 bin/kitadoc-backend-linux-arm64${{ steps.version.outputs.version }}
+          mv kitadoc-backend-linux-amd64/kitadoc-backend-linux-amd64 kitadoc-backend-linux-amd64-${{ steps.version.outputs.version }}
+          mv kitadoc-backend-linux-arm64/kitadoc-backend-linux-arm64 kitadoc-backend-linux-arm64-${{ steps.version.outputs.version }}
 
       - name: Create GitHub Release
         if: steps.version.outputs.version != ''
@@ -118,5 +118,5 @@ jobs:
           tag_name: "${{ steps.version.outputs.version }}"
           generate_release_notes: true
           files: |
-            bin/kitadoc-backend-linux-amd64${{ steps.version.outputs.version }}
-            bin/kitadoc-backend-linux-arm64${{ steps.version.outputs.version }}
+            kitadoc-backend-linux-amd64-${{ steps.version.outputs.version }}
+            kitadoc-backend-linux-arm64-${{ steps.version.outputs.version }}
