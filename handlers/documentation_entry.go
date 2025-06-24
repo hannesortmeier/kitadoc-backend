@@ -151,7 +151,7 @@ func (handler *DocumentationEntryHandler) ApproveDocumentationEntry(writer http.
 		return
 	}
 
-	// In a real application, the approvedByUserID would come from the authenticated user's context.
+	// TODO(hannes): In a real application, the approvedByUserID would come from the authenticated user's context.
 	// For now, we'll use a placeholder.
 	approvedByUserID := 1 // Placeholder for the approving user's ID
 	err = handler.DocumentationEntryService.ApproveDocumentationEntry(logger, request.Context(), entryID, approvedByUserID)

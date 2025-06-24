@@ -247,7 +247,7 @@ func TestSQLAssignmentStore_GetAssignmentHistoryForChild(t *testing.T) {
 			AddRow(assignments[0].ID, assignments[0].ChildID, assignments[0].TeacherID, assignments[0].StartDate, assignments[0].EndDate, assignments[0].CreatedAt, assignments[0].UpdatedAt).
 			AddRow(assignments[1].ID, assignments[1].ChildID, assignments[1].TeacherID, assignments[1].StartDate, assignments[1].EndDate, assignments[1].CreatedAt, assignments[1].UpdatedAt)
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT assignment_id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`)).
 			WithArgs(childID).
 			WillReturnRows(rows)
 
@@ -261,7 +261,7 @@ func TestSQLAssignmentStore_GetAssignmentHistoryForChild(t *testing.T) {
 	})
 
 	t.Run("no assignments found", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT assignment_id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`)).
 			WithArgs(childID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "child_id", "teacher_id", "start_date", "end_date", "created_at", "updated_at"}))
 
@@ -273,7 +273,7 @@ func TestSQLAssignmentStore_GetAssignmentHistoryForChild(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT assignment_id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`)).
 			WithArgs(childID).
 			WillReturnError(errors.New("db error"))
 
@@ -285,10 +285,10 @@ func TestSQLAssignmentStore_GetAssignmentHistoryForChild(t *testing.T) {
 	})
 
 	t.Run("scan error", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"id", "child_id", "teacher_id", "start_date", "end_date", "created_at", "updated_at"}).
+		rows := sqlmock.NewRows([]string{"assignment_id", "child_id", "teacher_id", "start_date", "end_date", "created_at", "updated_at"}).
 			AddRow(assignments[0].ID, assignments[0].ChildID, "not-an-int", assignments[0].StartDate, assignments[0].EndDate, assignments[0].CreatedAt, assignments[0].UpdatedAt) // Malformed row
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT assignment_id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`)).
 			WithArgs(childID).
 			WillReturnRows(rows)
 

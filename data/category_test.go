@@ -126,7 +126,7 @@ func TestSQLCategoryStore_Update(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE categories SET name = ?, description = ? WHERE category_id = ?`)).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE categories SET category_name = ?, description = ? WHERE category_id = ?`)).
 			WithArgs(category.Name, category.Description, category.ID).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -136,7 +136,7 @@ func TestSQLCategoryStore_Update(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE categories SET name = ?, description = ? WHERE category_id = ?`)).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE categories SET category_name = ?, description = ? WHERE category_id = ?`)).
 			WithArgs(category.Name, category.Description, category.ID).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
@@ -147,7 +147,7 @@ func TestSQLCategoryStore_Update(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE categories SET name = ?, description = ? WHERE category_id = ?`)).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE categories SET category_name = ?, description = ? WHERE category_id = ?`)).
 			WithArgs(category.Name, category.Description, category.ID).
 			WillReturnError(errors.New("db error"))
 

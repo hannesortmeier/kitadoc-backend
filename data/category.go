@@ -58,7 +58,7 @@ func (s *SQLCategoryStore) GetByID(id int) (*models.Category, error) {
 
 // Update updates an existing category in the database.
 func (s *SQLCategoryStore) Update(category *models.Category) error {
-	query := `UPDATE categories SET name = ?, description = ? WHERE category_id = ?`
+	query := `UPDATE categories SET category_name = ?, description = ? WHERE category_id = ?`
 	result, err := s.db.Exec(query, category.Name, category.Description, category.ID)
 	if err != nil {
 		return err

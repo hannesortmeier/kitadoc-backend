@@ -52,7 +52,7 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 	}
 
 	// Assuming the first row is the header
-	// Expected headers: Name,DateOfBirth,Gender,ParentContact
+	// Expected headers: FirstName,LastName,DateOfBirth,Gender
 	// You might want more robust header validation.
 
 	var importedChildren []*models.Child
@@ -68,7 +68,7 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 			continue
 		}
 
-		dob, err := time.Parse("2006-01-02", record[1]) // Assuming YYYY-MM-DD format
+		dob, err := time.Parse("2006-01-02", record[2]) // Assuming YYYY-MM-DD format
 		if err != nil {
 			importErrors = append(importErrors, fmt.Sprintf("Row %d: Invalid DateOfBirth format: %v", i+1, err))
 			continue
@@ -76,16 +76,16 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 
 		child := &models.Child{
 			FirstName:   record[0],
+			LastName:    record[1],
 			Birthdate:   dob,
-			Gender:      record[2],
-			Parent1Name: &record[3], // Assuming ParentContact maps to Parent1Name
+			Gender:      record[3],
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		}
 
 		createdChild, err := bulkOperationsHandler.ChildService.CreateChild(child)
 		if err != nil {
-			importErrors = append(importErrors, fmt.Sprintf("Row %d: Failed to create child: %v", i+1, err))
+			importErrors = append(importErrors, fmt.Sprintf("Row %d: Failed to create child: %v", i, err))
 			continue
 		}
 		importedChildren = append(importedChildren, createdChild)

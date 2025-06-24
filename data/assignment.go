@@ -99,7 +99,7 @@ func (s *SQLAssignmentStore) Delete(id int) error {
 
 // GetAssignmentHistoryForChild fetches all assignments for a specific child.
 func (s *SQLAssignmentStore) GetAssignmentHistoryForChild(childID int) ([]models.Assignment, error) {
-	query := `SELECT id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`
+	query := `SELECT assignment_id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments WHERE child_id = ? ORDER BY start_date DESC`
 	rows, err := s.db.Query(query, childID)
 	if err != nil {
 		logger.GetGlobalLogger().Errorf("Error fetching assignment history for child ID %d: %v", childID, err)
