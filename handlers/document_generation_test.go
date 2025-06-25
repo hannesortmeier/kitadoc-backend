@@ -6,11 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"kitadoc-backend/handlers/mocks"
 	"kitadoc-backend/internal/testutils"
-	"kitadoc-backend/models"
 	"kitadoc-backend/services"
 
 	"github.com/sirupsen/logrus"
@@ -123,18 +121,4 @@ func TestGenerateChildReport(t *testing.T) {
 		assert.Equal(t, "Internal server error\n", recorder.Body.String())
 		mockService.AssertExpectations(t)
 	})
-}
-
-// Helper function to create a dummy DocumentationEntry for testing
-func createDummyDocumentationEntry(id int, childID int, teacherID int, categoryID int) *models.DocumentationEntry {
-	return &models.DocumentationEntry{
-		ID:                     id,
-		ChildID:                childID,
-		TeacherID:              teacherID,
-		CategoryID:             categoryID,
-		ObservationDate:        time.Date(2023, time.January, 15, 0, 0, 0, 0, time.UTC),
-		ObservationDescription: "Test observation",
-		IsApproved:             false,
-		ApprovedByUserID:       nil,
-	}
 }

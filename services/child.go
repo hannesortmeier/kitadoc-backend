@@ -2,10 +2,10 @@ package services
 
 import (
 	"errors"
-	"time"
 	"kitadoc-backend/data"
 	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -30,7 +30,7 @@ type ChildServiceImpl struct {
 // NewChildService creates a new ChildServiceImpl.
 func NewChildService(childStore data.ChildStore, groupStore data.GroupStore) *ChildServiceImpl {
 	validate := validator.New()
-	validate.RegisterValidation("childbirthdate", models.ValidateChildBirthdate) // Register custom validation
+	validate.RegisterValidation("childbirthdate", models.ValidateChildBirthdate) //nolint:errcheck
 	return &ChildServiceImpl{
 		childStore: childStore,
 		groupStore: groupStore,

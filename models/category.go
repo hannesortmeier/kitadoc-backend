@@ -10,7 +10,7 @@ import (
 type Category struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name" validate:"required,min=2,max=100"` // Unique handled by DB, but required for feedback
-	Description *string   `json:"description"`                             // Pointer for nullable field
+	Description *string   `json:"description"`                            // Pointer for nullable field
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

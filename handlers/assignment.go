@@ -43,7 +43,10 @@ func (assignmentHandler *AssignmentHandler) CreateAssignment(writer http.Respons
 	}
 
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(createdAssignment)
+	if err := json.NewEncoder(writer).Encode(createdAssignment); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetAssignmentsByChildID handles fetching assignments by child ID.
@@ -61,7 +64,10 @@ func (assignmentHandler *AssignmentHandler) GetAssignmentsByChildID(writer http.
 		return
 	}
 
-	json.NewEncoder(writer).Encode(assignments)
+	if err := json.NewEncoder(writer).Encode(assignments); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // UpdateAssignment handles updating an existing assignment.
@@ -97,7 +103,14 @@ func (assignmentHandler *AssignmentHandler) UpdateAssignment(writer http.Respons
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Assignment updated successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Assignment updated successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Assignment updated successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // DeleteAssignment handles deleting an assignment.
@@ -120,5 +133,8 @@ func (assignmentHandler *AssignmentHandler) DeleteAssignment(writer http.Respons
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Assignment deleted successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Assignment deleted successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

@@ -19,7 +19,7 @@ func TestSQLTeacherStore_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLTeacherStore(db)
 
@@ -59,7 +59,7 @@ func TestSQLTeacherStore_GetByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLTeacherStore(db)
 
@@ -121,7 +121,7 @@ func TestSQLTeacherStore_Update(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLTeacherStore(db)
 
@@ -170,7 +170,7 @@ func TestSQLTeacherStore_Delete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLTeacherStore(db)
 
@@ -214,7 +214,7 @@ func TestSQLTeacherStore_GetAll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLTeacherStore(db)
 

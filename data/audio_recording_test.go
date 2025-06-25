@@ -19,7 +19,7 @@ func TestSQLAudioRecordingStore_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLAudioRecordingStore(db)
 
@@ -59,7 +59,7 @@ func TestSQLAudioRecordingStore_GetByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLAudioRecordingStore(db)
 
@@ -121,7 +121,7 @@ func TestSQLAudioRecordingStore_Delete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLAudioRecordingStore(db)
 

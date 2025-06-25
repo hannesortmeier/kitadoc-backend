@@ -58,13 +58,13 @@ func TestMain(m *testing.M) {
 			DSN: ":memory:", // Use in-memory database for testing
 		},
 		FileStorage: struct {
-			UploadDir string `mapstructure:"upload_dir"`
-			MaxSizeMB int `mapstructure:"max_size_mb"`
+			UploadDir    string   `mapstructure:"upload_dir"`
+			MaxSizeMB    int      `mapstructure:"max_size_mb"`
 			AllowedTypes []string `mapstructure:"allowed_types"`
 		}{
-			MaxSizeMB: 10, // Set a small limit for testing
+			MaxSizeMB:    10, // Set a small limit for testing
 			AllowedTypes: []string{"audio/mpeg", "audio/wav", "audio/ogg", "application/octet-stream"},
-			UploadDir: "test_uploads", // Use a test directory for uploads
+			UploadDir:    "test_uploads", // Use a test directory for uploads
 		},
 	}
 
@@ -76,7 +76,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(fmt.Sprintf("failed to connect to test database: %v", err))
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	// Read and execute data_model.sql
 	sqlContent, err := os.ReadFile("../database/data_model.sql")
@@ -168,7 +168,7 @@ func TestPublicRoutes(t *testing.T) {
 			"password": "password123",
 			"role":     "teacher",
 		}, "application/json")
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 		if resp.StatusCode != http.StatusCreated {
 			body, _ := io.ReadAll(resp.Body)
 			t.Errorf("Expected status %d, got %d. Response: %s", http.StatusCreated, resp.StatusCode, string(body))
@@ -186,7 +186,7 @@ func TestPublicRoutes(t *testing.T) {
 			"password": "password123",
 			"role":     "admin",
 		}, "application/json")
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 		if resp.StatusCode != http.StatusCreated {
 			body, _ := io.ReadAll(resp.Body)
 			t.Errorf("Expected status %d, got %d. Response: %s", http.StatusCreated, resp.StatusCode, string(body))
@@ -206,7 +206,7 @@ func TestPublicRoutes(t *testing.T) {
 			"email":    "testuser@example.com",
 			"password": "password123",
 		}, "application/json")
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
 			t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, resp.StatusCode, string(body))
@@ -231,7 +231,7 @@ func TestPublicRoutes(t *testing.T) {
 			"username": "adminuser",
 			"password": "password123",
 		}, "application/json")
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
 			t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, resp.StatusCode, string(body))
@@ -253,7 +253,7 @@ func TestPublicRoutes(t *testing.T) {
 	// Test GET /health
 	t.Run("Health Check", func(t *testing.T) {
 		resp := makeUnauthenticatedRequest(t, http.MethodGet, "/health", nil, "application/json")
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 		}
@@ -274,7 +274,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/auth/me
 		t.Run("Get Current User", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, "/api/v1/auth/me", authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				body, _ := io.ReadAll(resp.Body)
 				t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, resp.StatusCode, string(body))
@@ -289,7 +289,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test POST /api/v1/auth/logout
 		t.Run("Logout User", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/auth/logout", authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				body, _ := io.ReadAll(resp.Body)
 				t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, resp.StatusCode, string(body))
@@ -309,7 +309,7 @@ func TestPublicRoutes(t *testing.T) {
 			"email":    "testuser@example.com",
 			"password": "password123",
 		}, "application/json")
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 		if resp.StatusCode == http.StatusOK {
 			var loginResp struct {
 				Token string `json:"token"`
@@ -336,7 +336,7 @@ func TestPublicRoutes(t *testing.T) {
 				"birthdate":  time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),
 				"gender":     "female",
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 
 			body := readResponseBody(t, resp)
 			if resp.StatusCode != http.StatusCreated {
@@ -366,7 +366,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/children
 		t.Run("Get All Children", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, "/api/v1/children", authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				body, _ := io.ReadAll(resp.Body)
 				t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, resp.StatusCode, string(body))
@@ -381,7 +381,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/children/{child_id}
 		t.Run("Get Child By ID", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, fmt.Sprintf("/api/v1/children/%d", childID), authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				body, _ := io.ReadAll(resp.Body)
 				t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, resp.StatusCode, string(body))
@@ -401,7 +401,7 @@ func TestPublicRoutes(t *testing.T) {
 				"birthdate":  time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),
 				"gender":     "female",
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				body, _ := io.ReadAll(resp.Body)
 				t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, resp.StatusCode, string(body))
@@ -416,7 +416,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test DELETE /api/v1/children/{child_id}
 		t.Run("Delete Child", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodDelete, fmt.Sprintf("/api/v1/children/%d", childID), adminAuthToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				body, _ := io.ReadAll(resp.Body)
 				t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, resp.StatusCode, string(body))
@@ -438,7 +438,7 @@ func TestPublicRoutes(t *testing.T) {
 				"first_name": "Alice",
 				"last_name":  "Smith",
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusCreated {
 				t.Errorf("Expected status %d, got %d", http.StatusCreated, resp.StatusCode)
 			}
@@ -459,7 +459,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/teachers
 		t.Run("Get All Teachers", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, "/api/v1/teachers", authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -472,7 +472,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/teachers/{teacher_id}
 		t.Run("Get Teacher By ID", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, fmt.Sprintf("/api/v1/teachers/%d", teacherID), authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -488,7 +488,7 @@ func TestPublicRoutes(t *testing.T) {
 				"first_name": "Alicia",
 				"last_name":  "Smith",
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -501,7 +501,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test DELETE /api/v1/teachers/{teacher_id}
 		t.Run("Delete Teacher", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodDelete, fmt.Sprintf("/api/v1/teachers/%d", teacherID), adminAuthToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -520,7 +520,7 @@ func TestPublicRoutes(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/groups", adminAuthToken, map[string]string{
 				"name": "Group A",
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusCreated {
 				t.Errorf("Expected status %d, got %d", http.StatusCreated, resp.StatusCode)
 			}
@@ -540,7 +540,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/groups
 		t.Run("Get All Groups", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, "/api/v1/groups", authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -553,7 +553,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/groups/{group_id}
 		t.Run("Get Group By ID", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, fmt.Sprintf("/api/v1/groups/%d", groupID), authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -569,7 +569,7 @@ func TestPublicRoutes(t *testing.T) {
 				"name":        "Group B",
 				"description": "Afternoon class",
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -582,7 +582,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test DELETE /api/v1/groups/{group_id}
 		t.Run("Delete Group", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodDelete, fmt.Sprintf("/api/v1/groups/%d", groupID), adminAuthToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -602,7 +602,7 @@ func TestPublicRoutes(t *testing.T) {
 				"name":        "Art",
 				"description": "Creative activities",
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusCreated {
 				t.Errorf("Expected status %d, got %d", http.StatusCreated, resp.StatusCode)
 			}
@@ -622,7 +622,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/categories
 		t.Run("Get All Categories", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, "/api/v1/categories", authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -638,7 +638,7 @@ func TestPublicRoutes(t *testing.T) {
 				"name":        "Music",
 				"description": "Musical activities",
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -651,7 +651,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test DELETE /api/v1/categories/{category_id}
 		t.Run("Delete Category", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodDelete, fmt.Sprintf("/api/v1/categories/%d", categoryID), adminAuthToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -673,22 +673,22 @@ func TestPublicRoutes(t *testing.T) {
 				"birthdate":  time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),
 				"gender":     "other",
 			}, "application/json")
-			defer respChild.Body.Close()
+			defer respChild.Body.Close() //nolint:errcheck
 			var childResp struct {
 				ID int `json:"id"`
 			}
-			json.Unmarshal(readResponseBody(t, respChild), &childResp)
+			json.Unmarshal(readResponseBody(t, respChild), &childResp) //nolint:errcheck
 			childID = childResp.ID
 
 			respTeacher := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/teachers", adminAuthToken, map[string]string{
 				"first_name": "AssignTeacher",
 				"last_name":  "Test",
 			}, "application/json")
-			defer respTeacher.Body.Close()
+			defer respTeacher.Body.Close() //nolint:errcheck
 			var teacherResp struct {
 				ID int `json:"id"`
 			}
-			json.Unmarshal(readResponseBody(t, respTeacher), &teacherResp)
+			json.Unmarshal(readResponseBody(t, respTeacher), &teacherResp) //nolint:errcheck
 			teacherID = teacherResp.ID
 		})
 
@@ -700,7 +700,7 @@ func TestPublicRoutes(t *testing.T) {
 				"teacher_id": teacherID,
 				"start_date": time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusCreated {
 				t.Errorf("Expected status %d, got %d", http.StatusCreated, resp.StatusCode)
 			}
@@ -720,7 +720,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/assignments/child/{child_id}
 		t.Run("Get Assignments by Child ID", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, fmt.Sprintf("/api/v1/assignments/child/%d", childID), authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -738,11 +738,11 @@ func TestPublicRoutes(t *testing.T) {
 				"first_name": "NewAssignTeacher",
 				"last_name":  "Test",
 			}, "application/json")
-			defer respNewTeacher.Body.Close()
+			defer respNewTeacher.Body.Close() //nolint:errcheck
 			var newTeacherResp struct {
 				ID int `json:"id"`
 			}
-			json.Unmarshal(readResponseBody(t, respNewTeacher), &newTeacherResp)
+			json.Unmarshal(readResponseBody(t, respNewTeacher), &newTeacherResp) //nolint:errcheck
 			newTeacherID = newTeacherResp.ID
 
 			resp := makeAuthenticatedRequest(t, http.MethodPut, fmt.Sprintf("/api/v1/assignments/%d", assignmentID), authToken, map[string]interface{}{
@@ -750,7 +750,7 @@ func TestPublicRoutes(t *testing.T) {
 				"teacher_id": newTeacherID,
 				"start_date": time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -763,7 +763,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test DELETE /api/v1/assignments/{assignment_id}
 		t.Run("Delete Assignment", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodDelete, fmt.Sprintf("/api/v1/assignments/%d", assignmentID), adminAuthToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -812,7 +812,7 @@ func TestPublicRoutes(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to make request: %v", err)
 			}
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 
 			// Verify response
 			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
@@ -836,18 +836,18 @@ func TestPublicRoutes(t *testing.T) {
 				"birthdate":  time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
 				"gender":     "other",
 			}, "application/json")
-			defer respChild.Body.Close()
+			defer respChild.Body.Close() //nolint:errcheck
 			var childResp struct {
 				ID int `json:"id"`
 			}
-			json.Unmarshal(readResponseBody(t, respChild), &childResp)
+			json.Unmarshal(readResponseBody(t, respChild), &childResp) //nolint:errcheck
 			childID = childResp.ID
 		})
 
 		// Test GET /api/v1/documents/child-report/{child_id}
 		t.Run("Generate Child Report", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, fmt.Sprintf("/api/v1/documents/child-report/%d", childID), authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -871,11 +871,11 @@ func TestPublicRoutes(t *testing.T) {
 				"birthdate":  time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
 				"gender":     "male",
 			}, "application/json")
-			defer respChild.Body.Close()
+			defer respChild.Body.Close() //nolint:errcheck
 			var childResp struct {
 				ID int `json:"id"`
 			}
-			json.Unmarshal(readResponseBody(t, respChild), &childResp)
+			json.Unmarshal(readResponseBody(t, respChild), &childResp) //nolint:errcheck
 			childID = childResp.ID
 		})
 
@@ -886,11 +886,11 @@ func TestPublicRoutes(t *testing.T) {
 				"first_name": "DocTeacher",
 				"last_name":  "Test",
 			}, "application/json")
-			defer respTeacher.Body.Close()
+			defer respTeacher.Body.Close() //nolint:errcheck
 			var teacherResp struct {
 				ID int `json:"id"`
 			}
-			json.Unmarshal(readResponseBody(t, respTeacher), &teacherResp)
+			json.Unmarshal(readResponseBody(t, respTeacher), &teacherResp) //nolint:errcheck
 			teacherID = teacherResp.ID
 		})
 
@@ -900,11 +900,11 @@ func TestPublicRoutes(t *testing.T) {
 			respCategory := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/categories", adminAuthToken, map[string]string{
 				"name": "DocCategory",
 			}, "application/json")
-			defer respCategory.Body.Close()
+			defer respCategory.Body.Close() //nolint:errcheck
 			var categoryResp struct {
 				ID int `json:"id"`
 			}
-			json.Unmarshal(readResponseBody(t, respCategory), &categoryResp)
+			json.Unmarshal(readResponseBody(t, respCategory), &categoryResp) //nolint:errcheck
 			categoryID = categoryResp.ID
 		})
 
@@ -918,7 +918,7 @@ func TestPublicRoutes(t *testing.T) {
 				"observation_description": "Child showed great progress today.",
 				"observation_date":        time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusCreated {
 				t.Errorf("Expected status %d, got %d", http.StatusCreated, resp.StatusCode)
 			}
@@ -938,7 +938,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test GET /api/v1/documentation/child/{child_id}
 		t.Run("Get Documentation Entries by Child ID", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodGet, fmt.Sprintf("/api/v1/documentation/child/%d", childID), authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -957,7 +957,7 @@ func TestPublicRoutes(t *testing.T) {
 				"observation_description": "Child showed even greater progress today.",
 				"observation_date":        time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
 			}, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -970,7 +970,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test PUT /api/v1/documentation/{entry_id}/approve
 		t.Run("Approve Documentation Entry", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodPut, fmt.Sprintf("/api/v1/documentation/%d/approve", entryID), authToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -983,7 +983,7 @@ func TestPublicRoutes(t *testing.T) {
 		// Test DELETE /api/v1/documentation/{entry_id}
 		t.Run("Delete Documentation Entry", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodDelete, fmt.Sprintf("/api/v1/documentation/%d", entryID), adminAuthToken, nil, "application/json")
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
@@ -1034,7 +1034,7 @@ BulkChild2,Test,2024-01-01,other`
 				t.Fatalf("failed to make request: %v", err)
 			}
 
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}

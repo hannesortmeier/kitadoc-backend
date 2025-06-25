@@ -33,10 +33,11 @@ func (groupHandler *GroupHandler) CreateGroup(writer http.ResponseWriter, reques
 
 	createdGroup, err := groupHandler.GroupService.CreateGroup(&group)
 	if err != nil {
-		if err == services.ErrInvalidInput {
+		switch err {
+		case services.ErrInvalidInput:
 			http.Error(writer, "Invalid group data provided", http.StatusBadRequest)
 			return
-		} else if err == services.ErrAlreadyExists {
+		case services.ErrAlreadyExists:
 			http.Error(writer, "Group already exists", http.StatusConflict)
 			return
 		}
@@ -45,7 +46,10 @@ func (groupHandler *GroupHandler) CreateGroup(writer http.ResponseWriter, reques
 	}
 
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(createdGroup)
+	if err := json.NewEncoder(writer).Encode(createdGroup); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetAllGroups handles fetching all groups.
@@ -56,7 +60,10 @@ func (groupHandler *GroupHandler) GetAllGroups(writer http.ResponseWriter, reque
 		return
 	}
 
-	json.NewEncoder(writer).Encode(groups)
+	if err := json.NewEncoder(writer).Encode(groups); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetGroupByID handles fetching a group by ID.
@@ -78,7 +85,10 @@ func (groupHandler *GroupHandler) GetGroupByID(writer http.ResponseWriter, reque
 		return
 	}
 
-	json.NewEncoder(writer).Encode(group)
+	if err := json.NewEncoder(writer).Encode(group); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // UpdateGroup handles updating an existing group.
@@ -118,7 +128,10 @@ func (groupHandler *GroupHandler) UpdateGroup(writer http.ResponseWriter, reques
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Group updated successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Group updated successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // DeleteGroup handles deleting a group.
@@ -141,5 +154,8 @@ func (groupHandler *GroupHandler) DeleteGroup(writer http.ResponseWriter, reques
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Group deleted successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Group deleted successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

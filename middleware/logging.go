@@ -11,7 +11,7 @@ import (
 func RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		start := time.Now()
-		
+
 		// Get logger with request ID from context
 		logger := GetLoggerWithReqID(request.Context()).WithFields(logrus.Fields{
 			"method": request.Method,

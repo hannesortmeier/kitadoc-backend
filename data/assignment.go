@@ -105,7 +105,7 @@ func (s *SQLAssignmentStore) GetAssignmentHistoryForChild(childID int) ([]models
 		logger.GetGlobalLogger().Errorf("Error fetching assignment history for child ID %d: %v", childID, err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var assignments []models.Assignment
 	for rows.Next() {

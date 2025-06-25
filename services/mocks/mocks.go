@@ -1,8 +1,8 @@
 package mocks
 
 import (
-	"kitadoc-backend/models"
 	"github.com/stretchr/testify/mock"
+	"kitadoc-backend/models"
 )
 
 // MockAssignmentStore is a mock implementation of data.AssignmentStore

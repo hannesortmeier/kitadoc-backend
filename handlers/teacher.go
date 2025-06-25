@@ -42,7 +42,10 @@ func (teacherHandler *TeacherHandler) CreateTeacher(writer http.ResponseWriter, 
 	}
 
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(createdTeacher)
+	if err := json.NewEncoder(writer).Encode(createdTeacher); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetAllTeachers handles fetching all teachers.
@@ -53,7 +56,10 @@ func (teacherHandler *TeacherHandler) GetAllTeachers(writer http.ResponseWriter,
 		return
 	}
 
-	json.NewEncoder(writer).Encode(teachers)
+	if err := json.NewEncoder(writer).Encode(teachers); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetTeacherByID handles fetching a teacher by ID.
@@ -75,7 +81,10 @@ func (teacherHandler *TeacherHandler) GetTeacherByID(writer http.ResponseWriter,
 		return
 	}
 
-	json.NewEncoder(writer).Encode(teacher)
+	if err := json.NewEncoder(writer).Encode(teacher); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // UpdateTeacher handles updating an existing teacher.
@@ -111,7 +120,10 @@ func (teacherHandler *TeacherHandler) UpdateTeacher(writer http.ResponseWriter, 
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Teacher updated successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Teacher updated successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // DeleteTeacher handles deleting a teacher.
@@ -134,5 +146,8 @@ func (teacherHandler *TeacherHandler) DeleteTeacher(writer http.ResponseWriter, 
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Teacher deleted successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Teacher deleted successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

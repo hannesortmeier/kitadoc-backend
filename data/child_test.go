@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"kitadoc-backend/data"
-	"kitadoc-backend/models"
 	"kitadoc-backend/internal/testutils"
+	"kitadoc-backend/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +20,7 @@ func TestSQLChildStore_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLChildStore(db)
 
@@ -68,7 +68,7 @@ func TestSQLChildStore_GetByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLChildStore(db)
 
@@ -149,7 +149,7 @@ func TestSQLChildStore_Update(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLChildStore(db)
 
@@ -207,7 +207,7 @@ func TestSQLChildStore_Delete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLChildStore(db)
 
@@ -251,7 +251,7 @@ func TestSQLChildStore_GetAll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLChildStore(db)
 

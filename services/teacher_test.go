@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
 	"kitadoc-backend/services/mocks"
-	"kitadoc-backend/internal/logger"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/sirupsen/logrus"
 )
 
 func TestCreateTeacher(t *testing.T) {

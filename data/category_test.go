@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"kitadoc-backend/data"
-	"kitadoc-backend/models"
 	"kitadoc-backend/internal/testutils"
+	"kitadoc-backend/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +19,7 @@ func TestSQLCategoryStore_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLCategoryStore(db)
 
@@ -57,7 +57,7 @@ func TestSQLCategoryStore_GetByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLCategoryStore(db)
 
@@ -115,7 +115,7 @@ func TestSQLCategoryStore_Update(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLCategoryStore(db)
 
@@ -163,7 +163,7 @@ func TestSQLCategoryStore_Delete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLCategoryStore(db)
 
@@ -207,7 +207,7 @@ func TestSQLCategoryStore_GetByName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLCategoryStore(db)
 
@@ -265,7 +265,7 @@ func TestSQLCategoryStore_GetAll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLCategoryStore(db)
 

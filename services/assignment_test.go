@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
 	"kitadoc-backend/services/mocks"
-	"kitadoc-backend/internal/logger"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/sirupsen/logrus"
 )
 
 func TestCreateAssignment(t *testing.T) {
@@ -205,7 +205,7 @@ func TestCreateAssignment(t *testing.T) {
 			TeacherID: 1,
 			StartDate: time.Now().Add(-24 * time.Hour),
 		}
-		
+
 		expectedChild := &models.Child{ID: 1}
 		expectedTeacher := &models.Teacher{ID: 1}
 

@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
 	"kitadoc-backend/services/mocks"
-	"kitadoc-backend/internal/logger"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/sirupsen/logrus"
 )
 
 func TestCreateChild(t *testing.T) {
@@ -75,7 +75,7 @@ func TestCreateChild(t *testing.T) {
 	// Test case 3: Invalid input (validation error)
 	t.Run("invalid input", func(t *testing.T) {
 		child := &models.Child{
-			FirstName: "",  // Invalid empty first name
+			FirstName: "", // Invalid empty first name
 			LastName:  "Doe",
 			Birthdate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			Gender:    "male",

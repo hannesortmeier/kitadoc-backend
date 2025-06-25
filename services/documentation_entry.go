@@ -44,7 +44,7 @@ func NewDocumentationEntryService(
 	userStore data.UserStore,
 ) *DocumentationEntryServiceImpl {
 	validate := validator.New()
-	validate.RegisterValidation("iso8601date", models.ValidateISO8601Date)
+	validate.RegisterValidation("iso8601date", models.ValidateISO8601Date) //nolint:errcheck
 	return &DocumentationEntryServiceImpl{
 		documentationEntryStore: documentationEntryStore,
 		childStore:              childStore,

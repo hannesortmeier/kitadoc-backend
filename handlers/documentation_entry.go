@@ -47,7 +47,11 @@ func (handler *DocumentationEntryHandler) CreateDocumentationEntry(writer http.R
 	}
 
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(createdEntry)
+	if err := json.NewEncoder(writer).Encode(createdEntry); err != nil {
+		logger.WithError(err).Error("Failed to encode response for CreateDocumentationEntry")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetDocumentationEntriesByChildID handles fetching documentation entries by child ID.
@@ -68,7 +72,11 @@ func (handler *DocumentationEntryHandler) GetDocumentationEntriesByChildID(write
 		return
 	}
 
-	json.NewEncoder(writer).Encode(entries)
+	if err := json.NewEncoder(writer).Encode(entries); err != nil {
+		logger.WithError(err).Error("Failed to encode response for GetDocumentationEntriesByChildID")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // UpdateDocumentationEntry handles updating an existing documentation entry.
@@ -110,7 +118,11 @@ func (handler *DocumentationEntryHandler) UpdateDocumentationEntry(writer http.R
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Documentation entry updated successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Documentation entry updated successfully"}); err != nil {
+		logger.WithError(err).Error("Failed to encode response for UpdateDocumentationEntry")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // DeleteDocumentationEntry handles deleting a documentation entry.
@@ -137,7 +149,11 @@ func (handler *DocumentationEntryHandler) DeleteDocumentationEntry(writer http.R
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Documentation entry deleted successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Documentation entry deleted successfully"}); err != nil {
+		logger.WithError(err).Error("Failed to encode response for DeleteDocumentationEntry")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // ApproveDocumentationEntry handles approving a documentation entry.
@@ -167,5 +183,9 @@ func (handler *DocumentationEntryHandler) ApproveDocumentationEntry(writer http.
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Documentation entry approved successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Documentation entry approved successfully"}); err != nil {
+		logger.WithError(err).Error("Failed to encode response for ApproveDocumentationEntry")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

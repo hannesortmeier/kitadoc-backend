@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"kitadoc-backend/data"
-	"kitadoc-backend/models"
 	"kitadoc-backend/internal/logger"
+	"kitadoc-backend/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/sirupsen/logrus"
@@ -21,7 +21,7 @@ func TestSQLAssignmentStore_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLAssignmentStore(db)
 
@@ -70,7 +70,7 @@ func TestSQLAssignmentStore_GetByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLAssignmentStore(db)
 
@@ -136,7 +136,7 @@ func TestSQLAssignmentStore_Update(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLAssignmentStore(db)
 
@@ -187,7 +187,7 @@ func TestSQLAssignmentStore_Delete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLAssignmentStore(db)
 
@@ -231,7 +231,7 @@ func TestSQLAssignmentStore_GetAssignmentHistoryForChild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLAssignmentStore(db)
 
@@ -305,7 +305,7 @@ func TestSQLAssignmentStore_EndAssignment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLAssignmentStore(db)
 

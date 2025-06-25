@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
-	"kitadoc-backend/internal/logger"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/sirupsen/logrus"
 )
 
 // MockGroupStore is a mock implementation of data.GroupStore

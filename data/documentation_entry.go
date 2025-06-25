@@ -97,7 +97,7 @@ func (s *SQLDocumentationEntryStore) GetAllForChild(childID int) ([]models.Docum
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var entries []models.DocumentationEntry
 	for rows.Next() {

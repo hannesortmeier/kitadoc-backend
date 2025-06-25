@@ -48,7 +48,7 @@ func TestCreateGroup(t *testing.T) {
 		}, nil).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputGroup)
+		json.NewEncoder(&reqBody).Encode(inputGroup) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/groups", &reqBody)
 		req = req.WithContext(context.WithValue(req.Context(), testutils.ContextKeyLogger, logger))
@@ -98,7 +98,7 @@ func TestCreateGroup(t *testing.T) {
 		mockService.On("CreateGroup", mock.AnythingOfType("*models.Group")).Return(nil, services.ErrInvalidInput).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputGroup)
+		json.NewEncoder(&reqBody).Encode(inputGroup) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/groups", &reqBody)
 		req = req.WithContext(context.WithValue(req.Context(), testutils.ContextKeyLogger, logger))
@@ -124,7 +124,7 @@ func TestCreateGroup(t *testing.T) {
 		mockService.On("CreateGroup", mock.AnythingOfType("*models.Group")).Return(nil, services.ErrAlreadyExists).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputGroup)
+		json.NewEncoder(&reqBody).Encode(inputGroup) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/groups", &reqBody)
 		req = req.WithContext(context.WithValue(req.Context(), testutils.ContextKeyLogger, logger))
@@ -150,7 +150,7 @@ func TestCreateGroup(t *testing.T) {
 		mockService.On("CreateGroup", mock.AnythingOfType("*models.Group")).Return(nil, errors.New("database error")).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputGroup)
+		json.NewEncoder(&reqBody).Encode(inputGroup) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/groups", &reqBody)
 		req = req.WithContext(context.WithValue(req.Context(), testutils.ContextKeyLogger, logger))
@@ -306,7 +306,7 @@ func TestUpdateGroup(t *testing.T) {
 		mockService.On("UpdateGroup", mock.AnythingOfType("*models.Group")).Return(nil).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputGroup)
+		json.NewEncoder(&reqBody).Encode(inputGroup) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPut, "/groups/1", &reqBody)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
@@ -372,7 +372,7 @@ func TestUpdateGroup(t *testing.T) {
 		mockService.On("UpdateGroup", mock.AnythingOfType("*models.Group")).Return(services.ErrNotFound).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputGroup)
+		json.NewEncoder(&reqBody).Encode(inputGroup) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPut, "/groups/99", &reqBody)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
@@ -400,7 +400,7 @@ func TestUpdateGroup(t *testing.T) {
 		mockService.On("UpdateGroup", mock.AnythingOfType("*models.Group")).Return(services.ErrInvalidInput).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputGroup)
+		json.NewEncoder(&reqBody).Encode(inputGroup) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPut, "/groups/1", &reqBody)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
@@ -428,7 +428,7 @@ func TestUpdateGroup(t *testing.T) {
 		mockService.On("UpdateGroup", mock.AnythingOfType("*models.Group")).Return(services.ErrAlreadyExists).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputGroup)
+		json.NewEncoder(&reqBody).Encode(inputGroup) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPut, "/groups/1", &reqBody)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
@@ -456,7 +456,7 @@ func TestUpdateGroup(t *testing.T) {
 		mockService.On("UpdateGroup", mock.AnythingOfType("*models.Group")).Return(errors.New("database error")).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputGroup)
+		json.NewEncoder(&reqBody).Encode(inputGroup) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPut, "/groups/1", &reqBody)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)

@@ -40,12 +40,12 @@ func TestCreateChild(t *testing.T) {
 			FirstName:   "Test",
 			LastName:    "Child",
 			Birthdate:   time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender: "male",
+			Gender:      "male",
 			Parent1Name: testutils.StringPtr("Parent One"),
 			Parent2Name: testutils.StringPtr("Parent Two"),
 			GroupID:     testutils.IntPtr(1),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		}
 
 		mockChildService.On("CreateChild", mock.AnythingOfType("*models.Child")).Return(&returnedChild, nil).Once()
@@ -59,7 +59,7 @@ func TestCreateChild(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, rr.Code)
 
 		var responseBody map[string]interface{}
-		json.Unmarshal(rr.Body.Bytes(), &responseBody)
+		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 
 		assert.Equal(t, float64(1), responseBody["id"])
 		assert.Equal(t, "Test", responseBody["first_name"])
@@ -156,7 +156,7 @@ func TestGetAllChildren(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var responseBody []models.Child
-		json.Unmarshal(rr.Body.Bytes(), &responseBody)
+		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 		assert.Equal(t, []models.Child{
 			{ID: 1, FirstName: "Child A", Birthdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), Gender: "Male"},
 			{ID: 2, FirstName: "Child B", Birthdate: time.Date(2022, 2, 2, 0, 0, 0, 0, time.UTC), Gender: "Female"},
@@ -205,7 +205,7 @@ func TestGetChildByID(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var responseBody map[string]interface{}
-		json.Unmarshal(rr.Body.Bytes(), &responseBody)
+		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 
 		assert.Equal(t, float64(1), responseBody["id"])
 		assert.Equal(t, "Test Child", responseBody["first_name"])
@@ -300,7 +300,7 @@ func TestUpdateChild(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var responseBody map[string]interface{}
-		json.Unmarshal(rr.Body.Bytes(), &responseBody)
+		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 		assert.Equal(t, map[string]interface{}{"message": "Child updated successfully"}, responseBody)
 
 		mockChildService.AssertExpectations(t)
@@ -432,7 +432,7 @@ func TestDeleteChild(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var responseBody map[string]interface{}
-		json.Unmarshal(rr.Body.Bytes(), &responseBody)
+		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 		assert.Equal(t, map[string]interface{}{"message": "Child deleted successfully"}, responseBody)
 
 		mockChildService.AssertExpectations(t)

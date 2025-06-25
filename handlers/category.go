@@ -27,7 +27,6 @@ func (handler *CategoryHandler) CreateCategory(writer http.ResponseWriter, reque
 		return
 	}
 
-
 	createdCategory, err := handler.CategoryService.CreateCategory(&category)
 	if err != nil {
 		if err == services.ErrInvalidInput {
@@ -39,7 +38,10 @@ func (handler *CategoryHandler) CreateCategory(writer http.ResponseWriter, reque
 	}
 
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(createdCategory)
+	if err := json.NewEncoder(writer).Encode(createdCategory); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetAllCategories handles fetching all categories.
@@ -50,7 +52,10 @@ func (handler *CategoryHandler) GetAllCategories(writer http.ResponseWriter, req
 		return
 	}
 
-	json.NewEncoder(writer).Encode(categories)
+	if err := json.NewEncoder(writer).Encode(categories); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // UpdateCategory handles updating an existing category.
@@ -85,7 +90,10 @@ func (handler *CategoryHandler) UpdateCategory(writer http.ResponseWriter, reque
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Category updated successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Category updated successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // DeleteCategory handles deleting a category.
@@ -108,5 +116,8 @@ func (handler *CategoryHandler) DeleteCategory(writer http.ResponseWriter, reque
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Category deleted successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Category deleted successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

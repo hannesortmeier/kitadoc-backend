@@ -3,7 +3,7 @@
 -- =============================================================================
 
 -- Insert Groups
-INSERT INTO groups (group_name) VALUES 
+INSERT INTO groups (group_name) VALUES
     ('Regenbogen Gruppe'),
     ('Sonnenblumen Gruppe'),
     ('Sterne Gruppe'),
@@ -68,7 +68,7 @@ INSERT INTO documentation_entries (child_id, documenting_teacher_id, category_id
 -- =============================================================================
 
 -- Query 1: Get all children with their current teachers and groups
-SELECT 
+SELECT
     c.first_name || ' ' || c.last_name AS child_name,
     c.birthdate,
     g.group_name,
@@ -82,12 +82,12 @@ LEFT JOIN teachers t ON cta.teacher_id = t.teacher_id
 ORDER BY c.last_name, c.first_name;
 
 -- Query 2: Get all documentation entries for a specific child with approval status
-SELECT 
+SELECT
     de.observation_date,
     cat.category_name,
     de.observation_description,
     t1.first_name || ' ' || t1.last_name AS documenting_teacher,
-    CASE 
+    CASE
         WHEN de.approved = 1 THEN 'Genehmigt von ' || t2.first_name || ' ' || t2.last_name
         ELSE 'Noch nicht genehmigt'
     END AS approval_status,
@@ -100,7 +100,7 @@ WHERE de.child_id = 1  -- Emma Johnson
 ORDER BY de.observation_date DESC;
 
 -- Query 3: Get teacher workload - count of children currently assigned to each teacher
-SELECT 
+SELECT
     t.first_name || ' ' || t.last_name AS teacher_name,
     COUNT(cta.child_id) AS current_children_count,
     GROUP_CONCAT(c.first_name || ' ' || c.last_name, ', ') AS children_names
@@ -111,7 +111,7 @@ GROUP BY t.teacher_id, t.first_name, t.last_name
 ORDER BY current_children_count DESC;
 
 -- Query 4: Get children ready for school enrollment (born in 2018)
-SELECT 
+SELECT
     c.first_name || ' ' || c.last_name AS child_name,
     c.birthdate,
     c.expected_school_enrollment,
@@ -126,7 +126,7 @@ GROUP BY c.child_id
 ORDER BY c.expected_school_enrollment;
 
 -- Query 5: Get documentation statistics by category and month
-SELECT 
+SELECT
     strftime('%Y-%m', de.observation_date) AS observation_month,
     cat.category_name,
     COUNT(de.entry_id) AS total_entries,
@@ -144,7 +144,7 @@ ORDER BY observation_month DESC, cat.category_name;
 
 -- View for current child-teacher assignments
 CREATE VIEW current_assignments AS
-SELECT 
+SELECT
     c.child_id,
     c.first_name || ' ' || c.last_name AS child_name,
     c.birthdate,
@@ -159,7 +159,7 @@ LEFT JOIN groups g ON c.group_id = g.group_id;
 
 -- View for documentation summary per child
 CREATE VIEW child_documentation_summary AS
-SELECT 
+SELECT
     c.child_id,
     c.first_name || ' ' || c.last_name AS child_name,
     COUNT(de.entry_id) AS total_entries,

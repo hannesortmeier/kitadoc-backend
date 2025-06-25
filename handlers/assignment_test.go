@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"kitadoc-backend/handlers/mocks"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
-	"kitadoc-backend/handlers/mocks"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -38,7 +38,7 @@ func TestCreateAssignment(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, rr.Code)
 		var createdAssignment models.Assignment
-		json.NewDecoder(rr.Body).Decode(&createdAssignment)
+		json.NewDecoder(rr.Body).Decode(&createdAssignment) //nolint:errcheck
 		assert.Equal(t, assignment.ChildID, createdAssignment.ChildID)
 		mockService.AssertExpectations(t)
 	})
@@ -124,7 +124,7 @@ func TestGetAssignmentsByChildID(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 		var fetchedAssignments []models.Assignment
-		json.NewDecoder(rr.Body).Decode(&fetchedAssignments)
+		json.NewDecoder(rr.Body).Decode(&fetchedAssignments) //nolint:errcheck
 		assert.Len(t, fetchedAssignments, 2)
 		assert.Equal(t, assignments[0].ID, fetchedAssignments[0].ID)
 		mockService.AssertExpectations(t)
@@ -175,10 +175,10 @@ func TestUpdateAssignment(t *testing.T) {
 
 		assignmentID := 1
 		assignment := models.Assignment{
-			ID:          assignmentID,
-			ChildID:     1,
-			TeacherID:   1,
-			StartDate:   time.Now(),
+			ID:        assignmentID,
+			ChildID:   1,
+			TeacherID: 1,
+			StartDate: time.Now(),
 		}
 		mockService.On("UpdateAssignment", mock.AnythingOfType("*models.Assignment")).Return(nil).Once()
 
@@ -237,10 +237,10 @@ func TestUpdateAssignment(t *testing.T) {
 
 		assignmentID := 1
 		assignment := models.Assignment{
-			ID:          assignmentID,
-			ChildID:     1,
-			TeacherID:   1,
-			StartDate:   time.Now(),
+			ID:        assignmentID,
+			ChildID:   1,
+			TeacherID: 1,
+			StartDate: time.Now(),
 		}
 		mockService.On("UpdateAssignment", mock.AnythingOfType("*models.Assignment")).Return(services.ErrNotFound).Once()
 
@@ -264,10 +264,10 @@ func TestUpdateAssignment(t *testing.T) {
 
 		assignmentID := 1
 		assignment := models.Assignment{
-			ID:          assignmentID,
-			ChildID:     1,
-			TeacherID:   1,
-			StartDate:   time.Now(),
+			ID:        assignmentID,
+			ChildID:   1,
+			TeacherID: 1,
+			StartDate: time.Now(),
 		}
 		mockService.On("UpdateAssignment", mock.AnythingOfType("*models.Assignment")).Return(services.ErrInvalidInput).Once()
 
@@ -291,10 +291,10 @@ func TestUpdateAssignment(t *testing.T) {
 
 		assignmentID := 1
 		assignment := models.Assignment{
-			ID:          assignmentID,
-			ChildID:     1,
-			TeacherID:   1,
-			StartDate:   time.Now(),
+			ID:        assignmentID,
+			ChildID:   1,
+			TeacherID: 1,
+			StartDate: time.Now(),
 		}
 		mockService.On("UpdateAssignment", mock.AnythingOfType("*models.Assignment")).Return(errors.New("db error")).Once()
 
@@ -374,7 +374,7 @@ func TestDeleteAssignment(t *testing.T) {
 	t.Run("internal server error", func(t *testing.T) {
 		mockService := new(mocks.AssignmentService)
 		handler := NewAssignmentHandler(mockService)
-		
+
 		assignmentID := 1
 		mockService.On("DeleteAssignment", assignmentID).Return(errors.New("db error")).Once()
 

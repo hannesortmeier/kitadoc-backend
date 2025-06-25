@@ -9,10 +9,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"kitadoc-backend/handlers/mocks"
 	"kitadoc-backend/middleware"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
-	"kitadoc-backend/handlers/mocks"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,7 +34,7 @@ func TestLogin(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 		var response map[string]string
-		json.NewDecoder(rr.Body).Decode(&response)
+		json.NewDecoder(rr.Body).Decode(&response) //nolint:errcheck
 		assert.Equal(t, "mock_token", response["token"])
 		mockService.AssertExpectations(t)
 	})
@@ -101,7 +101,7 @@ func TestLogout(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 	var response map[string]string
-	json.NewDecoder(rr.Body).Decode(&response)
+	json.NewDecoder(rr.Body).Decode(&response) //nolint:errcheck
 	assert.Equal(t, "Logged out successfully", response["message"])
 	mockService.AssertNotCalled(t, "LoginUser", mock.Anything, mock.Anything, mock.Anything) // Ensure no service calls
 }
@@ -120,7 +120,7 @@ func TestGetMe(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 		var fetchedUser models.User
-		json.NewDecoder(rr.Body).Decode(&fetchedUser)
+		json.NewDecoder(rr.Body).Decode(&fetchedUser) //nolint:errcheck
 		assert.Equal(t, user.ID, fetchedUser.ID)
 		assert.Equal(t, user.Username, fetchedUser.Username)
 		mockService.AssertNotCalled(t, "GetUserByID", mock.Anything, mock.Anything)
@@ -161,7 +161,7 @@ func TestRegisterUser(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, rr.Code)
 		var createdUser models.User
-		json.NewDecoder(rr.Body).Decode(&createdUser)
+		json.NewDecoder(rr.Body).Decode(&createdUser) //nolint:errcheck
 		assert.Equal(t, expectedUser.Username, expectedUser.Username)
 		mockService.AssertExpectations(t)
 	})

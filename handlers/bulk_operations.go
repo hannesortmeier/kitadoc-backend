@@ -36,7 +36,7 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 		http.Error(writer, "Error retrieving CSV file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	// 3. Read the CSV data
 	reader := csv.NewReader(file)
@@ -75,12 +75,12 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 		}
 
 		child := &models.Child{
-			FirstName:   record[0],
-			LastName:    record[1],
-			Birthdate:   dob,
-			Gender:      record[3],
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			FirstName: record[0],
+			LastName:  record[1],
+			Birthdate: dob,
+			Gender:    record[3],
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 
 		createdChild, err := bulkOperationsHandler.ChildService.CreateChild(child)
@@ -93,18 +93,24 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 
 	if len(importErrors) > 0 {
 		writer.WriteHeader(http.StatusPartialContent) // Some items failed
-		json.NewEncoder(writer).Encode(map[string]interface{}{
+		if err := json.NewEncoder(writer).Encode(map[string]interface{}{
 			"message":        "Bulk import completed with errors",
 			"imported_count": len(importedChildren),
 			"errors":         importErrors,
-		})
+		}); err != nil {
+			http.Error(writer, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
+			// Log the error but do not return here, we still want to return the successful imports
+		}
 		return
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]interface{}{
+	if err := json.NewEncoder(writer).Encode(map[string]interface{}{
 		"message":        "Bulk import completed successfully",
 		"imported_count": len(importedChildren),
 		"children":       importedChildren,
-	})
+	}); err != nil {
+		http.Error(writer, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

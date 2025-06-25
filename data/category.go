@@ -112,7 +112,7 @@ func (s *SQLCategoryStore) GetAll() ([]models.Category, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var categories []models.Category
 	for rows.Next() {

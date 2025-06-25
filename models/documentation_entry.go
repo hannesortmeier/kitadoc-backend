@@ -8,22 +8,22 @@ import (
 
 // DocumentationEntry represents a behavioral documentation entry.
 type DocumentationEntry struct {
-	ID              int       `json:"id"`
-	ChildID         int       `json:"child_id" validate:"required"`
-	TeacherID       int       `json:"teacher_id" validate:"required"`
-	CategoryID      int       `json:"category_id" validate:"required"`
-	ObservationDate       time.Time `json:"observation_date" validate:"required,iso8601date"` // Assuming ISO8601 format for date
-	ObservationDescription         string    `json:"observation_description" validate:"required,min=10"`
-	IsApproved      bool      `json:"is_approved"`
-	ApprovedByUserID *int      `json:"approved_by_user_id"` // Pointer for nullable foreign key
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID                     int       `json:"id"`
+	ChildID                int       `json:"child_id" validate:"required"`
+	TeacherID              int       `json:"teacher_id" validate:"required"`
+	CategoryID             int       `json:"category_id" validate:"required"`
+	ObservationDate        time.Time `json:"observation_date" validate:"required,iso8601date"` // Assuming ISO8601 format for date
+	ObservationDescription string    `json:"observation_description" validate:"required,min=10"`
+	IsApproved             bool      `json:"is_approved"`
+	ApprovedByUserID       *int      `json:"approved_by_user_id"` // Pointer for nullable foreign key
+	CreatedAt              time.Time `json:"created_at"`
+	UpdatedAt              time.Time `json:"updated_at"`
 }
 
 // ValidateDocumentationEntry validates the DocumentationEntry struct.
 func ValidateDocumentationEntry(entry DocumentationEntry) error {
 	validate := validator.New()
-	validate.RegisterValidation("iso8601date", ValidateISO8601Date)
+	validate.RegisterValidation("iso8601date", ValidateISO8601Date) //nolint:errcheck
 	return validate.Struct(entry)
 }
 

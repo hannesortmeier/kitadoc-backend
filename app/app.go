@@ -146,5 +146,8 @@ func (app *Application) Routes() http.Handler {
 // healthCheckHandler provides a simple health check endpoint.
 func healthCheckHandler(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"status": "ok"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"status": "ok"}); err != nil {
+		http.Error(writer, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

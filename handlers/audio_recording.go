@@ -52,7 +52,7 @@ func (audioRecordingHandler *AudioRecordingHandler) UploadAudio(writer http.Resp
 		http.Error(writer, "Error retrieving audio file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	// 3. Validate file type
 	contentType := fileHeader.Header.Get("Content-Type")
@@ -73,7 +73,7 @@ func (audioRecordingHandler *AudioRecordingHandler) UploadAudio(writer http.Resp
 		return
 	}
 	defer func() {
-		tempFile.Close()
+		tempFile.Close() //nolint:errcheck
 		// Delete the temporary file immediately after processing
 		if err := os.Remove(tempFilePath); err != nil {
 			logger.WithError(err).WithField("file_path", tempFilePath).Error("Failed to delete temporary audio file")
@@ -101,16 +101,20 @@ func (audioRecordingHandler *AudioRecordingHandler) UploadAudio(writer http.Resp
 	//     return
 	// }
 	logger.WithFields(logrus.Fields{
-		"filename": fileHeader.Filename,
-		"size":     fileHeader.Size,
+		"filename":  fileHeader.Filename,
+		"size":      fileHeader.Size,
 		"temp_path": tempFilePath,
 	}).Info("Audio uploaded and processed successfully (temporary file deleted)")
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{
+	if err := json.NewEncoder(writer).Encode(map[string]string{
 		"message":  "Audio uploaded successfully and processed. Temporary file deleted.",
 		"filename": fileHeader.Filename,
-	})
+	}); err != nil {
+		logger.WithError(err).Error("Failed to encode response")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // isAllowedFileType checks if the uploaded file's content type is allowed.

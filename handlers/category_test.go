@@ -103,7 +103,7 @@ func TestCreateCategory(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, rr.Code)
 
 			var responseBody map[string]interface{}
-			json.Unmarshal(rr.Body.Bytes(), &responseBody)
+			json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 			assert.Equal(t, tt.expectedBody, responseBody)
 
 			mockCategoryService.AssertExpectations(t)
@@ -218,7 +218,7 @@ func TestGetAllCategories(t *testing.T) {
 
 			if tt.expectedStatus == http.StatusOK {
 				var responseBody []models.Category
-				json.Unmarshal(rr.Body.Bytes(), &responseBody)
+				json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 				assert.Equal(t, tt.expectedBody, responseBody)
 			} else {
 				assert.Contains(t, rr.Body.String(), "Internal server error")
@@ -254,7 +254,7 @@ func TestUpdateCategory(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var responseBody map[string]interface{}
-		json.Unmarshal(rr.Body.Bytes(), &responseBody)
+		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 		assert.Equal(t, map[string]interface{}{"message": "Category updated successfully"}, responseBody)
 
 		mockCategoryService.AssertExpectations(t)
@@ -389,7 +389,7 @@ func TestDeleteCategory(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var responseBody map[string]interface{}
-		json.Unmarshal(rr.Body.Bytes(), &responseBody)
+		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 		assert.Equal(t, map[string]interface{}{"message": "Category deleted successfully"}, responseBody)
 
 		mockCategoryService.AssertExpectations(t)

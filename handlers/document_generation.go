@@ -53,5 +53,9 @@ func (handler *DocumentGenerationHandler) GenerateChildReport(writer http.Respon
 
 	writer.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	writer.Header().Set("Content-Disposition", "attachment; filename=\"child_report.docx\"")
-	writer.Write(reportBytes)
+	if _, err := writer.Write(reportBytes); err != nil {
+		logger.WithField("child_id", childID).WithError(err).Error("Failed to write report bytes to response")
+		http.Error(writer, "Failed to write report", http.StatusInternalServerError)
+		return
+	}
 }

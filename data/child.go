@@ -114,7 +114,7 @@ func (s *SQLChildStore) GetAll(groupID *int) ([]models.Child, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var children []models.Child
 	for rows.Next() {

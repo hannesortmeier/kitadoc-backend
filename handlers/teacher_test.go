@@ -49,7 +49,7 @@ func TestCreateTeacher(t *testing.T) {
 		}, nil).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputTeacher)
+		json.NewEncoder(&reqBody).Encode(inputTeacher) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/teachers", &reqBody)
 		req = req.WithContext(context.WithValue(req.Context(), testutils.ContextKeyLogger, logger))
@@ -100,7 +100,7 @@ func TestCreateTeacher(t *testing.T) {
 		mockService.On("CreateTeacher", mock.AnythingOfType("*models.Teacher")).Return(nil, services.ErrInvalidInput).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputTeacher)
+		json.NewEncoder(&reqBody).Encode(inputTeacher) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/teachers", &reqBody)
 		req = req.WithContext(context.WithValue(req.Context(), testutils.ContextKeyLogger, logger))
@@ -127,7 +127,7 @@ func TestCreateTeacher(t *testing.T) {
 		mockService.On("CreateTeacher", mock.AnythingOfType("*models.Teacher")).Return(nil, errors.New("database error")).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputTeacher)
+		json.NewEncoder(&reqBody).Encode(inputTeacher) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/teachers", &reqBody)
 		req = req.WithContext(context.WithValue(req.Context(), testutils.ContextKeyLogger, logger))
@@ -284,7 +284,7 @@ func TestUpdateTeacher(t *testing.T) {
 		mockService.On("UpdateTeacher", mock.AnythingOfType("*models.Teacher")).Return(nil).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputTeacher)
+		json.NewEncoder(&reqBody).Encode(inputTeacher) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPut, "/teachers/1", &reqBody)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
@@ -350,7 +350,7 @@ func TestUpdateTeacher(t *testing.T) {
 		mockService.On("UpdateTeacher", mock.AnythingOfType("*models.Teacher")).Return(services.ErrNotFound).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputTeacher)
+		json.NewEncoder(&reqBody).Encode(inputTeacher) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPut, "/teachers/99", &reqBody)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
@@ -378,7 +378,7 @@ func TestUpdateTeacher(t *testing.T) {
 		mockService.On("UpdateTeacher", mock.AnythingOfType("*models.Teacher")).Return(services.ErrInvalidInput).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputTeacher)
+		json.NewEncoder(&reqBody).Encode(inputTeacher) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPut, "/teachers/1", &reqBody)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
@@ -406,7 +406,7 @@ func TestUpdateTeacher(t *testing.T) {
 		mockService.On("UpdateTeacher", mock.AnythingOfType("*models.Teacher")).Return(errors.New("database error")).Once()
 
 		var reqBody bytes.Buffer
-		json.NewEncoder(&reqBody).Encode(inputTeacher)
+		json.NewEncoder(&reqBody).Encode(inputTeacher) //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPut, "/teachers/1", &reqBody)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)

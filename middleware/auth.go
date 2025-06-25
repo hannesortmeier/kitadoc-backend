@@ -22,7 +22,7 @@ const (
 
 // Claims defines the structure of our JWT claims.
 type Claims struct {
-	UserID int      `json:"user_id"`
+	UserID int       `json:"user_id"`
 	Role   data.Role `json:"role"`
 	jwt.RegisteredClaims
 }

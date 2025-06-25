@@ -27,8 +27,8 @@ type Config struct {
 		Format string `mapstructure:"format"` // "text" or "json"
 	} `mapstructure:"log"`
 	FileStorage struct {
-		UploadDir string `mapstructure:"upload_dir"`
-		MaxSizeMB int    `mapstructure:"max_size_mb"`
+		UploadDir    string   `mapstructure:"upload_dir"`
+		MaxSizeMB    int      `mapstructure:"max_size_mb"`
 		AllowedTypes []string `mapstructure:"allowed_types"`
 	} `mapstructure:"file_storage"`
 }
@@ -50,9 +50,8 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("file_storage.max_size_mb", 10)
 	v.SetDefault("file_storage.allowed_types", []string{"audio/mpeg", "audio/wav", "audio/ogg"})
 
-
 	// Set config file name and path
-	v.SetConfigName("config") // name of config file (without extension)
+	v.SetConfigName("config")   // name of config file (without extension)
 	v.AddConfigPath("./config") // path to look for the config file in the current directory
 	v.AddConfigPath(".")        // optionally look for config in the working directory
 

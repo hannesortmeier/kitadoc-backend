@@ -36,10 +36,10 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ChildID:              1,
-			TeacherID:            1,
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ChildID:                1,
+			TeacherID:              1,
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Test observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -108,10 +108,10 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ChildID:              99, // Non-existent child
-			TeacherID:            1,
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ChildID:                99, // Non-existent child
+			TeacherID:              1,
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Test observation",
 		}
 		expectedTeacher := &models.Teacher{ID: 1}
@@ -148,10 +148,10 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ChildID:              1,
-			TeacherID:            99, // Non-existent teacher
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ChildID:                1,
+			TeacherID:              99, // Non-existent teacher
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Test observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -188,10 +188,10 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ChildID:              1,
-			TeacherID:            1,
-			CategoryID:           99, // Non-existent category
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ChildID:                1,
+			TeacherID:              1,
+			CategoryID:             99, // Non-existent category
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Test observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -228,10 +228,10 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ChildID:              1,
-			TeacherID:            1,
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(time.Hour), // Future date
+			ChildID:                1,
+			TeacherID:              1,
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(time.Hour), // Future date
 			ObservationDescription: "Test observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -269,10 +269,10 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ChildID:              1,
-			TeacherID:            1,
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ChildID:                1,
+			TeacherID:              1,
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Test observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -375,11 +375,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ID:                   1,
-			ChildID:              1,
-			TeacherID:            1,
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ID:                     1,
+			ChildID:                1,
+			TeacherID:              1,
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Updated observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -447,11 +447,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ID:                   1,
-			ChildID:              99, // Non-existent child
-			TeacherID:            1,
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ID:                     1,
+			ChildID:                99, // Non-existent child
+			TeacherID:              1,
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Updated observation",
 		}
 		expectedTeacher := &models.Teacher{ID: 1}
@@ -487,11 +487,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ID:                   1,
-			ChildID:              1,
-			TeacherID:            99, // Non-existent teacher
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ID:                     1,
+			ChildID:                1,
+			TeacherID:              99, // Non-existent teacher
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Updated observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -527,11 +527,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ID:                   1,
-			ChildID:              1,
-			TeacherID:            1,
-			CategoryID:           99, // Non-existent category
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ID:                     1,
+			ChildID:                1,
+			TeacherID:              1,
+			CategoryID:             99, // Non-existent category
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Test observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -567,11 +567,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ID:                   1,
-			ChildID:              1,
-			TeacherID:            1,
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(time.Hour), // Future date
+			ID:                     1,
+			ChildID:                1,
+			TeacherID:              1,
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(time.Hour), // Future date
 			ObservationDescription: "Test observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -608,11 +608,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ID:                   99, // Non-existent ID
-			ChildID:              1,
-			TeacherID:            1,
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ID:                     99, // Non-existent ID
+			ChildID:                1,
+			TeacherID:              1,
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Updated observation",
 		}
 		expectedChild := &models.Child{ID: 1}
@@ -650,11 +650,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		)
 
 		entry := &models.DocumentationEntry{
-			ID:                   1,
-			ChildID:              1,
-			TeacherID:            1,
-			CategoryID:           1,
-			ObservationDate:      time.Now().Add(-time.Hour),
+			ID:                     1,
+			ChildID:                1,
+			TeacherID:              1,
+			CategoryID:             1,
+			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Updated observation",
 		}
 		expectedChild := &models.Child{ID: 1}

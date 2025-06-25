@@ -19,19 +19,19 @@ func TestSQLDocumentationEntryStore_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLDocumentationEntryStore(db)
 
 	entry := &models.DocumentationEntry{
-		ChildID:              1,
-		TeacherID:            2,
-		CategoryID:           3,
-		ObservationDate:      time.Now(),
+		ChildID:                1,
+		TeacherID:              2,
+		CategoryID:             3,
+		ObservationDate:        time.Now(),
 		ObservationDescription: "Test observation",
-		ApprovedByUserID:     nil,
-		CreatedAt:            time.Now(),
-		UpdatedAt:            time.Now(),
+		ApprovedByUserID:       nil,
+		CreatedAt:              time.Now(),
+		UpdatedAt:              time.Now(),
 	}
 
 	t.Run("success", func(t *testing.T) {
@@ -63,7 +63,7 @@ func TestSQLDocumentationEntryStore_GetByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLDocumentationEntryStore(db)
 
@@ -134,7 +134,7 @@ func TestSQLDocumentationEntryStore_Update(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLDocumentationEntryStore(db)
 
@@ -188,7 +188,7 @@ func TestSQLDocumentationEntryStore_Delete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLDocumentationEntryStore(db)
 
@@ -232,7 +232,7 @@ func TestSQLDocumentationEntryStore_GetAllForChild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLDocumentationEntryStore(db)
 
@@ -326,7 +326,7 @@ func TestSQLDocumentationEntryStore_ApproveEntry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	store := data.NewSQLDocumentationEntryStore(db)
 

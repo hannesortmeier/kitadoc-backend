@@ -50,13 +50,13 @@ func TestUploadAudio(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = io.Copy(part, bytes.NewBufferString("mock audio content"))
 		assert.NoError(t, err)
-		writer.Close()
+		writer.Close() //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/upload-audio", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
-		
+
 		// Add logger to context
-		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) // Use a generic key for testing
+		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) //nolint:staticcheck
 		req = req.WithContext(ctx)
 
 		recorder := httptest.NewRecorder()
@@ -64,7 +64,7 @@ func TestUploadAudio(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		var response map[string]string
-		json.NewDecoder(recorder.Body).Decode(&response)
+		json.NewDecoder(recorder.Body).Decode(&response) //nolint:errcheck
 		assert.Contains(t, response["message"], "Audio uploaded successfully")
 		assert.Equal(t, "test_audio.mp3", response["filename"])
 
@@ -82,13 +82,13 @@ func TestUploadAudio(t *testing.T) {
 		// Write content larger than MaxSizeMB
 		_, err = io.Copy(part, bytes.NewBuffer(make([]byte, (cfg.FileStorage.MaxSizeMB+1)<<20))) // MaxSizeMB + 1 MB
 		assert.NoError(t, err)
-		writer.Close()
+		writer.Close() //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/upload-audio", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
-		
+
 		// Add logger to context
-		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) // Use a generic key for testing
+		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) //nolint:staticcheck
 		req = req.WithContext(ctx)
 
 		rr := httptest.NewRecorder()
@@ -102,13 +102,13 @@ func TestUploadAudio(t *testing.T) {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
 		// Do not create "audio" field
-		writer.Close()
+		writer.Close() //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/upload-audio", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
-		
+
 		// Add logger to context
-		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) // Use a generic key for testing
+		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) //nolint:staticcheck
 		req = req.WithContext(ctx)
 
 		rr := httptest.NewRecorder()
@@ -125,15 +125,15 @@ func TestUploadAudio(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = io.Copy(part, bytes.NewBufferString("mock pdf content"))
 		assert.NoError(t, err)
-		writer.Close()
+		writer.Close() //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/upload-audio", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 		// Manually set Content-Type to a disallowed type
 		req.Header.Set("Content-Type", "application/pdf")
-		
+
 		// Add logger to context
-		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) // Use a generic key for testing
+		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) //nolint:staticcheck
 		req = req.WithContext(ctx)
 
 		rr := httptest.NewRecorder()
@@ -145,8 +145,8 @@ func TestUploadAudio(t *testing.T) {
 
 	t.Run("failed to create temporary file", func(t *testing.T) {
 		// Simulate an error by making the upload directory read-only
-		os.Chmod(uploadDir, 0444)
-		defer os.Chmod(uploadDir, 0755) // Revert permissions after test
+		os.Chmod(uploadDir, 0444)       //nolint:errcheck
+		defer os.Chmod(uploadDir, 0755) //nolint:errcheck
 
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
@@ -158,13 +158,13 @@ func TestUploadAudio(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = io.Copy(part, bytes.NewBufferString("mock audio content"))
 		assert.NoError(t, err)
-		writer.Close()
+		writer.Close() //nolint:errcheck
 
 		req := httptest.NewRequest(http.MethodPost, "/upload-audio", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
-		
+
 		// Add logger to context
-		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) // Use a generic key for testing
+		ctx := context.WithValue(req.Context(), "logger", logrus.NewEntry(logrus.New())) //nolint:staticcheck
 		req = req.WithContext(ctx)
 
 		rr := httptest.NewRecorder()

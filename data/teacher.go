@@ -96,7 +96,7 @@ func (s *SQLTeacherStore) GetAll() ([]models.Teacher, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var teachers []models.Teacher
 	for rows.Next() {

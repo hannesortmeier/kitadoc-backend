@@ -5,15 +5,14 @@ import (
 	"testing"
 
 	"kitadoc-backend/data"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
 	"kitadoc-backend/services/mocks"
-	"kitadoc-backend/internal/logger"
 
-
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/sirupsen/logrus"
 )
 
 func TestUploadAudioRecording(t *testing.T) {
@@ -34,7 +33,7 @@ func TestUploadAudioRecording(t *testing.T) {
 		recording := &models.AudioRecording{
 			DocumentationEntryID: 1,
 			FilePath:             "./test.mp3",
-			DurationSeconds: 	120,
+			DurationSeconds:      120,
 		}
 		fileContent := []byte("dummy audio data")
 		expectedEntry := &models.DocumentationEntry{ID: 1}
@@ -61,7 +60,7 @@ func TestUploadAudioRecording(t *testing.T) {
 		recording := &models.AudioRecording{
 			DocumentationEntryID: 1,
 			FilePath:             "./test.mp3",
-			DurationSeconds:             0, // Invalid duration
+			DurationSeconds:      0, // Invalid duration
 		}
 		fileContent := []byte("dummy audio data")
 
@@ -83,7 +82,7 @@ func TestUploadAudioRecording(t *testing.T) {
 		recording := &models.AudioRecording{
 			DocumentationEntryID: 99, // Non-existent entry
 			FilePath:             "test.mp3",
-			DurationSeconds: 	120,
+			DurationSeconds:      120,
 		}
 		fileContent := []byte("dummy audio data")
 
@@ -107,7 +106,7 @@ func TestUploadAudioRecording(t *testing.T) {
 		recording := &models.AudioRecording{
 			DocumentationEntryID: 1,
 			FilePath:             "test.mp3",
-			DurationSeconds: 	120,
+			DurationSeconds:      120,
 		}
 		fileContent := []byte("dummy audio data")
 
@@ -131,7 +130,7 @@ func TestUploadAudioRecording(t *testing.T) {
 		recording := &models.AudioRecording{
 			DocumentationEntryID: 1,
 			FilePath:             "test.mp3",
-			DurationSeconds: 	120,
+			DurationSeconds:      120,
 		}
 		fileContent := []byte("dummy audio data")
 		expectedEntry := &models.DocumentationEntry{ID: 1}

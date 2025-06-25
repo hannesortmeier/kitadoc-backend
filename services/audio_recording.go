@@ -19,17 +19,17 @@ type AudioRecordingService interface {
 
 // AudioRecordingServiceImpl implements AudioRecordingService.
 type AudioRecordingServiceImpl struct {
-	audioRecordingStore data.AudioRecordingStore
+	audioRecordingStore     data.AudioRecordingStore
 	documentationEntryStore data.DocumentationEntryStore
-	validate            *validator.Validate
+	validate                *validator.Validate
 }
 
 // NewAudioRecordingService creates a new AudioRecordingServiceImpl.
 func NewAudioRecordingService(audioRecordingStore data.AudioRecordingStore, documentationEntryStore data.DocumentationEntryStore) *AudioRecordingServiceImpl {
 	return &AudioRecordingServiceImpl{
-		audioRecordingStore: audioRecordingStore,
+		audioRecordingStore:     audioRecordingStore,
 		documentationEntryStore: documentationEntryStore,
-		validate:            validator.New(),
+		validate:                validator.New(),
 	}
 }
 

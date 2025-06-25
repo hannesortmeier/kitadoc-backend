@@ -116,7 +116,7 @@ func (s *SQLGroupStore) GetAll() ([]models.Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var groups []models.Group
 	for rows.Next() {

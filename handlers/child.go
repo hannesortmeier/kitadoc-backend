@@ -42,7 +42,10 @@ func (childHandler *ChildHandler) CreateChild(writer http.ResponseWriter, reques
 	}
 
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(createdChild)
+	if err := json.NewEncoder(writer).Encode(createdChild); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetAllChildren handles fetching all children.
@@ -53,7 +56,10 @@ func (childHandler *ChildHandler) GetAllChildren(writer http.ResponseWriter, req
 		return
 	}
 
-	json.NewEncoder(writer).Encode(children)
+	if err := json.NewEncoder(writer).Encode(children); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetChildByID handles fetching a child by ID.
@@ -75,7 +81,10 @@ func (childHandler *ChildHandler) GetChildByID(writer http.ResponseWriter, reque
 		return
 	}
 
-	json.NewEncoder(writer).Encode(child)
+	if err := json.NewEncoder(writer).Encode(child); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // UpdateChild handles updating an existing child.
@@ -111,7 +120,10 @@ func (childHandler *ChildHandler) UpdateChild(writer http.ResponseWriter, reques
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Child updated successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Child updated successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // DeleteChild handles deleting a child.
@@ -134,5 +146,8 @@ func (childHandler *ChildHandler) DeleteChild(writer http.ResponseWriter, reques
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Child deleted successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Child deleted successfully"}); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

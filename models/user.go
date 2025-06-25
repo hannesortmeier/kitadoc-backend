@@ -10,7 +10,7 @@ import (
 type User struct {
 	ID           int       `json:"id"`
 	Username     string    `json:"username" validate:"required,min=3,max=10"` // Unique handled by DB, but required for feedback
-	PasswordHash string    `json:"password_hash" validate:"required"` // Exclude from JSON output, required for input
+	PasswordHash string    `json:"password_hash" validate:"required"`         // Exclude from JSON output, required for input
 	Role         string    `json:"role" validate:"required,oneof=teacher admin"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`

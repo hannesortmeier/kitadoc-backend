@@ -40,22 +40,22 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		{
 			name: "Successful Creation",
 			inputPayload: models.DocumentationEntry{
-				ChildID:              1,
-				TeacherID:            1,
-				CategoryID:           1,
-				ObservationDate:      time.Date(2023, time.January, 15, 0, 0, 0, 0, time.UTC),
+				ChildID:                1,
+				TeacherID:              1,
+				CategoryID:             1,
+				ObservationDate:        time.Date(2023, time.January, 15, 0, 0, 0, 0, time.UTC),
 				ObservationDescription: "Test observation",
 			},
 			mockServiceSetup: func(m *mocks.MockDocumentationEntryService) {
 				m.On("CreateDocumentationEntry", mock.Anything, mock.Anything, mock.AnythingOfType("*models.DocumentationEntry")).Return(&models.DocumentationEntry{
-					ID:                   1,
-					ChildID:              1,
-					TeacherID:            1,
-					CategoryID:           1,
-					ObservationDate:      time.Date(2023, time.January, 15, 0, 0, 0, 0, time.UTC),
+					ID:                     1,
+					ChildID:                1,
+					TeacherID:              1,
+					CategoryID:             1,
+					ObservationDate:        time.Date(2023, time.January, 15, 0, 0, 0, 0, time.UTC),
 					ObservationDescription: "Test observation",
-					CreatedAt:            time.Now(),
-					UpdatedAt:            time.Now(),
+					CreatedAt:              time.Now(),
+					UpdatedAt:              time.Now(),
 				}, nil).Once()
 			},
 			expectedStatusCode: http.StatusCreated,
@@ -101,7 +101,7 @@ func TestCreateDocumentationEntry(t *testing.T) {
 
 			var reqBody bytes.Buffer
 			if tt.inputPayload != nil {
-				json.NewEncoder(&reqBody).Encode(tt.inputPayload)
+				json.NewEncoder(&reqBody).Encode(tt.inputPayload) //nolint:errcheck
 			}
 
 			req := httptest.NewRequest(http.MethodPost, "/entries", &reqBody)
@@ -215,11 +215,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 			name:         "Successful Update",
 			entryIDParam: "1",
 			inputPayload: models.DocumentationEntry{
-				ID:                   1,
-				ChildID:              1,
-				TeacherID:            1,
-				CategoryID:           1,
-				ObservationDate:      time.Date(2023, time.February, 1, 0, 0, 0, 0, time.UTC),
+				ID:                     1,
+				ChildID:                1,
+				TeacherID:              1,
+				CategoryID:             1,
+				ObservationDate:        time.Date(2023, time.February, 1, 0, 0, 0, 0, time.UTC),
 				ObservationDescription: "Updated observation",
 			},
 			mockServiceSetup: func(m *mocks.MockDocumentationEntryService) {
@@ -291,7 +291,7 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 
 			var reqBody bytes.Buffer
 			if tt.inputPayload != nil {
-				json.NewEncoder(&reqBody).Encode(tt.inputPayload)
+				json.NewEncoder(&reqBody).Encode(tt.inputPayload) //nolint:errcheck
 			}
 
 			req := httptest.NewRequest(http.MethodPut, "/entries/"+tt.entryIDParam, &reqBody)

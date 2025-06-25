@@ -54,7 +54,11 @@ func (authHandler *AuthHandler) Login(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	json.NewEncoder(writer).Encode(map[string]string{"token": token})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"token": token}); err != nil {
+		logger.WithError(err).Error("Failed to encode login response")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Logout handles user logout (token invalidation is typically client-side).
@@ -64,7 +68,11 @@ func (authHandler *AuthHandler) Logout(writer http.ResponseWriter, request *http
 	// If server-side invalidation is needed, a token blacklist mechanism would be implemented.
 	logger.Info("User logged out (client-side token discard)")
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "Logged out successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Logged out successfully"}); err != nil {
+		logger.WithError(err).Error("Failed to encode logout response")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetMe returns the currently authenticated user's information.
@@ -78,7 +86,11 @@ func (authHandler *AuthHandler) GetMe(writer http.ResponseWriter, request *http.
 	}
 	logger.WithField("user_id", user.ID).Info("Fetched current user information")
 
-	json.NewEncoder(writer).Encode(user)
+	if err := json.NewEncoder(writer).Encode(user); err != nil {
+		logger.WithError(err).Error("Failed to encode user information response")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // RegisterUser handles user registration.
@@ -109,7 +121,11 @@ func (authHandler *AuthHandler) RegisterUser(writer http.ResponseWriter, request
 	}
 
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(createdUser)
+	if err := json.NewEncoder(writer).Encode(createdUser); err != nil {
+		logger.WithError(err).Error("Failed to encode user registration response")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // UpdateUser handles updating user information.
@@ -158,7 +174,11 @@ func (authHandler *AuthHandler) UpdateUser(writer http.ResponseWriter, request *
 	logger.WithField("user_id", updatedUser.ID).Info("User updated successfully")
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "User updated successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "User updated successfully"}); err != nil {
+		logger.WithError(err).Error("Failed to encode user update response")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // DeleteUser handles deleting a user.
@@ -189,5 +209,9 @@ func (authHandler *AuthHandler) DeleteUser(writer http.ResponseWriter, request *
 	logger.WithField("user_id", userFromContext.ID).Info("User deleted successfully")
 
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "User deleted successfully"})
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "User deleted successfully"}); err != nil {
+		logger.WithError(err).Error("Failed to encode user deletion response")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
