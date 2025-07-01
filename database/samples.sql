@@ -28,9 +28,9 @@ INSERT INTO teachers (first_name, last_name) VALUES
 
 -- Insert Children
 INSERT INTO children (first_name, last_name, birthdate, group_id, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES
-    ('Emma', 'Johnson', '2019-03-15', 1, 'Deutsch', 0, '2023-08-01', '2025-08-01', 'Musterstraße 12, 12345 Berlin', 'Peter Johnson', 'Lisa Johnson'),
+    ('Anna', 'Müller', '2019-03-15', 1, 'Deutsch', 0, '2023-08-01', '2025-08-01', 'Musterstraße 12, 12345 Berlin', 'Peter Johnson', 'Lisa Johnson'),
     ('Liam', 'Kowalski', '2018-11-20', 1, 'Polnisch', 1, '2023-08-01', '2024-08-01', 'Hauptstraße 45, 12345 Berlin', 'Jan Kowalski', 'Anna Kowalski'),
-    ('Sophie', 'Martinez', '2019-07-08', 2, 'Spanisch', 1, '2023-09-15', '2025-08-01', 'Parkweg 23, 12345 Berlin', 'Carlos Martinez', 'Elena Martinez'),
+    ('Ben', 'Springer', '2019-07-08', 2, 'Spanisch', 1, '2023-09-15', '2025-08-01', 'Parkweg 23, 12345 Berlin', 'Carlos Martinez', 'Elena Martinez'),
     ('Noah', 'Brown', '2019-01-12', 2, 'Englisch', 1, '2023-08-01', '2025-08-01', 'Lindenallee 67, 12345 Berlin', 'James Brown', 'Emma Brown'),
     ('Mia', 'Schneider', '2018-09-30', 3, 'Deutsch', 0, '2023-08-01', '2024-08-01', 'Rosenstraße 89, 12345 Berlin', 'Klaus Schneider', 'Petra Schneider'),
     ('Lucas', 'Ahmed', '2019-05-22', 3, 'Arabisch', 1, '2023-10-01', '2025-08-01', 'Friedensplatz 34, 12345 Berlin', 'Omar Ahmed', 'Fatima Ahmed'),
