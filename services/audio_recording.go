@@ -1,92 +1,100 @@
 package services
 
 import (
-	"errors"
-	"time"
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
 
-	"kitadoc-backend/data"
-	"kitadoc-backend/models"
-
-	"github.com/go-playground/validator/v10"
+	"github.com/sirupsen/logrus"
 )
 
-// AudioRecordingService defines the interface for audio recording-related business logic operations.
-type AudioRecordingService interface {
-	UploadAudioRecording(recording *models.AudioRecording, fileContent []byte) (*models.AudioRecording, error)
-	GetAudioRecordingByID(id int) (*models.AudioRecording, error)
-	DeleteAudioRecording(id int) error
+// AudioAnalysisService defines the interface for audio analysis operations.
+type AudioAnalysisService interface {
+	AnalyzeAudio(ctx context.Context, fileContent []byte, filename string) (map[string]interface{}, error)
 }
 
-// AudioRecordingServiceImpl implements AudioRecordingService.
-type AudioRecordingServiceImpl struct {
-	audioRecordingStore     data.AudioRecordingStore
-	documentationEntryStore data.DocumentationEntryStore
-	validate                *validator.Validate
+// AudioAnalysisServiceImpl implements AudioAnalysisService.
+type AudioAnalysisServiceImpl struct {
+	httpClient   *http.Client
+	audioProcURL string
 }
 
-// NewAudioRecordingService creates a new AudioRecordingServiceImpl.
-func NewAudioRecordingService(audioRecordingStore data.AudioRecordingStore, documentationEntryStore data.DocumentationEntryStore) *AudioRecordingServiceImpl {
-	return &AudioRecordingServiceImpl{
-		audioRecordingStore:     audioRecordingStore,
-		documentationEntryStore: documentationEntryStore,
-		validate:                validator.New(),
+// NewAudioAnalysisService creates a new AudioAnalysisServiceImpl.
+func NewAudioAnalysisService(httpClient *http.Client, audioProcURL string) *AudioAnalysisServiceImpl {
+	return &AudioAnalysisServiceImpl{
+		httpClient:   httpClient,
+		audioProcURL: audioProcURL,
 	}
 }
 
-// UploadAudioRecording handles the upload and creation of an audio recording.
-func (service *AudioRecordingServiceImpl) UploadAudioRecording(recording *models.AudioRecording, fileContent []byte) (*models.AudioRecording, error) {
-	if err := service.validate.Struct(recording); err != nil {
-		return nil, err
-	}
+// AnalyzeAudio forwards the audio file to the audio-proc service for analysis.
+func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent []byte, filename string) (map[string]interface{}, error) {
+	logger := logrus.WithContext(ctx)
 
-	// Validate DocumentationEntryID
-	_, err := service.documentationEntryStore.GetByID(recording.DocumentationEntryID)
+	// Create a new multipart writer.
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// Create a new form-data header with the provided filename.
+	part, err := writer.CreateFormFile("audio_file", filename)
 	if err != nil {
-		if errors.Is(err, data.ErrNotFound) {
-			return nil, errors.New("documentation entry not found")
-		}
-		return nil, ErrInternal
+		logger.WithError(err).Error("Failed to create form file")
+		return nil, fmt.Errorf("failed to create form file: %w", err)
 	}
 
-	// In a real application, you would save the fileContent to a storage system (e.g., local disk, S3).
-	// The FilePath in the model would then store the path/URL to this saved file.
-	// For this example, we'll just simulate success and set a dummy file path.
-	if len(fileContent) == 0 {
-		return nil, errors.New("audio file content is empty")
-	}
-	recording.FilePath = "/path/to/uploaded/audio/" + time.Now().Format("20060102150405") + ".mp3" // Dummy path
-
-	recording.CreatedAt = time.Now()
-
-	id, err := service.audioRecordingStore.Create(recording)
+	// Copy the file content to the form file.
+	_, err = io.Copy(part, bytes.NewReader(fileContent))
 	if err != nil {
-		return nil, ErrInternal
+		logger.WithError(err).Error("Failed to copy file content to form file")
+		return nil, fmt.Errorf("failed to copy file content: %w", err)
 	}
-	recording.ID = id
-	return recording, nil
-}
 
-// GetAudioRecordingByID fetches an audio recording by ID.
-func (s *AudioRecordingServiceImpl) GetAudioRecordingByID(id int) (*models.AudioRecording, error) {
-	recording, err := s.audioRecordingStore.GetByID(id)
+	// Close the multipart writer.
+	err = writer.Close()
 	if err != nil {
-		if errors.Is(err, data.ErrNotFound) {
-			return nil, ErrNotFound
-		}
-		return nil, ErrInternal
+		logger.WithError(err).Error("Failed to close multipart writer")
+		return nil, fmt.Errorf("failed to close multipart writer: %w", err)
 	}
-	return recording, nil
-}
 
-// DeleteAudioRecording deletes an audio recording by ID.
-func (service *AudioRecordingServiceImpl) DeleteAudioRecording(id int) error {
-	// In a real application, you would also delete the actual file from storage here.
-	err := service.audioRecordingStore.Delete(id)
+	// Create a new HTTP request to the audio-proc service.
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.audioProcURL, body)
 	if err != nil {
-		if errors.Is(err, data.ErrNotFound) {
-			return ErrNotFound
-		}
-		return ErrInternal
+		logger.WithError(err).Error("Failed to create request to audio-proc service")
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	return nil
+
+	// Set the content type for the request.
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	// Send the request.
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		logger.WithError(err).Error("Failed to send request to audio-proc service")
+		return nil, fmt.Errorf("failed to send request to audio-proc service: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check the response status code.
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		logger.WithFields(logrus.Fields{
+			"status_code": resp.StatusCode,
+			"response":    string(bodyBytes),
+		}).Error("Received non-OK response from audio-proc service")
+		return nil, fmt.Errorf("audio-proc service returned status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	// Decode the JSON response.
+	var analysisResult map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&analysisResult); err != nil {
+		logger.WithError(err).Error("Failed to decode response from audio-proc service")
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	logger.Info("Successfully received analysis from audio-proc service")
+	return analysisResult, nil
 }

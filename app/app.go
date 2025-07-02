@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"kitadoc-backend/config"
 	"kitadoc-backend/data"
@@ -37,7 +38,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	categoryService := services.NewCategoryService(dal.Categories)
 	assignmentService := services.NewAssignmentService(dal.Assignments, dal.Children, dal.Teachers)
 	documentationEntryService := services.NewDocumentationEntryService(dal.DocumentationEntries, dal.Children, dal.Teachers, dal.Categories, dal.Users)
-	audioRecordingService := services.NewAudioRecordingService(dal.AudioRecordings, dal.DocumentationEntries)
+	audioAnalysisService := services.NewAudioAnalysisService(&http.Client{Timeout: 10 * time.Second}, cfg.AudioProcServiceURL)
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userService)
@@ -47,7 +48,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	assignmentHandler := handlers.NewAssignmentHandler(assignmentService)
 	documentationEntryHandler := handlers.NewDocumentationEntryHandler(documentationEntryService)
-	audioRecordingHandler := handlers.NewAudioRecordingHandler(audioRecordingService, &cfg)
+	audioRecordingHandler := handlers.NewAudioRecordingHandler(audioAnalysisService, documentationEntryService, &cfg)
 	documentGenerationHandler := handlers.NewDocumentGenerationHandler(documentationEntryService)
 	bulkOperationsHandler := handlers.NewBulkOperationsHandler(childService)
 

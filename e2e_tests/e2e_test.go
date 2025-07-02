@@ -29,6 +29,15 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	// Create a mock server for the audio-proc service
+	mockAudioProc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"transcription": "mocked transcription",
+		})
+	}))
+	defer mockAudioProc.Close()
+
 	// Create temporary directory for uploads
 	if err := os.MkdirAll("test_uploads", os.ModePerm); err != nil {
 		panic(fmt.Sprintf("failed to create test uploads directory: %v", err))
@@ -66,6 +75,7 @@ func TestMain(m *testing.M) {
 			AllowedTypes: []string{"audio/mpeg", "audio/wav", "audio/ogg", "application/octet-stream"},
 			UploadDir:    "test_uploads", // Use a test directory for uploads
 		},
+		AudioProcServiceURL: mockAudioProc.URL,
 	}
 
 	logLevel, _ := logrus.ParseLevel("debug")
@@ -815,12 +825,16 @@ func TestPublicRoutes(t *testing.T) {
 			defer resp.Body.Close() //nolint:errcheck
 
 			// Verify response
-			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-				t.Errorf("Expected status %d or %d, got %d", http.StatusOK, http.StatusCreated, resp.StatusCode)
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
 			responseBody := readResponseBody(t, resp)
-			if !bytes.Contains(responseBody, []byte("Audio uploaded successfully")) {
-				t.Errorf("Expected upload success message, got %s", responseBody)
+			var result map[string]interface{}
+			if err := json.Unmarshal(responseBody, &result); err != nil {
+				t.Fatalf("Failed to unmarshal response: %v", err)
+			}
+			if result["transcription"] != "mocked transcription" {
+				t.Errorf("Expected transcription 'mocked transcription', got '%s'", result["transcription"])
 			}
 		})
 	})
@@ -912,9 +926,10 @@ func TestPublicRoutes(t *testing.T) {
 		// Test POST /api/v1/documentation
 		t.Run("Create Documentation Entry", func(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/documentation", authToken, map[string]interface{}{
-				"child_id":                childID,
-				"teacher_id":              teacherID,
-				"category_id":             categoryID,
+				"child_id":    childID,
+				"teacher_id":  teacherID,
+				"category_id": categoryID,
+
 				"observation_description": "Child showed great progress today.",
 				"observation_date":        time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
 			}, "application/json")

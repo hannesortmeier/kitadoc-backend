@@ -5,12 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
-	"time"
-
-	"github.com/sirupsen/logrus"
 
 	"kitadoc-backend/config"
 	"kitadoc-backend/middleware"
@@ -19,107 +14,76 @@ import (
 
 // AudioRecordingHandler handles audio recording-related HTTP requests.
 type AudioRecordingHandler struct {
-	AudioRecordingService services.AudioRecordingService
-	Config                *config.Config
+	AudioAnalysisService services.AudioAnalysisService
+	Config               *config.Config
 }
 
 // NewAudioRecordingHandler creates a new AudioRecordingHandler.
-func NewAudioRecordingHandler(audioRecordingService services.AudioRecordingService, cfg *config.Config) *AudioRecordingHandler {
+func NewAudioRecordingHandler(audioAnalysisService services.AudioAnalysisService, cfg *config.Config) *AudioRecordingHandler {
 	return &AudioRecordingHandler{
-		AudioRecordingService: audioRecordingService,
-		Config:                cfg,
+		AudioAnalysisService: audioAnalysisService,
+		Config:               cfg,
 	}
 }
 
-// UploadAudio handles uploading an audio recording.
-func (audioRecordingHandler *AudioRecordingHandler) UploadAudio(writer http.ResponseWriter, request *http.Request) {
-	logger := middleware.GetLoggerWithReqID(request.Context())
+// UploadAudio handles uploading an audio recording and forwarding it to the audio-proc service.
+func (h *AudioRecordingHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
+	logger := middleware.GetLoggerWithReqID(r.Context())
 
 	// 1. Parse multipart form data with file size limit
-	maxUploadSize := int64(audioRecordingHandler.Config.FileStorage.MaxSizeMB) << 20 // Convert MB to bytes
-	request.Body = http.MaxBytesReader(writer, request.Body, maxUploadSize)
-	err := request.ParseMultipartForm(maxUploadSize)
-	if err != nil {
+	maxUploadSize := int64(h.Config.FileStorage.MaxSizeMB) << 20 // Convert MB to bytes
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
 		logger.WithError(err).Error("Failed to parse multipart form or file size exceeded limit")
-		http.Error(writer, fmt.Sprintf("Failed to parse multipart form or file size exceeded limit (%d MB): %v", audioRecordingHandler.Config.FileStorage.MaxSizeMB, err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to parse multipart form or file size exceeded limit (%d MB): %v", h.Config.FileStorage.MaxSizeMB, err), http.StatusBadRequest)
 		return
 	}
 
 	// 2. Get the file from the form
-	file, fileHeader, err := request.FormFile("audio")
+	file, fileHeader, err := r.FormFile("audio")
 	if err != nil {
 		logger.WithError(err).Error("Error retrieving audio file from form")
-		http.Error(writer, "Error retrieving audio file: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "Error retrieving audio file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer file.Close() //nolint:errcheck
+	defer file.Close()
 
 	// 3. Validate file type
 	contentType := fileHeader.Header.Get("Content-Type")
-	if !audioRecordingHandler.isAllowedFileType(contentType) {
+	if !h.isAllowedFileType(contentType) {
 		logger.WithField("content_type", contentType).Warn("Disallowed file type uploaded")
-		http.Error(writer, fmt.Sprintf("Disallowed file type: %s. Allowed types are: %s", contentType, strings.Join(audioRecordingHandler.Config.FileStorage.AllowedTypes, ", ")), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Disallowed file type: %s. Allowed types are: %s", contentType, strings.Join(h.Config.FileStorage.AllowedTypes, ", ")), http.StatusBadRequest)
 		return
 	}
 
-	// 4. Create a temporary file to save the uploaded audio
-	tempDir := audioRecordingHandler.Config.FileStorage.UploadDir
-	// The directory is ensured to exist during config validation, so no need to check here.
-	tempFilePath := filepath.Join(tempDir, fmt.Sprintf("audio_%d_%s", time.Now().UnixNano(), fileHeader.Filename))
-	tempFile, err := os.Create(tempFilePath)
+	// 4. Read the file content into a byte slice
+	fileContent, err := io.ReadAll(file)
 	if err != nil {
-		logger.WithError(err).Error("Failed to create temporary file for audio upload")
-		http.Error(writer, "Failed to create temporary file: "+err.Error(), http.StatusInternalServerError)
+		logger.WithError(err).Error("Failed to read audio file content")
+		http.Error(w, "Failed to read audio file content: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer func() {
-		tempFile.Close() //nolint:errcheck
-		// Delete the temporary file immediately after processing
-		if err := os.Remove(tempFilePath); err != nil {
-			logger.WithError(err).WithField("file_path", tempFilePath).Error("Failed to delete temporary audio file")
-		} else {
-			logger.WithField("file_path", tempFilePath).Info("Temporary audio file deleted successfully")
-		}
-	}()
 
-	// 5. Copy the uploaded file to the temporary file
-	_, err = io.Copy(tempFile, file)
+	// 5. Call the service layer to analyze the audio
+	analysisResult, err := h.AudioAnalysisService.AnalyzeAudio(r.Context(), fileContent, fileHeader.Filename)
 	if err != nil {
-		logger.WithError(err).Error("Failed to save audio file to temporary location")
-		http.Error(writer, "Failed to save audio file: "+err.Error(), http.StatusInternalServerError)
+		logger.WithError(err).Error("Failed to analyze audio")
+		http.Error(w, fmt.Sprintf("Failed to analyze audio: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// 6. Call the service layer to process the audio (e.g., save metadata to DB)
-	// In a real application, you would pass the tempFilePath to the service.
-	// For now, we'll just return a success message.
-	// Example:
-	// audioRecording, err := audioRecordingHandler.AudioRecordingService.ProcessAudio(r.Context(), tempFilePath, r.FormValue("child_id"), r.FormValue("teacher_id"))
-	// if err != nil {
-	//     logger.WithError(err).Error("Failed to process audio recording in service")
-	//     http.Error(writer, "Failed to process audio recording", http.StatusInternalServerError)
-	//     return
-	// }
-	logger.WithFields(logrus.Fields{
-		"filename":  fileHeader.Filename,
-		"size":      fileHeader.Size,
-		"temp_path": tempFilePath,
-	}).Info("Audio uploaded and processed successfully (temporary file deleted)")
-
-	writer.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(writer).Encode(map[string]string{
-		"message":  "Audio uploaded successfully and processed. Temporary file deleted.",
-		"filename": fileHeader.Filename,
-	}); err != nil {
+	// 6. Return the analysis result to the client
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(analysisResult); err != nil {
 		logger.WithError(err).Error("Failed to encode response")
-		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
-		return
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
 // isAllowedFileType checks if the uploaded file's content type is allowed.
-func (audioRecordingHandler *AudioRecordingHandler) isAllowedFileType(contentType string) bool {
-	for _, allowedType := range audioRecordingHandler.Config.FileStorage.AllowedTypes {
+func (h *AudioRecordingHandler) isAllowedFileType(contentType string) bool {
+	for _, allowedType := range h.Config.FileStorage.AllowedTypes {
 		if contentType == allowedType {
 			return true
 		}
