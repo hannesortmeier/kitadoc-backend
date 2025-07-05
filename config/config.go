@@ -49,7 +49,7 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("log.format", "json") // Default to JSON format
 	v.SetDefault("file_storage.upload_dir", "uploads")
 	v.SetDefault("file_storage.max_size_mb", 10)
-	v.SetDefault("file_storage.allowed_types", []string{"audio/mpeg", "audio/wav", "audio/ogg"})
+	v.SetDefault("file_storage.allowed_types", []string{"audio/mpeg", "audio/wav"})
 	v.SetDefault("audio_proc_service_url", "http://localhost:8000/analyze-audio")
 
 	// Set config file name and path

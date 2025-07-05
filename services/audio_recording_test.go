@@ -18,9 +18,10 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{"transcription": "hello world"})
+			err := json.NewEncoder(w).Encode(map[string]interface{}{"transcription": "hello world"})
+			assert.NoError(t, err)
 		}))
-		defer mockServer.Close()
+		t.Cleanup(func() { mockServer.Close() })
 
 		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL)
 
@@ -41,7 +42,7 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// This handler will not be called
 		}))
-		defer mockServer.Close()
+		t.Cleanup(func() { mockServer.Close() })
 
 		service := services.NewAudioAnalysisService(mockServer.Client(), "http://invalid-url")
 
@@ -58,7 +59,7 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
-		defer mockServer.Close()
+		t.Cleanup(func() { mockServer.Close() })
 
 		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL)
 
@@ -74,9 +75,10 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 	t.Run("failed to decode response", func(t *testing.T) {
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte("invalid json"))
+			_, err := w.Write([]byte("invalid json"))
+			assert.NoError(t, err)
 		}))
-		defer mockServer.Close()
+		t.Cleanup(func() { mockServer.Close() })
 
 		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL)
 

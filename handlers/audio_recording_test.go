@@ -8,21 +8,27 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
+	"net/url"
 	"testing"
+	"time"
 
 	"kitadoc-backend/config"
 	"kitadoc-backend/handlers"
-	"kitadoc-backend/services/mocks"
+	"kitadoc-backend/handlers/mocks"
+	"kitadoc-backend/models"
+	services_mocks "kitadoc-backend/services/mocks"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
-		mockService := &mocks.MockAudioAnalysisService{}
-		h := handlers.NewAudioRecordingHandler(mockService, &config.Config{
+		mockAudioAnalysisService := &services_mocks.MockAudioAnalysisService{}
+		mockDocEntryService := &mocks.MockDocumentationEntryService{}
+		h := handlers.NewAudioRecordingHandler(mockAudioAnalysisService, mockDocEntryService, &config.Config{
 			FileStorage: struct {
 				UploadDir    string   `mapstructure:"upload_dir"`
 				MaxSizeMB    int      `mapstructure:"max_size_mb"`
@@ -39,15 +45,24 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		header.Set("Content-Disposition", `form-data; name="audio"; filename="test.wav"`)
 		header.Set("Content-Type", "audio/wav")
 		part, _ := writer.CreatePart(header)
-		part.Write([]byte("dummy audio data"))
+		_, err := part.Write([]byte("dummy audio data"))
+		assert.NoError(t, err)
 
-		writer.Close()
+		err = writer.Close()
+		assert.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/audio/upload", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 
-		mockResponse := map[string]interface{}{"transcription": "hello world"}
-		mockService.On("AnalyzeAudio", ctx, []byte("dummy audio data"), "test.wav").Return(mockResponse, nil).Once()
+		// Add teacher_id and timestamp to the request form
+		form := url.Values{}
+		form.Add("teacher_id", "1")
+		form.Add("timestamp", time.Now().Format(time.RFC3339))
+		req.PostForm = form
+
+		mockResponse := map[string]interface{}{"transcription": "hello world", "documentationEntryId": 1}
+		mockAudioAnalysisService.On("AnalyzeAudio", ctx, []byte("dummy audio data"), "test.wav").Return(mockResponse, nil).Once()
+		mockDocEntryService.On("CreateDocumentationEntry", mock.Anything, ctx, mock.Anything).Return(&models.DocumentationEntry{ID: 1}, nil).Once()
 
 		rr := httptest.NewRecorder()
 		h.UploadAudio(rr, req.WithContext(ctx))
@@ -55,15 +70,18 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var response map[string]interface{}
-		json.NewDecoder(rr.Body).Decode(&response)
+		err = json.NewDecoder(rr.Body).Decode(&response)
+		assert.NoError(t, err)
 
-		assert.Equal(t, mockResponse, response)
-		mockService.AssertExpectations(t)
+		assert.Equal(t, map[string]interface{}{"documentationEntryId": float64(1)}, response)
+		mockAudioAnalysisService.AssertExpectations(t)
+		mockDocEntryService.AssertExpectations(t)
 	})
 
 	t.Run("service error", func(t *testing.T) {
-		mockService := &mocks.MockAudioAnalysisService{}
-		h := handlers.NewAudioRecordingHandler(mockService, &config.Config{
+		mockAudioAnalysisService := &services_mocks.MockAudioAnalysisService{}
+		mockDocEntryService := &mocks.MockDocumentationEntryService{}
+		h := handlers.NewAudioRecordingHandler(mockAudioAnalysisService, mockDocEntryService, &config.Config{
 			FileStorage: struct {
 				UploadDir    string   `mapstructure:"upload_dir"`
 				MaxSizeMB    int      `mapstructure:"max_size_mb"`
@@ -80,19 +98,23 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		header.Set("Content-Disposition", `form-data; name="audio"; filename="test.wav"`)
 		header.Set("Content-Type", "audio/wav")
 		part, _ := writer.CreatePart(header)
-		part.Write([]byte("dummy audio data"))
+		_, err := part.Write([]byte("dummy audio data"))
+		assert.NoError(t, err)
 
-		writer.Close()
+		err = writer.Close()
+		assert.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/audio/upload", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 
-		mockService.On("AnalyzeAudio", ctx, []byte("dummy audio data"), "test.wav").Return(nil, assert.AnError).Once()
+		// Add teacher_id and timestamp to the request form
+		form := url.Values{}
+		form.Add("teacher_id", "1")
+		req.PostForm = form
 
 		rr := httptest.NewRecorder()
 		h.UploadAudio(rr, req.WithContext(ctx))
 
-		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		mockService.AssertExpectations(t)
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 }

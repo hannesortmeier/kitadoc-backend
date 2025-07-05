@@ -89,7 +89,7 @@ func (app *Application) Routes() http.Handler {
 
 	// Auth Endpoints
 	app.Router.Handle("POST /api/v1/auth/logout", middleware.RequestIDMiddleware(authMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AuthHandler.Logout))))))
-	app.Router.Handle("GET /api/v1/auth/me", middleware.RequestIDMiddleware(authMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AuthHandler.GetMe))))))
+	app.Router.Handle("GET /api/v1/auth/me", middleware.RequestIDMiddleware(authMiddleware(middleware.RequestLogger(http.HandlerFunc(app.AuthHandler.GetMe)))))
 
 	// Children Management Endpoints
 	app.Router.Handle("POST /api/v1/children", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.ChildHandler.CreateChild)))))))

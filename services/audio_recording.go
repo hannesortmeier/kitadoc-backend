@@ -9,12 +9,14 @@ import (
 	"mime/multipart"
 	"net/http"
 
+	"kitadoc-backend/models"
+
 	"github.com/sirupsen/logrus"
 )
 
 // AudioAnalysisService defines the interface for audio analysis operations.
 type AudioAnalysisService interface {
-	AnalyzeAudio(ctx context.Context, fileContent []byte, filename string) (map[string]interface{}, error)
+	AnalyzeAudio(ctx context.Context, fileContent []byte, filename string) (models.AnalysisResult, error)
 }
 
 // AudioAnalysisServiceImpl implements AudioAnalysisService.
@@ -32,7 +34,7 @@ func NewAudioAnalysisService(httpClient *http.Client, audioProcURL string) *Audi
 }
 
 // AnalyzeAudio forwards the audio file to the audio-proc service for analysis.
-func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent []byte, filename string) (map[string]interface{}, error) {
+func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent []byte, filename string) (models.AnalysisResult, error) {
 	logger := logrus.WithContext(ctx)
 
 	// Create a new multipart writer.
@@ -43,28 +45,28 @@ func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent
 	part, err := writer.CreateFormFile("audio_file", filename)
 	if err != nil {
 		logger.WithError(err).Error("Failed to create form file")
-		return nil, fmt.Errorf("failed to create form file: %w", err)
+		return models.AnalysisResult{}, fmt.Errorf("failed to create form file: %w", err)
 	}
 
 	// Copy the file content to the form file.
 	_, err = io.Copy(part, bytes.NewReader(fileContent))
 	if err != nil {
 		logger.WithError(err).Error("Failed to copy file content to form file")
-		return nil, fmt.Errorf("failed to copy file content: %w", err)
+		return models.AnalysisResult{}, fmt.Errorf("failed to copy file content: %w", err)
 	}
 
 	// Close the multipart writer.
 	err = writer.Close()
 	if err != nil {
 		logger.WithError(err).Error("Failed to close multipart writer")
-		return nil, fmt.Errorf("failed to close multipart writer: %w", err)
+		return models.AnalysisResult{}, fmt.Errorf("failed to close multipart writer: %w", err)
 	}
 
 	// Create a new HTTP request to the audio-proc service.
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.audioProcURL, body)
 	if err != nil {
 		logger.WithError(err).Error("Failed to create request to audio-proc service")
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return models.AnalysisResult{}, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Set the content type for the request.
@@ -74,9 +76,13 @@ func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		logger.WithError(err).Error("Failed to send request to audio-proc service")
-		return nil, fmt.Errorf("failed to send request to audio-proc service: %w", err)
+		return models.AnalysisResult{}, fmt.Errorf("failed to send request to audio-proc service: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.WithError(err).Error("Failed to close response body")
+		}
+	}()
 
 	// Check the response status code.
 	if resp.StatusCode != http.StatusOK {
@@ -85,14 +91,14 @@ func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent
 			"status_code": resp.StatusCode,
 			"response":    string(bodyBytes),
 		}).Error("Received non-OK response from audio-proc service")
-		return nil, fmt.Errorf("audio-proc service returned status %d: %s", resp.StatusCode, string(bodyBytes))
+		return models.AnalysisResult{}, fmt.Errorf("audio-proc service returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	// Decode the JSON response.
-	var analysisResult map[string]interface{}
+	var analysisResult models.AnalysisResult
 	if err := json.NewDecoder(resp.Body).Decode(&analysisResult); err != nil {
 		logger.WithError(err).Error("Failed to decode response from audio-proc service")
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+		return models.AnalysisResult{}, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	logger.Info("Successfully received analysis from audio-proc service")

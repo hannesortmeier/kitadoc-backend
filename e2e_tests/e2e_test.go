@@ -32,9 +32,23 @@ func TestMain(m *testing.M) {
 	// Create a mock server for the audio-proc service
 	mockAudioProc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"transcription": "mocked transcription",
-		})
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			"number_of_entries": 1,
+			"analysis_results": []map[string]interface{}{
+				{
+					"child_id":              2,
+					"first_name":            "Anna",
+					"last_name":             "Müller",
+					"transcription_summary": "Anna spielt mit Tom Fangeln im Sandkasten.",
+					"analysis_category": map[string]interface{}{
+						"category_id":   2,
+						"category_name": "Soziale Entwicklung",
+					},
+				},
+			},
+		}); err != nil {
+			panic(fmt.Sprintf("failed to encode response: %v", err))
+		}
 	}))
 	defer mockAudioProc.Close()
 
@@ -787,6 +801,14 @@ func TestPublicRoutes(t *testing.T) {
 	// Audio Recordings Endpoints
 	t.Run("Audio Recordings Endpoints", func(t *testing.T) {
 		// Test POST /api/v1/audio/upload
+		// Create a category for documentation entry
+		t.Run("Setup Category for Documentation", func(t *testing.T) {
+			respCategory := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/categories", adminAuthToken, map[string]string{
+				"name": "DocCategory",
+			}, "application/json")
+			defer respCategory.Body.Close() //nolint:errcheck
+		})
+
 		t.Run("Upload Audio Recording", func(t *testing.T) {
 			// Create a buffer to hold the multipart form data
 			body := &bytes.Buffer{}
@@ -802,6 +824,14 @@ func TestPublicRoutes(t *testing.T) {
 			dummyAudioContent := []byte("This is a test audio file content")
 			if _, err := part.Write(dummyAudioContent); err != nil {
 				t.Fatalf("Failed to write to form file: %v", err)
+			}
+
+			// Add teacher_id and timestamp fields
+			if err := writer.WriteField("teacher_id", "2"); err != nil {
+				t.Fatalf("Failed to write field: %v", err)
+			}
+			if err := writer.WriteField("timestamp", time.Now().Format(time.RFC3339)); err != nil {
+				t.Fatalf("Failed to write field: %v", err)
 			}
 
 			// Close the multipart writer
@@ -829,12 +859,12 @@ func TestPublicRoutes(t *testing.T) {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
 			responseBody := readResponseBody(t, resp)
-			var result map[string]interface{}
+			var result map[string][]int
 			if err := json.Unmarshal(responseBody, &result); err != nil {
 				t.Fatalf("Failed to unmarshal response: %v", err)
 			}
-			if result["transcription"] != "mocked transcription" {
-				t.Errorf("Expected transcription 'mocked transcription', got '%s'", result["transcription"])
+			if result["documentationEntryIds"][0] != 1 {
+				t.Errorf("Expected transcription 'mocked transcription', got '%d'", result["documentationEntryIds"][0])
 			}
 		})
 	})
@@ -912,7 +942,7 @@ func TestPublicRoutes(t *testing.T) {
 		var categoryID int
 		t.Run("Setup Category for Documentation", func(t *testing.T) {
 			respCategory := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/categories", adminAuthToken, map[string]string{
-				"name": "DocCategory",
+				"name": "DocCategory2",
 			}, "application/json")
 			defer respCategory.Body.Close() //nolint:errcheck
 			var categoryResp struct {
