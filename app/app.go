@@ -38,7 +38,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	categoryService := services.NewCategoryService(dal.Categories)
 	assignmentService := services.NewAssignmentService(dal.Assignments, dal.Children, dal.Teachers)
 	documentationEntryService := services.NewDocumentationEntryService(dal.DocumentationEntries, dal.Children, dal.Teachers, dal.Categories, dal.Users)
-	audioAnalysisService := services.NewAudioAnalysisService(&http.Client{Timeout: 10 * time.Second}, cfg.AudioProcServiceURL)
+	audioAnalysisService := services.NewAudioAnalysisService(&http.Client{Timeout: 10 * time.Minute}, cfg.AudioProcServiceURL)
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userService)
@@ -83,6 +83,14 @@ func (app *Application) Routes() http.Handler {
 	app.Router.Handle("POST /api/v1/auth/register", middleware.RequestIDMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AuthHandler.RegisterUser)))))
 	app.Router.Handle("POST /api/v1/auth/login", middleware.RequestIDMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AuthHandler.Login)))))
 	app.Router.Handle("GET /health", middleware.RequestIDMiddleware(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(healthCheckHandler)))))
+
+	// Add a generic OPTIONS handler for all paths that need CORS
+	// This handler will be wrapped by the CORS middleware later
+	app.Router.HandleFunc("OPTIONS /", func(w http.ResponseWriter, r *http.Request) {
+		// The CORS middleware will handle setting the appropriate headers
+		// and writing the status. We just need to ensure this handler is called.
+		w.WriteHeader(http.StatusOK)
+	})
 
 	// Authenticated routes (Teacher and Admin roles)
 	authMiddleware := middleware.Authenticate(app.AuthHandler.UserService, &app.Config)

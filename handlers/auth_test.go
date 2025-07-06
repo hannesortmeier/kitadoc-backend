@@ -7,9 +7,13 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+
 	"kitadoc-backend/handlers/mocks"
+	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/middleware"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
@@ -17,6 +21,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func TestMain(m *testing.M) {
+	// Initialize a discard logger for tests to prevent nil pointer dereferences
+	logger.InitGlobalLogger(logrus.DebugLevel, &logrus.TextFormatter{DisableColors: true})
+	os.Exit(m.Run())
+}
 
 func TestLogin(t *testing.T) {
 	t.Run("success", func(t *testing.T) {

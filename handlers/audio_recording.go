@@ -117,6 +117,7 @@ func (h *AudioRecordingHandler) UploadAudio(w http.ResponseWriter, r *http.Reque
 		h.writeInternalServerError(w, fmt.Sprintf("Failed to analyze audio: %v", err))
 		return
 	}
+	logger.WithField("analysis_result", analysisResult).Debug("Audio analysis result")
 
 	// 6. Persist the analysis result as a documentation entry
 	// Convert teacherID to int
@@ -127,6 +128,7 @@ func (h *AudioRecordingHandler) UploadAudio(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	logger.WithField("number_of_entries", analysisResult.NumberOfEntries).Debug("Found analysis results")
 	// Loop through analysis results and create documentation entries
 	if analysisResult.NumberOfEntries == 0 {
 		logger.Warn("No analysis results found")
@@ -159,9 +161,10 @@ func (h *AudioRecordingHandler) UploadAudio(w http.ResponseWriter, r *http.Reque
 	// 7. Return the ids of the created documentation entry to the client
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	response := map[string]interface{}{
+	response := map[string][]int{
 		"documentationEntryIds": documentationEntryIds,
 	}
+	logger.WithField("documentationEntryIds", documentationEntryIds).Info("Successfully created documentation entries from audio analysis")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.WithError(err).Error("Failed to encode response")
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)

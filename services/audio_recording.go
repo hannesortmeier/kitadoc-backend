@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 
+	"kitadoc-backend/middleware"
 	"kitadoc-backend/models"
 
 	"github.com/sirupsen/logrus"
@@ -35,7 +36,7 @@ func NewAudioAnalysisService(httpClient *http.Client, audioProcURL string) *Audi
 
 // AnalyzeAudio forwards the audio file to the audio-proc service for analysis.
 func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent []byte, filename string) (models.AnalysisResult, error) {
-	logger := logrus.WithContext(ctx)
+	logger := middleware.GetLoggerWithReqID(ctx)
 
 	// Create a new multipart writer.
 	body := &bytes.Buffer{}
@@ -102,5 +103,6 @@ func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent
 	}
 
 	logger.Info("Successfully received analysis from audio-proc service")
+	logger.Debug("Analysis result: ", analysisResult)
 	return analysisResult, nil
 }

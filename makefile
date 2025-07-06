@@ -1,11 +1,15 @@
-.PHONY: all build test test-e2e clean
+.PHONY: all build test test-e2e clean test-db run-dev
 
 # Default target
 all: build
 
 # Build the application
 build:
-	go build -o bin/kitadoc-backend ./main.go
+	go build -tags=viper_bind_struct -o bin/kitadoc-backend ./main.go
+
+# Run test application
+run-dev:
+	KINDERGARTEN_LOG_LEVEL=debug KINDERGARTEN_LOG_FORMAT=text KINDERGARTEN_SERVER_JWT_SECRET=dsjfhaksdfhasfh KINDERGARTEN_ADMIN_USERNAME=admin KINDERGARTEN_ADMIN_PASSWORD=admin KINDERGARTEN_NORMAL_USERNAME=teacher KINDERGARTEN_NORMAL_PASSWORD=teacher bin/kitadoc-backend
 
 build-amd64:
 	env GOOS=linux GOARCH=amd64 go build -o bin/kitadoc-backend-linux-amd64 ./main.go
@@ -26,3 +30,9 @@ clean:
 deps:
 	go mod tidy
 	go mod download
+
+# Create test sqlite database
+test-db:
+	rm -rf test.db
+	sqlite3 test.db < database/data_model.sql
+	sqlite3 test.db < database/sample_data.sql

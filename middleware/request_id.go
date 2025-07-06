@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"kitadoc-backend/internal/logger"
+
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -33,8 +35,9 @@ func GetRequestID(ctx context.Context) string {
 
 // GetLoggerWithReqID returns a logrus entry with the request ID field.
 func GetLoggerWithReqID(ctx context.Context) *logrus.Entry {
+	globalLogger := logger.GetGlobalLogger().GetLogrusEntry()
 	if requestID := GetRequestID(ctx); requestID != "" {
-		return logrus.WithField("request_id", requestID)
+		return globalLogger.WithField("request_id", requestID)
 	}
-	return logrus.NewEntry(logrus.StandardLogger())
+	return globalLogger
 }

@@ -22,6 +22,8 @@ type Logger interface {
 	Panicf(format string, args ...interface{})
 	WithField(key string, value interface{}) Logger
 	WithFields(fields logrus.Fields) Logger
+	// GetLogrusEntry returns the underlying *logrus.Entry.
+	GetLogrusEntry() *logrus.Entry
 }
 
 // logrusLogger implements the Logger interface using logrus.
@@ -88,6 +90,10 @@ func (l *logrusLogger) WithField(key string, value interface{}) Logger {
 
 func (l *logrusLogger) WithFields(fields logrus.Fields) Logger {
 	return &logrusLogger{entry: l.entry.WithFields(fields)}
+}
+
+func (l *logrusLogger) GetLogrusEntry() *logrus.Entry {
+	return l.entry
 }
 
 var globalLogger Logger

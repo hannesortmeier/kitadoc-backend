@@ -6,13 +6,19 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"kitadoc-backend/config"
 	"kitadoc-backend/data"
 	"kitadoc-backend/models"
-	"kitadoc-backend/services"
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
+// UserAuthenticator defines the interface for user authentication operations needed by middleware.
+type UserAuthenticator interface {
+	GetUserByID(logger *logrus.Entry, ctx context.Context, id int) (*models.User, error)
+}
 
 type contextKeyUser string
 
@@ -28,7 +34,7 @@ type Claims struct {
 }
 
 // Authenticate middleware validates JWT tokens and injects user context.
-func Authenticate(userService services.UserService, cfg *config.Config) func(next http.Handler) http.Handler {
+func Authenticate(userAuthenticator UserAuthenticator, cfg *config.Config) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			logger := GetLoggerWithReqID(request.Context())
@@ -62,7 +68,7 @@ func Authenticate(userService services.UserService, cfg *config.Config) func(nex
 			}
 
 			// Fetch user from database to ensure they still exist and are active
-			user, err := userService.GetUserByID(logger, request.Context(), claims.UserID)
+			user, err := userAuthenticator.GetUserByID(logger, request.Context(), claims.UserID)
 			if err != nil {
 				logger.WithError(err).WithField("user_id", claims.UserID).Warn("User not found or inactive during authentication")
 				http.Error(writer, "User not found or inactive", http.StatusUnauthorized)

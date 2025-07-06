@@ -60,7 +60,18 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		form.Add("timestamp", time.Now().Format(time.RFC3339))
 		req.PostForm = form
 
-		mockResponse := map[string]interface{}{"transcription": "hello world", "documentationEntryId": 1}
+		mockResponse := models.AnalysisResult{
+			NumberOfEntries: 1,
+			AnalysisResults: []models.ChildAnalysisObject{
+				{
+					ChildID:              1,
+					FirstName:            "John",
+					LastName:             "Doe",
+					TranscriptionSummary: "Test transcription summary",
+					Category:             models.AnalysisCategory{},
+				},
+			},
+		}
 		mockAudioAnalysisService.On("AnalyzeAudio", ctx, []byte("dummy audio data"), "test.wav").Return(mockResponse, nil).Once()
 		mockDocEntryService.On("CreateDocumentationEntry", mock.Anything, ctx, mock.Anything).Return(&models.DocumentationEntry{ID: 1}, nil).Once()
 
@@ -69,11 +80,11 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 
-		var response map[string]interface{}
+		var response map[string][]int
 		err = json.NewDecoder(rr.Body).Decode(&response)
 		assert.NoError(t, err)
 
-		assert.Equal(t, map[string]interface{}{"documentationEntryId": float64(1)}, response)
+		assert.Equal(t, map[string][]int{"documentationEntryIds": []int{1}}, response)
 		mockAudioAnalysisService.AssertExpectations(t)
 		mockDocEntryService.AssertExpectations(t)
 	})

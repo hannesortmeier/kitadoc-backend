@@ -12,7 +12,15 @@ import (
 // Config holds all application configuration settings.
 type Config struct {
 	Environment string `mapstructure:"environment"`
-	Server      struct {
+	AdminUser   struct {
+		Username string `mapstructure:"username"`
+		Password string `mapstructure:"password"`
+	} `mapstructure:"admin_user"`
+	NormalUser struct {
+		Username string `mapstructure:"username"`
+		Password string `mapstructure:"password"`
+	} `mapstructure:"normal_user"`
+	Server struct {
 		Port         int           `mapstructure:"port"`
 		ReadTimeout  time.Duration `mapstructure:"read_timeout"`
 		WriteTimeout time.Duration `mapstructure:"write_timeout"`
@@ -44,7 +52,7 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("server.read_timeout", 5*time.Second)
 	v.SetDefault("server.write_timeout", 10*time.Second)
 	v.SetDefault("server.idle_timeout", 120*time.Second)
-	v.SetDefault("database.dsn", "file:kindergarten.db?_foreign_keys=on")
+	v.SetDefault("database.dsn", "file:test.db?_foreign_keys=on")
 	v.SetDefault("log.level", "info")
 	v.SetDefault("log.format", "json") // Default to JSON format
 	v.SetDefault("file_storage.upload_dir", "uploads")
@@ -69,8 +77,54 @@ func LoadConfig() (*Config, error) {
 	}
 
 	// Automatically read environment variables that match
-	v.SetEnvPrefix("KINDERGARTEN") // prefix for environment variables (e.g., KINDERGARTEN_SERVER_PORT)
-	v.AutomaticEnv()
+	if err := v.BindEnv("server.port", "KINDERGARTEN_SERVER_PORT"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_SERVER_PORT: %w", err)
+	}
+	if err := v.BindEnv("server.read_timeout", "KINDERGARTEN_SERVER_READ_TIMEOUT"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_SERVER_READ_TIMEOUT: %w", err)
+	}
+	if err := v.BindEnv("server.write_timeout", "KINDERGARTEN_SERVER_WRITE_TIMEOUT"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_SERVER_WRITE_TIMEOUT: %w", err)
+	}
+	if err := v.BindEnv("server.idle_timeout", "KINDERGARTEN_SERVER_IDLE_TIMEOUT"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_SERVER_IDLE_TIMEOUT: %w", err)
+	}
+	if err := v.BindEnv("server.jwt_secret", "KINDERGARTEN_SERVER_JWT_SECRET"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_SERVER_JWT_SECRET: %w", err)
+	}
+	if err := v.BindEnv("database.dsn", "KINDERGARTEN_DATABASE_DSN"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_DATABASE_DSN: %w", err)
+	}
+	if err := v.BindEnv("log.level", "KINDERGARTEN_LOG_LEVEL"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_LOG_LEVEL: %w", err)
+	}
+	if err := v.BindEnv("log.format", "KINDERGARTEN_LOG_FORMAT"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_LOG_FORMAT: %w", err)
+	}
+	if err := v.BindEnv("file_storage.upload_dir", "KINDERGARTEN_FILE_STORAGE_UPLOAD_DIR"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_FILE_STORAGE_UPLOAD_DIR: %w", err)
+	}
+	if err := v.BindEnv("file_storage.max_size_mb", "KINDERGARTEN_FILE_STORAGE_MAX_SIZE_MB"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_FILE_STORAGE_MAX_SIZE_MB: %w", err)
+	}
+	if err := v.BindEnv("file_storage.allowed_types", "KINDERGARTEN_FILE_STORAGE_ALLOWED_TYPES"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_FILE_STORAGE_ALLOWED_TYPES: %w", err)
+	}
+	if err := v.BindEnv("audio_proc_service_url", "KINDERGARTEN_AUDIO_PROC_SERVICE_URL"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_AUDIO_PROC_SERVICE_URL: %w", err)
+	}
+	if err := v.BindEnv("admin_user.username", "KINDERGARTEN_ADMIN_USERNAME"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_ADMIN_USERNAME: %w", err)
+	}
+	if err := v.BindEnv("admin_user.password", "KINDERGARTEN_ADMIN_PASSWORD"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_ADMIN_PASSWORD: %w", err)
+	}
+	if err := v.BindEnv("normal_user.username", "KINDERGARTEN_NORMAL_USERNAME"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_NORMAL_USERNAME: %w", err)
+	}
+	if err := v.BindEnv("normal_user.password", "KINDERGARTEN_NORMAL_PASSWORD"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_NORMAL_PASSWORD: %w", err)
+	}
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
