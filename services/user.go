@@ -107,7 +107,7 @@ func (s *UserServiceImpl) LoginUser(logger *logrus.Entry, username, password str
 		"user_id":  user.ID,
 		"username": user.Username,
 		"role":     user.Role,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(s.config.Server.JWTSecret)) // Use JWTSecret from config

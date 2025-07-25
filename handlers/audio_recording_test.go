@@ -3,7 +3,6 @@ package handlers_test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -73,20 +72,20 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 			},
 		}
 		mockAudioAnalysisService.On("AnalyzeAudio", ctx, []byte("dummy audio data"), "test.wav").Return(mockResponse, nil).Once()
-		mockDocEntryService.On("CreateDocumentationEntry", mock.Anything, ctx, mock.Anything).Return(&models.DocumentationEntry{ID: 1}, nil).Once()
+		mockDocEntryService.On("CreateDocumentationEntry", mock.Anything, ctx, mock.Anything).Return(nil, nil).Once()
 
 		rr := httptest.NewRecorder()
 		h.UploadAudio(rr, req.WithContext(ctx))
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 
-		var response map[string][]int
-		err = json.NewDecoder(rr.Body).Decode(&response)
-		assert.NoError(t, err)
-
-		assert.Equal(t, map[string][]int{"documentationEntryIds": []int{1}}, response)
-		mockAudioAnalysisService.AssertExpectations(t)
-		mockDocEntryService.AssertExpectations(t)
+		// Wait for the goroutine to complete
+		assert.Eventually(t, func() bool {
+			return mockDocEntryService.AssertExpectations(t)
+		}, 2*time.Second, 100*time.Millisecond)
+		assert.Eventually(t, func() bool {
+			return mockAudioAnalysisService.AssertExpectations(t)
+		}, 1*time.Second, 100*time.Millisecond)
 	})
 
 	t.Run("service error", func(t *testing.T) {

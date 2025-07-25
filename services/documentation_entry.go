@@ -1,17 +1,18 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/gomutex/godocx"
+	"github.com/gomutex/godocx/wml/stypes"
 	"github.com/sirupsen/logrus"
-
 	"kitadoc-backend/data"
 	"kitadoc-backend/models"
-
-	"github.com/go-playground/validator/v10"
 )
 
 // DocumentationEntryService defines the interface for documentation entry-related business logic operations.
@@ -22,7 +23,8 @@ type DocumentationEntryService interface {
 	DeleteDocumentationEntry(logger *logrus.Entry, ctx context.Context, id int) error
 	GetAllDocumentationForChild(logger *logrus.Entry, ctx context.Context, childID int) ([]models.DocumentationEntry, error)
 	ApproveDocumentationEntry(logger *logrus.Entry, ctx context.Context, entryID int, approvedByUserID int) error
-	GenerateChildReport(logger *logrus.Entry, ctx context.Context, childID int) ([]byte, error) // Returns a byte slice representing the Word document
+	GenerateChildReport(logger *logrus.Entry, ctx context.Context, childID int, assignments []models.Assignment) ([]byte, error) // Returns a byte slice representing the Word document
+	GetDocumentName(ctx context.Context, childID int) (string, error) // Returns the document name for a child report
 }
 
 // DocumentationEntryServiceImpl implements DocumentationEntryService.
@@ -269,56 +271,141 @@ func (service *DocumentationEntryServiceImpl) ApproveDocumentationEntry(logger *
 	return nil
 }
 
-// GenerateChildReport generates a Word document report for a child.
-// This is a placeholder for actual document generation logic.
-func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus.Entry, ctx context.Context, childID int) ([]byte, error) {
-	logger.WithField("child_id", childID).Info("Attempting to generate child report")
+// GenerateChildReport generates a Word document with the child's documentation entries.
+func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus.Entry, ctx context.Context, childID int, assignments []models.Assignment) ([]byte, error) {
+	logger.WithField("child_id", childID).Info("Generating child report")
 
-	// In a real implementation, you would fetch child data and related documentation entries,
-	// then use a library (e.g., go-docx, unioffice) to generate a Word document.
-	// For now, we return a placeholder error and an empty byte slice.
-	// Simulate some work
-	select {
-	case <-ctx.Done():
-		logger.Warn("Child report generation cancelled due to context cancellation")
-		return nil, ctx.Err()
-	case <-time.After(2 * time.Second): // Simulate document generation time
-		// Fetch child data and documentation entries
-		child, err := service.childStore.GetByID(childID)
-		if err != nil {
-			if errors.Is(err, data.ErrNotFound) {
-				logger.WithField("child_id", childID).Warn("Child not found for report generation")
-				return nil, errors.New("child not found for report generation")
-			}
-			logger.WithError(err).WithField("child_id", childID).Error("Error fetching child for report generation")
-			return nil, ErrInternal
+	child, err := service.childStore.GetByID(childID)
+	if err != nil {
+		if errors.Is(err, data.ErrNotFound) {
+			logger.WithField("child_id", childID).Warn("Child not found for report generation")
+			return nil, ErrNotFound
 		}
-
-		entries, err := service.documentationEntryStore.GetAllForChild(childID)
-		if err != nil {
-			logger.WithError(err).WithField("child_id", childID).Error("Error fetching documentation entries for report generation")
-			return nil, ErrInternal
-		}
-
-		// Placeholder for actual document generation logic
-		// For demonstration, create a simple text document
-		content := fmt.Sprintf("Child Report for: %s %s\n\n", child.FirstName, child.LastName)
-		if len(entries) > 0 {
-			content += "Documentation Entries:\n"
-			for _, entry := range entries {
-				content += fmt.Sprintf("- Date: %s, Category: %d, Observation: %s\n", entry.ObservationDate.Format("2006-01-02"), entry.CategoryID, entry.ObservationDescription)
-			}
-		} else {
-			content += "No documentation entries found for this child.\n"
-		}
-
-		// Simulate DOCX content (very basic, not a real DOCX)
-		// A real DOCX would require a proper library like github.com/unidoc/unioffice
-		docxContent := []byte(content)
-		logger.WithField("child_id", childID).Info("Child report generated successfully (simulated)")
-		return docxContent, nil
+		logger.WithError(err).WithField("child_id", childID).Error("Error fetching child for report generation")
+		return nil, ErrInternal
 	}
+
+	entries, err := service.documentationEntryStore.GetAllForChild(childID)
+	if err != nil {
+		logger.WithError(err).WithField("child_id", childID).Error("Error fetching documentation entries for report generation")
+		return nil, ErrInternal
+	}
+
+	document, err := godocx.NewDocument()
+	if err != nil {
+		logger.WithError(err).Error("Error creating new Word document for child report")
+		return nil, ErrChildReportGenerationFailed
+	}
+
+	assignmentsText, err := service.FormatChildTeacherAssignments(assignments)
+	if err != nil {
+		logger.WithError(err).WithField("child_id", childID).Error("Error formatting child teacher assignments for report")
+		return nil, ErrChildReportGenerationFailed
+	}
+
+	breaktype := stypes.BreakTypeTextWrapping
+
+	// Add a title
+	document.AddHeading("Dokumentation", 0)
+	document.AddParagraph(
+		"des Bildungsprozesses im Rahmen der Grundsätze zur Bildungsförderung für Kinder von 0 bis 10 Jahren in Kindertageseinrichtungen und Schulen im Primarbereich in NRW",
+	).Justification(stypes.JustificationCenter)
+
+	document.AddEmptyParagraph()
+
+	// TODO(hannes) This needs to be dynamically set based on the kindergarten's details
+	addressParagraph := document.AddEmptyParagraph()
+	addressParagraph.AddText("Familienzentrum St. Jakobus Emsdetten").AddBreak(&breaktype)
+	addressParagraph.AddText("Heidberge 1").AddBreak(&breaktype)
+	addressParagraph.AddText("48282 Emsdetten").AddBreak(&breaktype)
+	addressParagraph.AddText("Telefonnummer: 02572-5671").AddBreak(&breaktype)
+	addressParagraph.AddText("E-Mail-Adresse: kita.stjakobus-emsdetten@bistum-muenster.de")
+
+	document.AddEmptyParagraph()
+
+	childInformationParagraph := document.AddEmptyParagraph()
+	childInformationParagraph.AddText(fmt.Sprintf("Name des Kindes: %s %s", child.FirstName, child.LastName)).AddBreak(&breaktype)
+	childInformationParagraph.AddText(fmt.Sprintf("Geburtsdatum: %s", child.Birthdate.Format("02.01.2006"))).AddBreak(&breaktype)
+	childInformationParagraph.AddText(fmt.Sprintf("Familiensprache: %s", *child.FamilyLanguage)).AddBreak(&breaktype)
+	if child.MigrationBackground != nil && *child.MigrationBackground {
+		childInformationParagraph.AddText("Migrationshintergrund: Ja").AddBreak(&breaktype)
+	} else {
+		childInformationParagraph.AddText("Migrationshintergrund: Nein").AddBreak(&breaktype)
+	}
+	childInformationParagraph.AddText(fmt.Sprintf("Aufnahmedatum: %s", child.AdmissionDate.Format("02.01.2006"))).AddBreak(&breaktype)
+	childInformationParagraph.AddText(fmt.Sprintf("Voraussichtliche Einschulung: %s", child.ExpectedSchoolEnrollment.Format("02.01.2006"))).AddBreak(&breaktype)
+	childInformationParagraph.AddText(fmt.Sprintf("Adresse: %s", *child.Address)).AddBreak(&breaktype)
+	childInformationParagraph.AddText(fmt.Sprintf("Namen der Erziehungsberechtigten: %s, %s", *child.Parent1Name, *child.Parent2Name)).AddBreak(&breaktype)
+	childInformationParagraph.AddText("Entwicklungsbegleiter/-innen, Fachkräfte (von - bis):").AddBreak(&breaktype)
+	for _, assignmentText := range assignmentsText {
+		childInformationParagraph.AddText(assignmentText).Style("List Bullet")
+	}
+
+	document.AddPageBreak()
+
+	document.AddHeading("Kindbeobachtungen", 1)
+
+	// Group entries by category
+	entriesByCategory := make(map[string][]models.DocumentationEntry)
+	for _, entry := range entries {
+		if entry.IsApproved {
+			category, err := service.categoryStore.GetByID(entry.CategoryID)
+			if err != nil {
+				logger.WithError(err).WithField("category_id", entry.CategoryID).Warn("Category not found for entry")
+				continue
+			}
+			entriesByCategory[category.Name] = append(entriesByCategory[category.Name], entry)
+		}
+	}
+
+	// Add entries to the document
+	for categoryName, entries := range entriesByCategory {
+		document.AddHeading(fmt.Sprintf("Bildungsbereich: %s", categoryName), 2)
+		for _, entry := range entries {
+			document.AddParagraph(entry.ObservationDescription).Style("List Bullet")
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := document.Write(&buf); err != nil {
+		logger.WithError(err).Error("Error saving generated document")
+		return nil, ErrChildReportGenerationFailed
+	}
+
+	logger.WithField("child_id", childID).Info("Child report generated successfully")
+	return buf.Bytes(), nil
 }
 
-// DownloadDocument is no longer needed as reports are directly returned.
-// This function has been removed as per the scope.
+func (service *DocumentationEntryServiceImpl) GetDocumentName(ctx context.Context, childID int) (string, error) {
+	// Fetch child details to construct the document name
+	child, err := service.childStore.GetByID(childID)
+	if err != nil {
+		if errors.Is(err, data.ErrNotFound) {
+			return "", fmt.Errorf("child with ID %d not found", childID)
+		}
+		return "", fmt.Errorf("error fetching child details: %w", err)
+	}
+	
+	documentName := fmt.Sprintf("Bildungsdokumentation_%s_%s_%s.docx", child.FirstName, child.LastName, child.Birthdate.Format("2006-01-02"))
+
+	return documentName, nil
+}
+
+func (service *DocumentationEntryServiceImpl) FormatChildTeacherAssignments(assignments []models.Assignment) ([]string, error) {
+	if len(assignments) == 0 {
+		return []string{"Keine Zuordnungen gefunden"}, nil
+	}
+
+	var formattedAssignments []string
+	for _, assignment := range assignments {
+		// Lookup teacher name for teacher ID
+		teacher, err := service.teacherStore.GetByID(assignment.TeacherID)
+		if err != nil {
+			return nil, err
+		}
+		formattedAssignments = append(formattedAssignments, fmt.Sprintf("- %s %s (%s bis %s)", teacher.FirstName, teacher.LastName, assignment.StartDate.Format("02.01.2006"), assignment.EndDate.Format("02.01.2006")))
+	}
+
+	return formattedAssignments, nil
+}
+

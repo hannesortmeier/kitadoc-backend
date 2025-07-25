@@ -103,6 +103,5 @@ func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent
 	}
 
 	logger.Info("Successfully received analysis from audio-proc service")
-	logger.Debug("Analysis result: ", analysisResult)
 	return analysisResult, nil
 }

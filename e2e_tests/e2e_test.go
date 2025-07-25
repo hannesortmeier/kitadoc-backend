@@ -858,14 +858,6 @@ func TestPublicRoutes(t *testing.T) {
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 			}
-			responseBody := readResponseBody(t, resp)
-			var result map[string][]int
-			if err := json.Unmarshal(responseBody, &result); err != nil {
-				t.Fatalf("Failed to unmarshal response: %v", err)
-			}
-			if result["documentationEntryIds"][0] != 1 {
-				t.Errorf("Expected transcription 'mocked transcription', got '%d'", result["documentationEntryIds"][0])
-			}
 		})
 	})
 
@@ -879,6 +871,13 @@ func TestPublicRoutes(t *testing.T) {
 				"last_name":  "Test",
 				"birthdate":  time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
 				"gender":     "other",
+				"family_language": "Deutsch",
+				"migration_background": false,
+				"parent1_name": "Parent One",
+				"parent2_name": "Parent Two",
+				"address": "123 Main St, City, Country",
+				"expected_school_enrollment": time.Date(2024, 9, 1, 0, 0, 0, 0, time.UTC),
+				"admission_date": time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			}, "application/json")
 			defer respChild.Body.Close() //nolint:errcheck
 			var childResp struct {
@@ -901,6 +900,11 @@ func TestPublicRoutes(t *testing.T) {
 			if len(body) == 0 {
 				t.Error("Expected non-empty report content, got empty")
 			}
+			// save the report to a file for manual inspection if needed
+			if err := os.WriteFile("child_report.docx", body, 0644); err != nil {
+				t.Fatalf("Failed to write report to file: %v", err)
+			}
+			t.Log("Child report generated and saved as child_report.docx")
 		})
 	})
 

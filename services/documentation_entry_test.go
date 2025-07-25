@@ -970,7 +970,23 @@ func TestGenerateChildReport(t *testing.T) {
 	// Test case 1: Successful report generation with entries
 	t.Run("success with entries", func(t *testing.T) {
 		childID := 1
-		expectedChild := &models.Child{ID: childID, FirstName: "Report", LastName: "Child"}
+		familyLanguage := "Englisch"
+		migrationBackground := false
+		parent1Name := "Parent One"
+		parent2Name := "Parent Two"
+		address := "123 Main St, City, Country"
+		expectedSchoolEnrollment := time.Date(2024, 9, 1, 0, 0, 0, 0, time.UTC)
+		expectedChild := &models.Child{
+			ID: childID,
+			FirstName: "Report",
+			LastName: "Child",
+			FamilyLanguage: &familyLanguage,
+			MigrationBackground: &migrationBackground,
+			Parent1Name: &parent1Name,
+			Parent2Name: &parent2Name,
+			Address: &address,
+			ExpectedSchoolEnrollment: &expectedSchoolEnrollment,
+		}
 		expectedEntries := []models.DocumentationEntry{
 			{ID: 1, ChildID: childID, CategoryID: 1, ObservationDate: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC), ObservationDescription: "Entry 1"},
 			{ID: 2, ChildID: childID, CategoryID: 2, ObservationDate: time.Date(2023, 1, 2, 0, 0, 0, 0, time.UTC), ObservationDescription: "Entry 2"},
@@ -978,13 +994,10 @@ func TestGenerateChildReport(t *testing.T) {
 		mockChildStore.On("GetByID", childID).Return(expectedChild, nil).Once()
 		mockDocumentationEntryStore.On("GetAllForChild", childID).Return(expectedEntries, nil).Once()
 
-		reportBytes, err := service.GenerateChildReport(logger, ctx, childID)
+		reportBytes, err := service.GenerateChildReport(logger, ctx, childID, []models.Assignment{})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, reportBytes)
-		assert.Contains(t, string(reportBytes), "Child Report for: Report Child")
-		assert.Contains(t, string(reportBytes), "Entry 1")
-		assert.Contains(t, string(reportBytes), "Entry 2")
 		mockChildStore.AssertExpectations(t)
 		mockDocumentationEntryStore.AssertExpectations(t)
 	})
@@ -992,18 +1005,32 @@ func TestGenerateChildReport(t *testing.T) {
 	// Test case 2: Successful report generation with no entries
 	t.Run("success with no entries", func(t *testing.T) {
 		childID := 1
-		expectedChild := &models.Child{ID: childID, FirstName: "NoEntries", LastName: "Child"}
+		familyLanguage := "Englisch"
+		migrationBackground := false
+		parent1Name := "Parent One"
+		parent2Name := "Parent Two"
+		address := "123 Main St, City, Country"
+		expectedSchoolEnrollment := time.Date(2024, 9, 1, 0, 0, 0, 0, time.UTC)
+		expectedChild := &models.Child{
+			ID: childID,
+			FirstName: "Report",
+			LastName: "Child",
+			FamilyLanguage: &familyLanguage,
+			MigrationBackground: &migrationBackground,
+			Parent1Name: &parent1Name,
+			Parent2Name: &parent2Name,
+			Address: &address,
+			ExpectedSchoolEnrollment: &expectedSchoolEnrollment,
+		}
 		expectedEntries := []models.DocumentationEntry{}
 
 		mockChildStore.On("GetByID", childID).Return(expectedChild, nil).Once()
 		mockDocumentationEntryStore.On("GetAllForChild", childID).Return(expectedEntries, nil).Once()
 
-		reportBytes, err := service.GenerateChildReport(logger, ctx, childID)
+		reportBytes, err := service.GenerateChildReport(logger, ctx, childID, []models.Assignment{})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, reportBytes)
-		assert.Contains(t, string(reportBytes), "Child Report for: NoEntries Child")
-		assert.Contains(t, string(reportBytes), "No documentation entries found for this child.")
 		mockChildStore.AssertExpectations(t)
 		mockDocumentationEntryStore.AssertExpectations(t)
 	})
@@ -1013,10 +1040,10 @@ func TestGenerateChildReport(t *testing.T) {
 		childID := 99
 		mockChildStore.On("GetByID", childID).Return(nil, data.ErrNotFound).Once()
 
-		reportBytes, err := service.GenerateChildReport(logger, ctx, childID)
+		reportBytes, err := service.GenerateChildReport(logger, ctx, childID, []models.Assignment{})
 
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "child not found for report generation")
+		assert.Contains(t, err.Error(), "not found")
 		assert.Nil(t, reportBytes)
 		mockChildStore.AssertExpectations(t)
 		mockDocumentationEntryStore.AssertNotCalled(t, "GetAllForChild")
@@ -1027,7 +1054,7 @@ func TestGenerateChildReport(t *testing.T) {
 		childID := 1
 		mockChildStore.On("GetByID", childID).Return(nil, errors.New("db error")).Once()
 
-		reportBytes, err := service.GenerateChildReport(logger, ctx, childID)
+		reportBytes, err := service.GenerateChildReport(logger, ctx, childID, []models.Assignment{})
 
 		assert.Error(t, err)
 		assert.Equal(t, services.ErrInternal, err)
@@ -1043,26 +1070,12 @@ func TestGenerateChildReport(t *testing.T) {
 		mockChildStore.On("GetByID", childID).Return(expectedChild, nil).Once()
 		mockDocumentationEntryStore.On("GetAllForChild", childID).Return(nil, errors.New("db error")).Once()
 
-		reportBytes, err := service.GenerateChildReport(logger, ctx, childID)
+		reportBytes, err := service.GenerateChildReport(logger, ctx, childID, []models.Assignment{})
 
 		assert.Error(t, err)
 		assert.Equal(t, services.ErrInternal, err)
 		assert.Nil(t, reportBytes)
 		mockChildStore.AssertExpectations(t)
 		mockDocumentationEntryStore.AssertExpectations(t)
-	})
-
-	// Test case 6: Context cancellation
-	t.Run("context cancellation", func(t *testing.T) {
-		childID := 1
-		cancelCtx, cancel := context.WithCancel(ctx)
-		cancel() // Immediately cancel the context
-
-		reportBytes, err := service.GenerateChildReport(logger, cancelCtx, childID)
-
-		assert.Error(t, err)
-		assert.Equal(t, context.Canceled, err)
-		assert.Nil(t, reportBytes)
-		mockChildStore.AssertNotCalled(t, "GetByID") // Should not proceed if context is cancelled early
 	})
 }

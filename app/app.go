@@ -49,7 +49,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	assignmentHandler := handlers.NewAssignmentHandler(assignmentService)
 	documentationEntryHandler := handlers.NewDocumentationEntryHandler(documentationEntryService)
 	audioRecordingHandler := handlers.NewAudioRecordingHandler(audioAnalysisService, documentationEntryService, &cfg)
-	documentGenerationHandler := handlers.NewDocumentGenerationHandler(documentationEntryService)
+	documentGenerationHandler := handlers.NewDocumentGenerationHandler(documentationEntryService, assignmentService)
 	bulkOperationsHandler := handlers.NewBulkOperationsHandler(childService)
 
 	app := &Application{
@@ -136,7 +136,7 @@ func (app *Application) Routes() http.Handler {
 	app.Router.Handle("POST /api/v1/documentation", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.CreateDocumentationEntry)))))))
 	app.Router.Handle("GET /api/v1/documentation/child/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.GetDocumentationEntriesByChildID)))))))
 	app.Router.Handle("PUT /api/v1/documentation/{entry_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.UpdateDocumentationEntry)))))))
-	app.Router.Handle("DELETE /api/v1/documentation/{entry_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.DeleteDocumentationEntry)))))))
+	app.Router.Handle("DELETE /api/v1/documentation/{entry_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.DeleteDocumentationEntry)))))))
 	app.Router.Handle("PUT /api/v1/documentation/{entry_id}/approve", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentationEntryHandler.ApproveDocumentationEntry)))))))
 
 	// Audio Recordings Endpoints

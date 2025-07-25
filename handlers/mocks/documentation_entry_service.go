@@ -125,13 +125,13 @@ func (_m *MockDocumentationEntryService) ApproveDocumentationEntry(logger *logru
 	return r0
 }
 
-// GenerateChildReport provides a mock function with given fields: logger, ctx, childID
-func (_m *MockDocumentationEntryService) GenerateChildReport(logger *logrus.Entry, ctx context.Context, childID int) ([]byte, error) {
-	ret := _m.Called(logger, ctx, childID)
+// GenerateChildReport provides a mock function with given fields: logger, ctx, childID, assignments
+func (_m *MockDocumentationEntryService) GenerateChildReport(logger *logrus.Entry, ctx context.Context, childID int, assignments []models.Assignment) ([]byte, error) {
+	ret := _m.Called(logger, ctx, childID, assignments)
 
 	var r0 []byte
-	if rf, ok := ret.Get(0).(func(*logrus.Entry, context.Context, int) []byte); ok {
-		r0 = rf(logger, ctx, childID)
+	if rf, ok := ret.Get(0).(func(*logrus.Entry, context.Context, int, []models.Assignment) []byte); ok {
+		r0 = rf(logger, ctx, childID, assignments)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]byte)
@@ -139,8 +139,29 @@ func (_m *MockDocumentationEntryService) GenerateChildReport(logger *logrus.Entr
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*logrus.Entry, context.Context, int) error); ok {
-		r1 = rf(logger, ctx, childID)
+	if rf, ok := ret.Get(1).(func(*logrus.Entry, context.Context, int, []models.Assignment) error); ok {
+		r1 = rf(logger, ctx, childID, assignments)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetDocumentName provides a mock function with given fields: ctx, childID
+func (_m *MockDocumentationEntryService) GetDocumentName(ctx context.Context, childID int) (string, error) {
+	ret := _m.Called(ctx, childID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, int) string); ok {
+		r0 = rf(ctx, childID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, childID)
 	} else {
 		r1 = ret.Error(1)
 	}

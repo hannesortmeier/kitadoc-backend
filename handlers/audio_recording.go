@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -52,8 +53,10 @@ func (h *AudioRecordingHandler) writeInternalServerError(w http.ResponseWriter, 
 // UploadAudio handles uploading an audio recording and forwarding it to the audio-proc service.
 func (h *AudioRecordingHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	logger := middleware.GetLoggerWithReqID(r.Context())
+	logger.Info("Starting audio upload process")
 
 	// 1. Parse multipart form data with file size limit
+	logger.Info("Parsing multipart form")
 	maxUploadSize := int64(h.Config.FileStorage.MaxSizeMB) << 20 // Convert MB to bytes
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
@@ -61,17 +64,17 @@ func (h *AudioRecordingHandler) UploadAudio(w http.ResponseWriter, r *http.Reque
 		h.writeBadRequestError(w, fmt.Sprintf("Failed to parse multipart form or file size exceeded limit (%d MB): %v", h.Config.FileStorage.MaxSizeMB, err))
 		return
 	}
+	logger.Info("Successfully parsed multipart form")
 
 	// 2. Get the file, teacher_id, and timestamp from the form
+	logger.Info("Retrieving file and form values")
 	file, fileHeader, err := r.FormFile("audio")
 	if err != nil {
 		logger.WithError(err).Error("Error retrieving audio file from form")
 		h.writeBadRequestError(w, "Error retrieving audio file: "+err.Error())
 		return
 	}
-	if err := file.Close(); err != nil {
-		logger.WithError(err).Error("Failed to close file")
-	}
+	defer file.Close()
 
 	teacherID := r.FormValue("teacher_id")
 	if teacherID == "" {
@@ -93,82 +96,80 @@ func (h *AudioRecordingHandler) UploadAudio(w http.ResponseWriter, r *http.Reque
 		h.writeBadRequestError(w, "Invalid timestamp format. Use RFC3339 (e.g., 2006-01-02T15:04:05Z07:00)")
 		return
 	}
+	logger.Infof("Received file: %s, teacher_id: %s, timestamp: %s", fileHeader.Filename, teacherID, timestampStr)
 
 	// 3. Validate file type
 	contentType := fileHeader.Header.Get("Content-Type")
+	logger.Infof("Validating file type: %s", contentType)
 	if !h.isAllowedFileType(contentType) {
 		logger.WithField("content_type", contentType).Warn("Disallowed file type uploaded")
 		h.writeBadRequestError(w, fmt.Sprintf("Disallowed file type: %s. Allowed types are: %s", contentType, strings.Join(h.Config.FileStorage.AllowedTypes, ", ")))
 		return
 	}
 
-	// 4. Read the file content into a byte slic
+	// 4. Read the file content into a byte slice
+	logger.Info("Reading file content")
 	fileContent, err := io.ReadAll(file)
 	if err != nil {
 		logger.WithError(err).Error("Failed to read audio file content")
 		h.writeInternalServerError(w, "Failed to read audio file content: "+err.Error())
 		return
 	}
+	logger.Infof("Successfully read %d bytes from file", len(fileContent))
 
-	// 5. Call the service layer to analyze the audio
-	analysisResult, err := h.AudioAnalysisService.AnalyzeAudio(r.Context(), fileContent, fileHeader.Filename)
-	if err != nil {
-		logger.WithError(err).Error("Failed to analyze audio")
-		h.writeInternalServerError(w, fmt.Sprintf("Failed to analyze audio: %v", err))
-		return
-	}
-	logger.WithField("analysis_result", analysisResult).Debug("Audio analysis result")
+	// Respond immediately to the client
+	w.WriteHeader(http.StatusOK)
+	logger.Info("Sent 200 OK response to client")
 
-	// 6. Persist the analysis result as a documentation entry
-	// Convert teacherID to int
-	teacherIDInt, err := strconv.Atoi(teacherID)
-	if err != nil {
-		logger.WithError(err).Error("Invalid teacher ID")
-		h.writeBadRequestError(w, "Invalid teacher ID")
-		return
-	}
+	// Perform analysis and persistence in a goroutine
+	go func() {
+		// Use a new context for the goroutine if the original request context might be cancelled
+		// or if you need a longer timeout for the background task.
+		// For simplicity, we're using a background context here.
+		ctx := context.Background()
 
-	logger.WithField("number_of_entries", analysisResult.NumberOfEntries).Debug("Found analysis results")
-	// Loop through analysis results and create documentation entries
-	if analysisResult.NumberOfEntries == 0 {
-		logger.Warn("No analysis results found")
-		h.writeErrorResponse(w, 442, "No analysis results found") // Custom status code for no results
-		return
-	}
-
-	var documentationEntryIds []int
-
-	for _, childAnalysis := range analysisResult.AnalysisResults {
-
-		docEntry := models.DocumentationEntry{
-			TeacherID:              teacherIDInt,
-			ObservationDate:        timestamp,
-			ObservationDescription: childAnalysis.TranscriptionSummary,
-			CategoryID:             childAnalysis.Category.AnalysisCategoryID,
-			ChildID:                childAnalysis.ChildID,
-			IsApproved:             false,
-		}
-
-		createdEntry, err := h.DocumentationEntryService.CreateDocumentationEntry(logger, r.Context(), &docEntry)
+		// 5. Call the service layer to analyze the audio
+		logger.Info("Calling audio analysis service (async)")
+		analysisResult, err := h.AudioAnalysisService.AnalyzeAudio(ctx, fileContent, fileHeader.Filename)
 		if err != nil {
-			logger.WithError(err).Error("Failed to create documentation entry from audio analysis")
-			h.writeInternalServerError(w, fmt.Sprintf("Failed to create documentation entry: %v", err))
+			logger.WithError(err).Error("Failed to analyze audio (async)")
 			return
 		}
-		documentationEntryIds = append(documentationEntryIds, createdEntry.ID)
-	}
+		logger.WithField("analysis_result", analysisResult).Debug("Audio analysis result (async)")
 
-	// 7. Return the ids of the created documentation entry to the client
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	response := map[string][]int{
-		"documentationEntryIds": documentationEntryIds,
-	}
-	logger.WithField("documentationEntryIds", documentationEntryIds).Info("Successfully created documentation entries from audio analysis")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		logger.WithError(err).Error("Failed to encode response")
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
+		// 6. Persist the analysis result as a documentation entry
+		logger.Info("Persisting analysis result (async)")
+		teacherIDInt, err := strconv.Atoi(teacherID)
+		if err != nil {
+			logger.WithError(err).Error("Invalid teacher ID (async)")
+			return
+		}
+
+		if analysisResult.NumberOfEntries == 0 {
+			logger.Warn("No analysis results found (async)")
+			return
+		}
+
+		for _, childAnalysis := range analysisResult.AnalysisResults {
+			docEntry := models.DocumentationEntry{
+				TeacherID:              teacherIDInt,
+				ObservationDate:        timestamp,
+				ObservationDescription: childAnalysis.TranscriptionSummary,
+				CategoryID:             childAnalysis.Category.AnalysisCategoryID,
+				ChildID:                childAnalysis.ChildID,
+				IsApproved:             false,
+			}
+
+			_, err := h.DocumentationEntryService.CreateDocumentationEntry(logger, ctx, &docEntry)
+			if err != nil {
+				logger.WithError(err).Error("Failed to create documentation entry from audio analysis (async)")
+				return
+			}
+		}
+		logger.Info("Finished asynchronous audio processing")
+	}()
+
+	logger.Info("Finished audio upload process (handler)")
 }
 
 // isAllowedFileType checks if the uploaded file's content type is allowed.

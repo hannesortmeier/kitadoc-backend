@@ -8,21 +8,20 @@ import (
 
 // Child represents a child in the system.
 type Child struct {
-	ID                       int        `json:"id"`
-	FirstName                string     `json:"first_name" validate:"required,min=1,max=100"`
-	LastName                 string     `json:"last_name" validate:"required,min=1,max=100"`
-	Birthdate                time.Time  `json:"birthdate" validate:"required,childbirthdate"` // Custom validation for age range
-	Gender                   string     `json:"gender" validate:"required,oneof=male female other"`
-	GroupID                  *int       `json:"group_id"` // Pointer for nullable foreign key
-	FamilyLanguage           *string    `json:"family_language"`
-	MigrationBackground      *bool      `json:"migration_background"`
-	AdmissionDate            time.Time  `json:"admission_date"`
-	ExpectedSchoolEnrollment *time.Time `json:"expected_school_enrollment" validate:"omitempty,gtfield=Birthdate"`
-	Address                  *string    `json:"address"`
-	Parent1Name              *string    `json:"parent1_name" validate:"omitempty,min=1,max=200"`
-	Parent2Name              *string    `json:"parent2_name" validate:"omitempty,min=1,max=200"`
-	CreatedAt                time.Time  `json:"created_at"`
-	UpdatedAt                time.Time  `json:"updated_at"`
+	ID                       int       `json:"id"`
+	FirstName                string    `json:"first_name" validate:"required,min=1,max=100"`
+	LastName                 string    `json:"last_name" validate:"required,min=1,max=100"`
+	Birthdate                time.Time `json:"birthdate" validate:"required,childbirthdate"` // Custom validation for age range
+	Gender                   string    `json:"gender" validate:"required,oneof=male female other"`
+	FamilyLanguage           string    `json:"family_language" validate:"required"`
+	MigrationBackground      bool      `json:"migration_background" validate:"required"`
+	AdmissionDate            time.Time `json:"admission_date" validate:"required"`
+	ExpectedSchoolEnrollment time.Time `json:"expected_school_enrollment" validate:"gtfield=Birthdate"`
+	Address                  string    `json:"address" validate:"required"`
+	Parent1Name              string    `json:"parent1_name" validate:"required,min=1,max=200"`
+	Parent2Name              string    `json:"parent2_name" validate:"required,min=1,max=200"`
+	CreatedAt                time.Time `json:"created_at"`
+	UpdatedAt                time.Time `json:"updated_at"`
 }
 
 // ValidateChild validates the Child struct.
