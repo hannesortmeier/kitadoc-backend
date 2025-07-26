@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"kitadoc-backend/handlers/mocks"
-	"kitadoc-backend/internal/testutils"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
 
@@ -26,26 +25,34 @@ func TestCreateChild(t *testing.T) {
 		handler := NewChildHandler(mockChildService)
 
 		inputChild := models.Child{
-			FirstName:   "Test",
-			LastName:    "Child",
-			Birthdate:   time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:      "male",
-			Parent1Name: testutils.StringPtr("Parent One"),
-			Parent2Name: testutils.StringPtr("Parent Two"),
-			GroupID:     testutils.IntPtr(1),
+			FirstName:                "Test",
+			LastName:                 "Child",
+			Birthdate:                time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+			Gender:                   "male",
+			FamilyLanguage:           "English",
+			MigrationBackground:      false,
+			AdmissionDate:            time.Now(),
+			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
+			Address:                  "123 Main St",
+			Parent1Name:              "Parent One",
+			Parent2Name:              "Parent Two",
 		}
 
 		returnedChild := models.Child{
-			ID:          1,
-			FirstName:   "Test",
-			LastName:    "Child",
-			Birthdate:   time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:      "male",
-			Parent1Name: testutils.StringPtr("Parent One"),
-			Parent2Name: testutils.StringPtr("Parent Two"),
-			GroupID:     testutils.IntPtr(1),
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:                       1,
+			FirstName:                "Test",
+			LastName:                 "Child",
+			Birthdate:                time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+			Gender:                   "male",
+			FamilyLanguage:           "English",
+			MigrationBackground:      false,
+			AdmissionDate:            time.Now(),
+			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
+			Address:                  "123 Main St",
+			Parent1Name:              "Parent One",
+			Parent2Name:              "Parent Two",
+			CreatedAt:                time.Now(),
+			UpdatedAt:                time.Now(),
 		}
 
 		mockChildService.On("CreateChild", mock.AnythingOfType("*models.Child")).Return(&returnedChild, nil).Once()
@@ -67,7 +74,6 @@ func TestCreateChild(t *testing.T) {
 		assert.Equal(t, "male", responseBody["gender"])
 		assert.Equal(t, "Parent One", responseBody["parent1_name"])
 		assert.Equal(t, "Parent Two", responseBody["parent2_name"])
-		assert.Equal(t, float64(1), responseBody["group_id"])
 
 		expectedTime, _ := time.Parse(time.RFC3339, "2020-01-01T00:00:00Z")
 		actualTime, _ := time.Parse(time.RFC3339, responseBody["birthdate"].(string))
@@ -144,8 +150,8 @@ func TestGetAllChildren(t *testing.T) {
 		handler := NewChildHandler(mockChildService)
 
 		mockChildService.On("GetAllChildren").Return([]models.Child{
-			{ID: 1, FirstName: "Child A", Birthdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), Gender: "Male"},
-			{ID: 2, FirstName: "Child B", Birthdate: time.Date(2022, 2, 2, 0, 0, 0, 0, time.UTC), Gender: "Female"},
+			{ID: 1, FirstName: "Child A", Birthdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), Gender: "male"},
+			{ID: 2, FirstName: "Child B", Birthdate: time.Date(2022, 2, 2, 0, 0, 0, 0, time.UTC), Gender: "female"},
 		}, nil).Once()
 
 		req := httptest.NewRequest(http.MethodGet, "/children", nil)
@@ -158,8 +164,8 @@ func TestGetAllChildren(t *testing.T) {
 		var responseBody []models.Child
 		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 		assert.Equal(t, []models.Child{
-			{ID: 1, FirstName: "Child A", Birthdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), Gender: "Male"},
-			{ID: 2, FirstName: "Child B", Birthdate: time.Date(2022, 2, 2, 0, 0, 0, 0, time.UTC), Gender: "Female"},
+			{ID: 1, FirstName: "Child A", Birthdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), Gender: "male"},
+			{ID: 2, FirstName: "Child B", Birthdate: time.Date(2022, 2, 2, 0, 0, 0, 0, time.UTC), Gender: "female"},
 		}, responseBody)
 
 		mockChildService.AssertExpectations(t)
@@ -192,7 +198,7 @@ func TestGetChildByID(t *testing.T) {
 			ID:        1,
 			FirstName: "Test Child",
 			Birthdate: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "Male",
+			Gender:    "male",
 		}, nil).Once()
 
 		req := httptest.NewRequest(http.MethodGet, "/children/1", nil)
@@ -209,7 +215,7 @@ func TestGetChildByID(t *testing.T) {
 
 		assert.Equal(t, float64(1), responseBody["id"])
 		assert.Equal(t, "Test Child", responseBody["first_name"])
-		assert.Equal(t, "Male", responseBody["gender"])
+		assert.Equal(t, "male", responseBody["gender"])
 
 		expectedTime, _ := time.Parse(time.RFC3339, "2020-01-01T00:00:00Z")
 		actualTime, _ := time.Parse(time.RFC3339, responseBody["birthdate"].(string))
@@ -283,8 +289,8 @@ func TestUpdateChild(t *testing.T) {
 			FirstName:   "Updated",
 			LastName:    "Child",
 			Birthdate:   time.Date(2019, 5, 10, 0, 0, 0, 0, time.UTC),
-			Gender:      "Female",
-			Parent1Name: testutils.StringPtr("New Parent"),
+			Gender:      "female",
+			Parent1Name: "New Parent",
 		}
 		mockChildService.On("UpdateChild", mock.AnythingOfType("*models.Child")).Return(nil).Once()
 

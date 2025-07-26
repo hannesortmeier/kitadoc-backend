@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
@@ -27,9 +26,6 @@ func (childHandler *ChildHandler) CreateChild(writer http.ResponseWriter, reques
 		http.Error(writer, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-
-	child.CreatedAt = time.Now()
-	child.UpdatedAt = time.Now()
 
 	createdChild, err := childHandler.ChildService.CreateChild(&child)
 	if err != nil {
@@ -103,7 +99,6 @@ func (childHandler *ChildHandler) UpdateChild(writer http.ResponseWriter, reques
 	}
 
 	child.ID = id
-	child.UpdatedAt = time.Now()
 
 	err = childHandler.ChildService.UpdateChild(&child)
 	if err != nil {

@@ -10,7 +10,6 @@ type DAL struct {
 	Users                UserStore
 	Children             ChildStore
 	Teachers             TeacherStore
-	Groups               GroupStore
 	Categories           CategoryStore
 	Assignments          AssignmentStore
 	DocumentationEntries DocumentationEntryStore
@@ -23,7 +22,6 @@ func NewDAL(db *sql.DB) *DAL {
 		Users:                NewSQLUserStore(db),
 		Children:             NewSQLChildStore(db),
 		Teachers:             NewSQLTeacherStore(db),
-		Groups:               NewSQLGroupStore(db),
 		Categories:           NewSQLCategoryStore(db),
 		Assignments:          NewSQLAssignmentStore(db),
 		DocumentationEntries: NewSQLDocumentationEntryStore(db),

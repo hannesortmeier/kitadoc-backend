@@ -24,7 +24,7 @@ type DocumentationEntryService interface {
 	GetAllDocumentationForChild(logger *logrus.Entry, ctx context.Context, childID int) ([]models.DocumentationEntry, error)
 	ApproveDocumentationEntry(logger *logrus.Entry, ctx context.Context, entryID int, approvedByUserID int) error
 	GenerateChildReport(logger *logrus.Entry, ctx context.Context, childID int, assignments []models.Assignment) ([]byte, error) // Returns a byte slice representing the Word document
-	GetDocumentName(ctx context.Context, childID int) (string, error) // Returns the document name for a child report
+	GetDocumentName(ctx context.Context, childID int) (string, error)                                                            // Returns the document name for a child report
 }
 
 // DocumentationEntryServiceImpl implements DocumentationEntryService.
@@ -326,19 +326,19 @@ func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus
 	childInformationParagraph := document.AddEmptyParagraph()
 	childInformationParagraph.AddText(fmt.Sprintf("Name des Kindes: %s %s", child.FirstName, child.LastName)).AddBreak(&breaktype)
 	childInformationParagraph.AddText(fmt.Sprintf("Geburtsdatum: %s", child.Birthdate.Format("02.01.2006"))).AddBreak(&breaktype)
-	childInformationParagraph.AddText(fmt.Sprintf("Familiensprache: %s", *child.FamilyLanguage)).AddBreak(&breaktype)
-	if child.MigrationBackground != nil && *child.MigrationBackground {
+	childInformationParagraph.AddText(fmt.Sprintf("Familiensprache: %s", child.FamilyLanguage)).AddBreak(&breaktype)
+	if child.MigrationBackground {
 		childInformationParagraph.AddText("Migrationshintergrund: Ja").AddBreak(&breaktype)
 	} else {
 		childInformationParagraph.AddText("Migrationshintergrund: Nein").AddBreak(&breaktype)
 	}
 	childInformationParagraph.AddText(fmt.Sprintf("Aufnahmedatum: %s", child.AdmissionDate.Format("02.01.2006"))).AddBreak(&breaktype)
 	childInformationParagraph.AddText(fmt.Sprintf("Voraussichtliche Einschulung: %s", child.ExpectedSchoolEnrollment.Format("02.01.2006"))).AddBreak(&breaktype)
-	childInformationParagraph.AddText(fmt.Sprintf("Adresse: %s", *child.Address)).AddBreak(&breaktype)
-	childInformationParagraph.AddText(fmt.Sprintf("Namen der Erziehungsberechtigten: %s, %s", *child.Parent1Name, *child.Parent2Name)).AddBreak(&breaktype)
+	childInformationParagraph.AddText(fmt.Sprintf("Adresse: %s", child.Address)).AddBreak(&breaktype)
+	childInformationParagraph.AddText(fmt.Sprintf("Namen der Erziehungsberechtigten: %s, %s", child.Parent1Name, child.Parent2Name)).AddBreak(&breaktype)
 	childInformationParagraph.AddText("Entwicklungsbegleiter/-innen, Fachkräfte (von - bis):").AddBreak(&breaktype)
 	for _, assignmentText := range assignmentsText {
-		childInformationParagraph.AddText(assignmentText).Style("List Bullet")
+		childInformationParagraph.AddText(assignmentText).Style("List Bullet").AddBreak(&breaktype)
 	}
 
 	document.AddPageBreak()
@@ -385,7 +385,7 @@ func (service *DocumentationEntryServiceImpl) GetDocumentName(ctx context.Contex
 		}
 		return "", fmt.Errorf("error fetching child details: %w", err)
 	}
-	
+
 	documentName := fmt.Sprintf("Bildungsdokumentation_%s_%s_%s.docx", child.FirstName, child.LastName, child.Birthdate.Format("2006-01-02"))
 
 	return documentName, nil
@@ -403,9 +403,15 @@ func (service *DocumentationEntryServiceImpl) FormatChildTeacherAssignments(assi
 		if err != nil {
 			return nil, err
 		}
-		formattedAssignments = append(formattedAssignments, fmt.Sprintf("- %s %s (%s bis %s)", teacher.FirstName, teacher.LastName, assignment.StartDate.Format("02.01.2006"), assignment.EndDate.Format("02.01.2006")))
+		assignmentStart := assignment.StartDate.Format("02.01.2006")
+		var assignmentEnd string
+		if assignment.EndDate == nil {
+			assignmentEnd = "heute"
+		} else {
+			assignmentEnd = assignment.EndDate.Format("02.01.2006")
+		}
+		formattedAssignments = append(formattedAssignments, fmt.Sprintf("- %s %s (%s bis %s)", teacher.FirstName, teacher.LastName, assignmentStart, assignmentEnd))
 	}
 
 	return formattedAssignments, nil
 }
-

@@ -17,7 +17,6 @@ type Application struct {
 	AuthHandler               *handlers.AuthHandler
 	ChildHandler              *handlers.ChildHandler
 	TeacherHandler            *handlers.TeacherHandler
-	GroupHandler              *handlers.GroupHandler
 	CategoryHandler           *handlers.CategoryHandler
 	AssignmentHandler         *handlers.AssignmentHandler
 	DocumentationEntryHandler *handlers.DocumentationEntryHandler
@@ -32,9 +31,8 @@ type Application struct {
 func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	// Initialize Services
 	userService := services.NewUserService(dal.Users, &cfg)
-	childService := services.NewChildService(dal.Children, dal.Groups)
+	childService := services.NewChildService(dal.Children)
 	teacherService := services.NewTeacherService(dal.Teachers)
-	groupService := services.NewGroupService(dal.Groups)
 	categoryService := services.NewCategoryService(dal.Categories)
 	assignmentService := services.NewAssignmentService(dal.Assignments, dal.Children, dal.Teachers)
 	documentationEntryService := services.NewDocumentationEntryService(dal.DocumentationEntries, dal.Children, dal.Teachers, dal.Categories, dal.Users)
@@ -44,7 +42,6 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	authHandler := handlers.NewAuthHandler(userService)
 	childHandler := handlers.NewChildHandler(childService)
 	teacherHandler := handlers.NewTeacherHandler(teacherService)
-	groupHandler := handlers.NewGroupHandler(groupService)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	assignmentHandler := handlers.NewAssignmentHandler(assignmentService)
 	documentationEntryHandler := handlers.NewDocumentationEntryHandler(documentationEntryService)
@@ -56,7 +53,6 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 		AuthHandler:               authHandler,
 		ChildHandler:              childHandler,
 		TeacherHandler:            teacherHandler,
-		GroupHandler:              groupHandler,
 		CategoryHandler:           categoryHandler,
 		AssignmentHandler:         assignmentHandler,
 		DocumentationEntryHandler: documentationEntryHandler,
@@ -107,18 +103,11 @@ func (app *Application) Routes() http.Handler {
 	app.Router.Handle("DELETE /api/v1/children/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.ChildHandler.DeleteChild)))))))
 
 	// Teachers Management Endpoints
-	app.Router.Handle("POST /api/v1/teachers", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.CreateTeacher)))))))
+	app.Router.Handle("POST /api/v1/teachers", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.CreateTeacher)))))))
 	app.Router.Handle("GET /api/v1/teachers", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.GetAllTeachers)))))))
 	app.Router.Handle("GET /api/v1/teachers/{teacher_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.GetTeacherByID)))))))
 	app.Router.Handle("PUT /api/v1/teachers/{teacher_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.UpdateTeacher)))))))
 	app.Router.Handle("DELETE /api/v1/teachers/{teacher_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.TeacherHandler.DeleteTeacher)))))))
-
-	// Groups Management Endpoints
-	app.Router.Handle("POST /api/v1/groups", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.CreateGroup)))))))
-	app.Router.Handle("GET /api/v1/groups", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.GetAllGroups)))))))
-	app.Router.Handle("GET /api/v1/groups/{group_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.GetGroupByID)))))))
-	app.Router.Handle("PUT /api/v1/groups/{group_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.UpdateGroup)))))))
-	app.Router.Handle("DELETE /api/v1/groups/{group_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.GroupHandler.DeleteGroup)))))))
 
 	// Categories Management Endpoints
 	app.Router.Handle("POST /api/v1/categories", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.CategoryHandler.CreateCategory)))))))

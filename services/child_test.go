@@ -18,8 +18,7 @@ import (
 
 func TestCreateChild(t *testing.T) {
 	mockChildStore := new(mocks.MockChildStore)
-	mockGroupStore := new(MockGroupStore)
-	service := services.NewChildService(mockChildStore, mockGroupStore)
+	service := services.NewChildService(mockChildStore)
 
 	log_level, _ := logrus.ParseLevel("debug")
 	logger.InitGlobalLogger(
@@ -29,13 +28,20 @@ func TestCreateChild(t *testing.T) {
 		},
 	)
 
-	// Test case 1: Successful creation without GroupID
-	t.Run("success without group", func(t *testing.T) {
+	// Test case 1: Successful creation
+	t.Run("success", func(t *testing.T) {
 		child := &models.Child{
-			FirstName: "John",
-			LastName:  "Doe",
-			Birthdate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "male",
+			FirstName:                "John",
+			LastName:                 "Doe",
+			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			Gender:                   "male",
+			FamilyLanguage:           "English",
+			MigrationBackground:      false,
+			AdmissionDate:            time.Now(),
+			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
+			Address:                  "123 Main St",
+			Parent1Name:              "Jane Doe",
+			Parent2Name:              "John Doe Sr.",
 		}
 		mockChildStore.On("Create", mock.AnythingOfType("*models.Child")).Return(1, nil).Once()
 
@@ -45,34 +51,9 @@ func TestCreateChild(t *testing.T) {
 		assert.NotNil(t, createdChild)
 		assert.Equal(t, 1, createdChild.ID)
 		mockChildStore.AssertExpectations(t)
-		mockGroupStore.AssertNotCalled(t, "GetByID")
 	})
 
-	// Test case 2: Successful creation with valid GroupID
-	t.Run("success with valid group", func(t *testing.T) {
-		groupID := 1
-		child := &models.Child{
-			FirstName: "John",
-			LastName:  "Doe",
-			Birthdate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "male",
-			GroupID:   &groupID,
-		}
-		expectedGroup := &models.Group{ID: groupID}
-
-		mockGroupStore.On("GetByID", groupID).Return(expectedGroup, nil).Once()
-		mockChildStore.On("Create", mock.AnythingOfType("*models.Child")).Return(1, nil).Once()
-
-		createdChild, err := service.CreateChild(child)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, createdChild)
-		assert.Equal(t, 1, createdChild.ID)
-		mockChildStore.AssertExpectations(t)
-		mockGroupStore.AssertExpectations(t)
-	})
-
-	// Test case 3: Invalid input (validation error)
+	// Test case 2: Invalid input (validation error)
 	t.Run("invalid input", func(t *testing.T) {
 		child := &models.Child{
 			FirstName: "", // Invalid empty first name
@@ -87,60 +68,22 @@ func TestCreateChild(t *testing.T) {
 		assert.Equal(t, services.ErrInvalidInput, err)
 		assert.Nil(t, createdChild)
 		mockChildStore.AssertNotCalled(t, "Create")
-		mockGroupStore.AssertNotCalled(t, "GetByID")
 	})
 
-	// Test case 4: Group not found for provided GroupID
-	t.Run("group not found", func(t *testing.T) {
-		groupID := 99
-		child := &models.Child{
-			FirstName: "Jane",
-			LastName:  "Smith",
-			Birthdate: time.Date(2024, 2, 2, 0, 0, 0, 0, time.UTC),
-			Gender:    "female",
-			GroupID:   &groupID,
-		}
-
-		mockGroupStore.On("GetByID", groupID).Return(nil, data.ErrNotFound).Once()
-
-		createdChild, err := service.CreateChild(child)
-
-		assert.Error(t, err)
-		assert.Equal(t, services.ErrNotFound, err)
-		assert.Nil(t, createdChild)
-		mockChildStore.AssertNotCalled(t, "Create")
-		mockGroupStore.AssertExpectations(t)
-	})
-
-	// Test case 5: Internal error during group existence check
-	t.Run("internal error on group check", func(t *testing.T) {
-		groupID := 1
-		child := &models.Child{
-			FirstName: "Jane",
-			LastName:  "Smith",
-			Birthdate: time.Date(2023, 2, 2, 0, 0, 0, 0, time.UTC),
-			Gender:    "female",
-			GroupID:   &groupID,
-		}
-
-		mockGroupStore.On("GetByID", groupID).Return(nil, errors.New("db error")).Once()
-
-		createdChild, err := service.CreateChild(child)
-
-		assert.Error(t, err)
-		assert.Equal(t, services.ErrInternal, err)
-		assert.Nil(t, createdChild)
-		mockChildStore.AssertNotCalled(t, "Create")
-		mockGroupStore.AssertExpectations(t)
-	})
-
-	// Test case 6: Internal error during child creation
+	// Test case 3: Internal error during child creation
 	t.Run("internal error on create child", func(t *testing.T) {
 		child := &models.Child{
-			FirstName: "John",
-			LastName:  "Doe",
-			Birthdate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "male",
+			FirstName:                "John",
+			LastName:                 "Doe",
+			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			Gender:                   "male",
+			FamilyLanguage:           "English",
+			MigrationBackground:      false,
+			AdmissionDate:            time.Now(),
+			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
+			Address:                  "123 Main St",
+			Parent1Name:              "Jane Doe",
+			Parent2Name:              "John Doe Sr.",
 		}
 		mockChildStore.On("Create", mock.AnythingOfType("*models.Child")).Return(0, errors.New("db error")).Once()
 
@@ -155,8 +98,7 @@ func TestCreateChild(t *testing.T) {
 
 func TestGetChildByID(t *testing.T) {
 	mockChildStore := new(mocks.MockChildStore)
-	mockGroupStore := new(MockGroupStore)
-	service := services.NewChildService(mockChildStore, mockGroupStore)
+	service := services.NewChildService(mockChildStore)
 
 	// Test case 1: Successful retrieval
 	t.Run("success", func(t *testing.T) {
@@ -202,17 +144,23 @@ func TestGetChildByID(t *testing.T) {
 
 func TestUpdateChild(t *testing.T) {
 	mockChildStore := new(mocks.MockChildStore)
-	mockGroupStore := new(MockGroupStore)
-	service := services.NewChildService(mockChildStore, mockGroupStore)
+	service := services.NewChildService(mockChildStore)
 
-	// Test case 1: Successful update without GroupID change
-	t.Run("success without group change", func(t *testing.T) {
+	// Test case 1: Successful update
+	t.Run("success", func(t *testing.T) {
 		child := &models.Child{
-			ID:        1,
-			FirstName: "Updated John",
-			LastName:  "Doe",
-			Birthdate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "male",
+			ID:                       1,
+			FirstName:                "Updated John",
+			LastName:                 "Doe",
+			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			Gender:                   "male",
+			FamilyLanguage:           "English",
+			MigrationBackground:      false,
+			AdmissionDate:            time.Now(),
+			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
+			Address:                  "123 Main St",
+			Parent1Name:              "Jane Doe",
+			Parent2Name:              "John Doe Sr.",
 		}
 		mockChildStore.On("Update", mock.AnythingOfType("*models.Child")).Return(nil).Once()
 
@@ -220,33 +168,9 @@ func TestUpdateChild(t *testing.T) {
 
 		assert.NoError(t, err)
 		mockChildStore.AssertExpectations(t)
-		mockGroupStore.AssertNotCalled(t, "GetByID")
 	})
 
-	// Test case 2: Successful update with valid GroupID
-	t.Run("success with valid group", func(t *testing.T) {
-		groupID := 1
-		child := &models.Child{
-			ID:        1,
-			FirstName: "Updated Jane",
-			LastName:  "Smith",
-			Birthdate: time.Date(2024, 2, 2, 0, 0, 0, 0, time.UTC),
-			Gender:    "female",
-			GroupID:   &groupID,
-		}
-		expectedGroup := &models.Group{ID: groupID}
-
-		mockGroupStore.On("GetByID", groupID).Return(expectedGroup, nil).Once()
-		mockChildStore.On("Update", mock.AnythingOfType("*models.Child")).Return(nil).Once()
-
-		err := service.UpdateChild(child)
-
-		assert.NoError(t, err)
-		mockChildStore.AssertExpectations(t)
-		mockGroupStore.AssertExpectations(t)
-	})
-
-	// Test case 3: Invalid input (validation error)
+	// Test case 2: Invalid input (validation error)
 	t.Run("invalid input", func(t *testing.T) {
 		child := &models.Child{
 			ID:        1,
@@ -261,61 +185,23 @@ func TestUpdateChild(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, services.ErrInvalidInput, err)
 		mockChildStore.AssertNotCalled(t, "Update")
-		mockGroupStore.AssertNotCalled(t, "GetByID")
 	})
 
-	// Test case 4: Group not found for provided GroupID
-	t.Run("group not found", func(t *testing.T) {
-		groupID := 99
-		child := &models.Child{
-			ID:        1,
-			FirstName: "Jane",
-			LastName:  "Smith",
-			Birthdate: time.Date(2024, 2, 2, 0, 0, 0, 0, time.UTC),
-			Gender:    "female",
-			GroupID:   &groupID,
-		}
-
-		mockGroupStore.On("GetByID", groupID).Return(nil, data.ErrNotFound).Once()
-
-		err := service.UpdateChild(child)
-
-		assert.Error(t, err)
-		assert.Equal(t, services.ErrNotFound, err)
-		mockChildStore.AssertNotCalled(t, "Update")
-		mockGroupStore.AssertExpectations(t)
-	})
-
-	// Test case 5: Internal error during group existence check
-	t.Run("internal error on group check", func(t *testing.T) {
-		groupID := 1
-		child := &models.Child{
-			ID:        1,
-			FirstName: "Jane",
-			LastName:  "Smith",
-			Birthdate: time.Date(2024, 2, 2, 0, 0, 0, 0, time.UTC),
-			Gender:    "female",
-			GroupID:   &groupID,
-		}
-
-		mockGroupStore.On("GetByID", groupID).Return(nil, errors.New("db error")).Once()
-
-		err := service.UpdateChild(child)
-
-		assert.Error(t, err)
-		assert.Equal(t, services.ErrInternal, err)
-		mockChildStore.AssertNotCalled(t, "Update")
-		mockGroupStore.AssertExpectations(t)
-	})
-
-	// Test case 6: Child not found during update
+	// Test case 3: Child not found during update
 	t.Run("child not found on update", func(t *testing.T) {
 		child := &models.Child{
-			ID:        99, // Non-existent ID
-			FirstName: "Updated John",
-			LastName:  "Doe",
-			Birthdate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "male",
+			ID:                       99, // Non-existent ID
+			FirstName:                "Updated John",
+			LastName:                 "Doe",
+			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			Gender:                   "male",
+			FamilyLanguage:           "English",
+			MigrationBackground:      false,
+			AdmissionDate:            time.Now(),
+			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
+			Address:                  "123 Main St",
+			Parent1Name:              "Jane Doe",
+			Parent2Name:              "John Doe Sr.",
 		}
 		mockChildStore.On("Update", mock.AnythingOfType("*models.Child")).Return(data.ErrNotFound).Once()
 
@@ -326,14 +212,21 @@ func TestUpdateChild(t *testing.T) {
 		mockChildStore.AssertExpectations(t)
 	})
 
-	// Test case 7: Internal error during update
+	// Test case 4: Internal error during update
 	t.Run("internal error on update", func(t *testing.T) {
 		child := &models.Child{
-			ID:        1,
-			FirstName: "Updated John",
-			LastName:  "Doe",
-			Birthdate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "male",
+			ID:                       1,
+			FirstName:                "Updated John",
+			LastName:                 "Doe",
+			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			Gender:                   "male",
+			FamilyLanguage:           "English",
+			MigrationBackground:      false,
+			AdmissionDate:            time.Now(),
+			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
+			Address:                  "123 Main St",
+			Parent1Name:              "Jane Doe",
+			Parent2Name:              "John Doe Sr.",
 		}
 		mockChildStore.On("Update", mock.AnythingOfType("*models.Child")).Return(errors.New("db error")).Once()
 
@@ -347,8 +240,7 @@ func TestUpdateChild(t *testing.T) {
 
 func TestDeleteChild(t *testing.T) {
 	mockChildStore := new(mocks.MockChildStore)
-	mockGroupStore := new(MockGroupStore)
-	service := services.NewChildService(mockChildStore, mockGroupStore)
+	service := services.NewChildService(mockChildStore)
 
 	// Test case 1: Successful deletion
 	t.Run("success", func(t *testing.T) {
@@ -388,8 +280,7 @@ func TestDeleteChild(t *testing.T) {
 
 func TestGetAllChildren(t *testing.T) {
 	mockChildStore := new(mocks.MockChildStore)
-	mockGroupStore := new(MockGroupStore)
-	service := services.NewChildService(mockChildStore, mockGroupStore)
+	service := services.NewChildService(mockChildStore)
 
 	// Test case 1: Successful retrieval
 	t.Run("success", func(t *testing.T) {
@@ -397,7 +288,7 @@ func TestGetAllChildren(t *testing.T) {
 			{ID: 1, FirstName: "Child A"},
 			{ID: 2, FirstName: "Child B"},
 		}
-		mockChildStore.On("GetAll", (*int)(nil)).Return(expectedChildren, nil).Once()
+		mockChildStore.On("GetAll").Return(expectedChildren, nil).Once()
 
 		children, err := service.GetAllChildren()
 
@@ -409,7 +300,7 @@ func TestGetAllChildren(t *testing.T) {
 
 	// Test case 2: Internal error
 	t.Run("internal error", func(t *testing.T) {
-		mockChildStore.On("GetAll", (*int)(nil)).Return(nil, errors.New("db error")).Once()
+		mockChildStore.On("GetAll").Return(nil, errors.New("db error")).Once()
 
 		children, err := service.GetAllChildren()
 
@@ -422,8 +313,7 @@ func TestGetAllChildren(t *testing.T) {
 
 func TestBulkImportChildren(t *testing.T) {
 	mockChildStore := new(mocks.MockChildStore)
-	mockGroupStore := new(MockGroupStore)
-	service := services.NewChildService(mockChildStore, mockGroupStore)
+	service := services.NewChildService(mockChildStore)
 
 	// Test case 1: Placeholder for bulk import
 	t.Run("placeholder", func(t *testing.T) {

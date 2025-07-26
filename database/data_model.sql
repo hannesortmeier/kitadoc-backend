@@ -8,13 +8,6 @@ PRAGMA foreign_keys = ON;
 -- TABLE DEFINITIONS
 -- =============================================================================
 
--- Groups Table (Kindergarten Classes)
-CREATE TABLE IF NOT EXISTS groups (
-    group_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    group_name VARCHAR(100) UNIQUE NOT NULL,
-    CONSTRAINT chk_group_name_not_empty CHECK (LENGTH(TRIM(group_name)) > 0)
-);
-
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,17 +47,15 @@ CREATE TABLE IF NOT EXISTS children (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     birthdate DATE NOT NULL,
-    group_id INTEGER,
-    family_language VARCHAR(100),
-    migration_background BOOLEAN,
+    family_language VARCHAR(100) NOT NULL,
+    migration_background BOOLEAN NOT NULL,
     admission_date DATE NOT NULL,
-    expected_school_enrollment DATE,
-    address TEXT,
-    parent1_name VARCHAR(200),
-    parent2_name VARCHAR(200),
+    expected_school_enrollment DATE NOT NULL,
+    address TEXT NOT NULL,
+    parent1_name VARCHAR(200) NOT NULL,
+    parent2_name VARCHAR(200) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (group_id) REFERENCES groups(group_id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT chk_child_first_name_not_empty CHECK (LENGTH(TRIM(first_name)) > 0),
     CONSTRAINT chk_child_last_name_not_empty CHECK (LENGTH(TRIM(last_name)) > 0),
     CONSTRAINT chk_school_enrollment_after_birth CHECK (expected_school_enrollment IS NULL OR expected_school_enrollment > birthdate)
@@ -121,7 +112,6 @@ CREATE TABLE IF NOT EXISTS audio_recordings (
 
 -- Indexes on frequently queried columns
 CREATE INDEX IF NOT EXISTS idx_children_names ON children(last_name, first_name);
-CREATE INDEX IF NOT EXISTS idx_children_group ON children(group_id);
 
 CREATE INDEX IF NOT EXISTS idx_teachers_names ON teachers(last_name, first_name);
 

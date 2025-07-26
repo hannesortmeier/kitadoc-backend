@@ -14,7 +14,7 @@ type Child struct {
 	Birthdate                time.Time `json:"birthdate" validate:"required,childbirthdate"` // Custom validation for age range
 	Gender                   string    `json:"gender" validate:"required,oneof=male female other"`
 	FamilyLanguage           string    `json:"family_language" validate:"required"`
-	MigrationBackground      bool      `json:"migration_background" validate:"required"`
+	MigrationBackground      bool      `json:"migration_background"`
 	AdmissionDate            time.Time `json:"admission_date" validate:"required"`
 	ExpectedSchoolEnrollment time.Time `json:"expected_school_enrollment" validate:"gtfield=Birthdate"`
 	Address                  string    `json:"address" validate:"required"`

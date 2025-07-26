@@ -23,17 +23,15 @@ type ChildService interface {
 // ChildServiceImpl implements ChildService.
 type ChildServiceImpl struct {
 	childStore data.ChildStore
-	groupStore data.GroupStore // To check if group exists
 	validate   *validator.Validate
 }
 
 // NewChildService creates a new ChildServiceImpl.
-func NewChildService(childStore data.ChildStore, groupStore data.GroupStore) *ChildServiceImpl {
+func NewChildService(childStore data.ChildStore) *ChildServiceImpl {
 	validate := validator.New()
 	validate.RegisterValidation("childbirthdate", models.ValidateChildBirthdate) //nolint:errcheck
 	return &ChildServiceImpl{
 		childStore: childStore,
-		groupStore: groupStore,
 		validate:   validate,
 	}
 }
@@ -43,17 +41,6 @@ func (s *ChildServiceImpl) CreateChild(child *models.Child) (*models.Child, erro
 	if err := s.validate.Struct(child); err != nil {
 		logger.GetGlobalLogger().Errorf("Validation error: %v", err)
 		return nil, ErrInvalidInput
-	}
-
-	if child.GroupID != nil {
-		_, err := s.groupStore.GetByID(*child.GroupID)
-		if err != nil {
-			if errors.Is(err, data.ErrNotFound) {
-				return nil, ErrNotFound // Group not found
-			}
-			logger.GetGlobalLogger().Errorf("Error checking group existence: %v", err)
-			return nil, ErrInternal
-		}
 	}
 
 	child.CreatedAt = time.Now()
@@ -85,16 +72,6 @@ func (s *ChildServiceImpl) UpdateChild(child *models.Child) error {
 		return ErrInvalidInput
 	}
 
-	if child.GroupID != nil {
-		_, err := s.groupStore.GetByID(*child.GroupID)
-		if err != nil {
-			if errors.Is(err, data.ErrNotFound) {
-				return ErrNotFound // Group not found
-			}
-			return ErrInternal
-		}
-	}
-
 	child.UpdatedAt = time.Now()
 	err := s.childStore.Update(child)
 	if err != nil {
@@ -120,7 +97,7 @@ func (s *ChildServiceImpl) DeleteChild(id int) error {
 
 // GetAllChildren fetches all children.
 func (s *ChildServiceImpl) GetAllChildren() ([]models.Child, error) {
-	children, err := s.childStore.GetAll(nil) // No pagination or filtering
+	children, err := s.childStore.GetAll()
 	if err != nil {
 		return nil, ErrInternal
 	}

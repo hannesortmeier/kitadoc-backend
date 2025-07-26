@@ -114,12 +114,8 @@ func TestCreateDocumentationEntry(t *testing.T) {
 			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Test observation",
 		}
-		expectedTeacher := &models.Teacher{ID: 1}
-		expectedCategory := &models.Category{ID: 1}
 
 		mockChildStore.On("GetByID", entry.ChildID).Return(nil, data.ErrNotFound).Once()
-		mockTeacherStore.On("GetByID", entry.TeacherID).Return(expectedTeacher, nil)
-		mockCategoryStore.On("GetByID", entry.CategoryID).Return(expectedCategory, nil)
 
 		createdEntry, err := service.CreateDocumentationEntry(logger, ctx, entry)
 
@@ -155,11 +151,9 @@ func TestCreateDocumentationEntry(t *testing.T) {
 			ObservationDescription: "Test observation",
 		}
 		expectedChild := &models.Child{ID: 1}
-		expectedCategory := &models.Category{ID: 1}
 
 		mockChildStore.On("GetByID", entry.ChildID).Return(expectedChild, nil).Once()
 		mockTeacherStore.On("GetByID", entry.TeacherID).Return(nil, data.ErrNotFound).Once()
-		mockCategoryStore.On("GetByID", entry.CategoryID).Return(expectedCategory, nil)
 
 		createdEntry, err := service.CreateDocumentationEntry(logger, ctx, entry)
 
@@ -234,13 +228,6 @@ func TestCreateDocumentationEntry(t *testing.T) {
 			ObservationDate:        time.Now().Add(time.Hour), // Future date
 			ObservationDescription: "Test observation",
 		}
-		expectedChild := &models.Child{ID: 1}
-		expectedTeacher := &models.Teacher{ID: 1}
-		expectedCategory := &models.Category{ID: 1}
-
-		mockChildStore.On("GetByID", entry.ChildID).Return(expectedChild, nil)
-		mockTeacherStore.On("GetByID", entry.TeacherID).Return(expectedTeacher, nil)
-		mockCategoryStore.On("GetByID", entry.CategoryID).Return(expectedCategory, nil)
 
 		createdEntry, err := service.CreateDocumentationEntry(logger, ctx, entry)
 
@@ -454,12 +441,8 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 			ObservationDate:        time.Now().Add(-time.Hour),
 			ObservationDescription: "Updated observation",
 		}
-		expectedTeacher := &models.Teacher{ID: 1}
-		expectedCategory := &models.Category{ID: 1}
 
 		mockChildStore.On("GetByID", entry.ChildID).Return(nil, data.ErrNotFound).Once()
-		mockTeacherStore.On("GetByID", entry.TeacherID).Return(expectedTeacher, nil)
-		mockCategoryStore.On("GetByID", entry.CategoryID).Return(expectedCategory, nil)
 
 		err := service.UpdateDocumentationEntry(logger, ctx, entry)
 
@@ -495,11 +478,9 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 			ObservationDescription: "Updated observation",
 		}
 		expectedChild := &models.Child{ID: 1}
-		expectedCategory := &models.Category{ID: 1}
 
 		mockChildStore.On("GetByID", entry.ChildID).Return(expectedChild, nil).Once()
 		mockTeacherStore.On("GetByID", entry.TeacherID).Return(nil, data.ErrNotFound).Once()
-		mockCategoryStore.On("GetByID", entry.CategoryID).Return(expectedCategory, nil)
 
 		err := service.UpdateDocumentationEntry(logger, ctx, entry)
 
@@ -571,16 +552,9 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 			ChildID:                1,
 			TeacherID:              1,
 			CategoryID:             1,
-			ObservationDate:        time.Now().Add(time.Hour), // Future date
+			ObservationDate:        time.Now().Add(time.Hour).UTC(), // Future date
 			ObservationDescription: "Test observation",
 		}
-		expectedChild := &models.Child{ID: 1}
-		expectedTeacher := &models.Teacher{ID: 1}
-		expectedCategory := &models.Category{ID: 1}
-
-		mockChildStore.On("GetByID", entry.ChildID).Return(expectedChild, nil)
-		mockTeacherStore.On("GetByID", entry.TeacherID).Return(expectedTeacher, nil)
-		mockCategoryStore.On("GetByID", entry.CategoryID).Return(expectedCategory, nil)
 
 		err := service.UpdateDocumentationEntry(logger, ctx, entry)
 
@@ -970,22 +944,17 @@ func TestGenerateChildReport(t *testing.T) {
 	// Test case 1: Successful report generation with entries
 	t.Run("success with entries", func(t *testing.T) {
 		childID := 1
-		familyLanguage := "Englisch"
-		migrationBackground := false
-		parent1Name := "Parent One"
-		parent2Name := "Parent Two"
-		address := "123 Main St, City, Country"
-		expectedSchoolEnrollment := time.Date(2024, 9, 1, 0, 0, 0, 0, time.UTC)
 		expectedChild := &models.Child{
-			ID: childID,
-			FirstName: "Report",
-			LastName: "Child",
-			FamilyLanguage: &familyLanguage,
-			MigrationBackground: &migrationBackground,
-			Parent1Name: &parent1Name,
-			Parent2Name: &parent2Name,
-			Address: &address,
-			ExpectedSchoolEnrollment: &expectedSchoolEnrollment,
+			ID:                       childID,
+			FirstName:                "Report",
+			LastName:                 "Child",
+			FamilyLanguage:           "English",
+			MigrationBackground:      false,
+			AdmissionDate:            time.Now(),
+			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
+			Address:                  "123 Main St",
+			Parent1Name:              "Parent One",
+			Parent2Name:              "Parent Two",
 		}
 		expectedEntries := []models.DocumentationEntry{
 			{ID: 1, ChildID: childID, CategoryID: 1, ObservationDate: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC), ObservationDescription: "Entry 1"},
@@ -1005,22 +974,17 @@ func TestGenerateChildReport(t *testing.T) {
 	// Test case 2: Successful report generation with no entries
 	t.Run("success with no entries", func(t *testing.T) {
 		childID := 1
-		familyLanguage := "Englisch"
-		migrationBackground := false
-		parent1Name := "Parent One"
-		parent2Name := "Parent Two"
-		address := "123 Main St, City, Country"
-		expectedSchoolEnrollment := time.Date(2024, 9, 1, 0, 0, 0, 0, time.UTC)
 		expectedChild := &models.Child{
-			ID: childID,
-			FirstName: "Report",
-			LastName: "Child",
-			FamilyLanguage: &familyLanguage,
-			MigrationBackground: &migrationBackground,
-			Parent1Name: &parent1Name,
-			Parent2Name: &parent2Name,
-			Address: &address,
-			ExpectedSchoolEnrollment: &expectedSchoolEnrollment,
+			ID:                       childID,
+			FirstName:                "Report",
+			LastName:                 "Child",
+			FamilyLanguage:           "English",
+			MigrationBackground:      false,
+			AdmissionDate:            time.Now(),
+			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
+			Address:                  "123 Main St",
+			Parent1Name:              "Parent One",
+			Parent2Name:              "Parent Two",
 		}
 		expectedEntries := []models.DocumentationEntry{}
 

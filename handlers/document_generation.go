@@ -14,7 +14,7 @@ import (
 // DocumentGenerationHandler handles document generation and download HTTP requests.
 type DocumentGenerationHandler struct {
 	DocumentationEntryService services.DocumentationEntryService
-	AssignmentService		  services.AssignmentService
+	AssignmentService         services.AssignmentService
 }
 
 // NewDocumentGenerationHandler creates a new DocumentGenerationHandler.

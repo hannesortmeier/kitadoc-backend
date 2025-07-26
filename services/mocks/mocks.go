@@ -74,8 +74,8 @@ func (m *MockChildStore) Delete(id int) error {
 	return args.Error(0)
 }
 
-func (m *MockChildStore) GetAll(groupID *int) ([]models.Child, error) {
-	args := m.Called(groupID)
+func (m *MockChildStore) GetAll() ([]models.Child, error) {
+	args := m.Called()
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

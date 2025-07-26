@@ -3,8 +3,6 @@ package data
 import (
 	"database/sql"
 	"errors"
-	"fmt"
-	"strings"
 
 	"kitadoc-backend/models"
 )
@@ -15,7 +13,7 @@ type ChildStore interface {
 	GetByID(id int) (*models.Child, error)
 	Update(child *models.Child) error
 	Delete(id int) error
-	GetAll(groupID *int) ([]models.Child, error)
+	GetAll() ([]models.Child, error)
 }
 
 // SQLChildStore implements ChildStore using database/sql.
@@ -30,8 +28,8 @@ func NewSQLChildStore(db *sql.DB) *SQLChildStore {
 
 // Create inserts a new child into the database.
 func (s *SQLChildStore) Create(child *models.Child) (int, error) {
-	query := `INSERT INTO children (first_name, last_name, birthdate, group_id, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	result, err := s.db.Exec(query, child.FirstName, child.LastName, child.Birthdate, child.GroupID, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name)
+	query := `INSERT INTO children (first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	result, err := s.db.Exec(query, child.FirstName, child.LastName, child.Birthdate, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name)
 	if err != nil {
 		return 0, err
 	}
@@ -44,10 +42,10 @@ func (s *SQLChildStore) Create(child *models.Child) (int, error) {
 
 // GetByID fetches a child by ID from the database.
 func (s *SQLChildStore) GetByID(id int) (*models.Child, error) {
-	query := `SELECT child_id, first_name, last_name, birthdate, group_id, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`
+	query := `SELECT child_id, first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`
 	row := s.db.QueryRow(query, id)
 	child := &models.Child{}
-	err := row.Scan(&child.ID, &child.FirstName, &child.LastName, &child.Birthdate, &child.GroupID, &child.FamilyLanguage, &child.MigrationBackground, &child.AdmissionDate, &child.ExpectedSchoolEnrollment, &child.Address, &child.Parent1Name, &child.Parent2Name, &child.CreatedAt, &child.UpdatedAt)
+	err := row.Scan(&child.ID, &child.FirstName, &child.LastName, &child.Birthdate, &child.FamilyLanguage, &child.MigrationBackground, &child.AdmissionDate, &child.ExpectedSchoolEnrollment, &child.Address, &child.Parent1Name, &child.Parent2Name, &child.CreatedAt, &child.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
@@ -59,8 +57,8 @@ func (s *SQLChildStore) GetByID(id int) (*models.Child, error) {
 
 // Update updates an existing child in the database.
 func (s *SQLChildStore) Update(child *models.Child) error {
-	query := `UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, group_id = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`
-	result, err := s.db.Exec(query, child.FirstName, child.LastName, child.Birthdate, child.GroupID, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name, child.ID)
+	query := `UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`
+	result, err := s.db.Exec(query, child.FirstName, child.LastName, child.Birthdate, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name, child.ID)
 	if err != nil {
 		return err
 	}
@@ -92,25 +90,10 @@ func (s *SQLChildStore) Delete(id int) error {
 }
 
 // GetAll fetches all children with pagination and filtering options.
-func (s *SQLChildStore) GetAll(groupID *int) ([]models.Child, error) {
-	var (
-		conditions []string
-		args       []interface{}
-	)
+func (s *SQLChildStore) GetAll() ([]models.Child, error) {
+	query := `SELECT child_id, first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`
 
-	if groupID != nil {
-		conditions = append(conditions, "group_id = ?")
-		args = append(args, *groupID)
-	}
-
-	whereClause := ""
-	if len(conditions) > 0 {
-		whereClause = " WHERE " + strings.Join(conditions, " AND ")
-	}
-
-	query := fmt.Sprintf(`SELECT child_id, first_name, last_name, birthdate, group_id, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children%s`, whereClause)
-
-	rows, err := s.db.Query(query, args...)
+	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +102,7 @@ func (s *SQLChildStore) GetAll(groupID *int) ([]models.Child, error) {
 	var children []models.Child
 	for rows.Next() {
 		child := &models.Child{}
-		err := rows.Scan(&child.ID, &child.FirstName, &child.LastName, &child.Birthdate, &child.GroupID, &child.FamilyLanguage, &child.MigrationBackground, &child.AdmissionDate, &child.ExpectedSchoolEnrollment, &child.Address, &child.Parent1Name, &child.Parent2Name, &child.CreatedAt, &child.UpdatedAt)
+		err := rows.Scan(&child.ID, &child.FirstName, &child.LastName, &child.Birthdate, &child.FamilyLanguage, &child.MigrationBackground, &child.AdmissionDate, &child.ExpectedSchoolEnrollment, &child.Address, &child.Parent1Name, &child.Parent2Name, &child.CreatedAt, &child.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

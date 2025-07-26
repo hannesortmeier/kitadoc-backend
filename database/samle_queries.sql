@@ -6,12 +6,10 @@
 SELECT
     c.first_name || ' ' || c.last_name AS child_name,
     c.birthdate,
-    g.group_name,
     t.first_name || ' ' || t.last_name AS current_teacher,
     c.family_language,
     c.migration_background
 FROM children c
-LEFT JOIN groups g ON c.group_id = g.group_id
 LEFT JOIN child_teacher_assignments cta ON c.child_id = cta.child_id AND cta.end_date IS NULL
 LEFT JOIN teachers t ON cta.teacher_id = t.teacher_id
 ORDER BY c.last_name, c.first_name;
@@ -50,11 +48,9 @@ SELECT
     c.first_name || ' ' || c.last_name AS child_name,
     c.birthdate,
     c.expected_school_enrollment,
-    g.group_name,
     COUNT(de.entry_id) AS total_documentation_entries,
     SUM(CASE WHEN de.approved = 1 THEN 1 ELSE 0 END) AS approved_entries
 FROM children c
-LEFT JOIN groups g ON c.group_id = g.group_id
 LEFT JOIN documentation_entries de ON c.child_id = de.child_id
 WHERE strftime('%Y', c.birthdate) = '2018'
 GROUP BY c.child_id
@@ -83,14 +79,12 @@ SELECT
     c.child_id,
     c.first_name || ' ' || c.last_name AS child_name,
     c.birthdate,
-    g.group_name,
     t.teacher_id,
     t.first_name || ' ' || t.last_name AS teacher_name,
     cta.start_date AS assignment_start_date
 FROM children c
 JOIN child_teacher_assignments cta ON c.child_id = cta.child_id AND cta.end_date IS NULL
-JOIN teachers t ON cta.teacher_id = t.teacher_id
-LEFT JOIN groups g ON c.group_id = g.group_id;
+JOIN teachers t ON cta.teacher_id = t.teacher_id;
 
 -- View for documentation summary per child
 CREATE VIEW child_documentation_summary AS
