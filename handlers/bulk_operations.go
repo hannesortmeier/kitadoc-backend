@@ -42,7 +42,7 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 	return
 
 	// 2. Get the CSV file from the form
-	file, _, err := request.FormFile("children_csv")
+
 	if err != nil {
 		http.Error(writer, "Error retrieving CSV file: "+err.Error(), http.StatusBadRequest)
 		return
