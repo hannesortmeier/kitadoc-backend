@@ -74,7 +74,7 @@ func (h *AudioRecordingHandler) UploadAudio(w http.ResponseWriter, r *http.Reque
 		h.writeBadRequestError(w, "Error retrieving audio file: "+err.Error())
 		return
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	teacherID := r.FormValue("teacher_id")
 	if teacherID == "" {

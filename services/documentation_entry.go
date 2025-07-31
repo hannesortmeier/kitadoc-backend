@@ -306,7 +306,7 @@ func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus
 	breaktype := stypes.BreakTypeTextWrapping
 
 	// Add a title
-	document.AddHeading("Dokumentation", 0)
+	document.AddHeading("Dokumentation", 0) //nolint:errcheck
 	document.AddParagraph(
 		"des Bildungsprozesses im Rahmen der Grundsätze zur Bildungsförderung für Kinder von 0 bis 10 Jahren in Kindertageseinrichtungen und Schulen im Primarbereich in NRW",
 	).Justification(stypes.JustificationCenter)
@@ -343,7 +343,7 @@ func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus
 
 	document.AddPageBreak()
 
-	document.AddHeading("Kindbeobachtungen", 1)
+	document.AddHeading("Kindbeobachtungen", 1) //nolint:errcheck
 
 	// Group entries by category
 	entriesByCategory := make(map[string][]models.DocumentationEntry)
@@ -360,7 +360,7 @@ func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus
 
 	// Add entries to the document
 	for categoryName, entries := range entriesByCategory {
-		document.AddHeading(fmt.Sprintf("Bildungsbereich: %s", categoryName), 2)
+		document.AddHeading(fmt.Sprintf("Bildungsbereich: %s", categoryName), 2) //nolint:errcheck
 		for _, entry := range entries {
 			document.AddParagraph(entry.ObservationDescription).Style("List Bullet")
 		}
