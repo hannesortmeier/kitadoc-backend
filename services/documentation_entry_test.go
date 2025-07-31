@@ -806,19 +806,19 @@ func TestApproveDocumentationEntry(t *testing.T) {
 	// Test case 1: Successful approval
 	t.Run("success", func(t *testing.T) {
 		entryID := 1
-		approvedByUserID := 1
+		approvedByTeacherID := 1
 		existingEntry := &models.DocumentationEntry{ID: entryID, IsApproved: false}
-		approvingUser := &models.User{ID: approvedByUserID}
+		approvingUser := &models.Teacher{ID: approvedByTeacherID}
 
 		mockDocumentationEntryStore.On("GetByID", entryID).Return(existingEntry, nil).Once()
-		mockUserStore.On("GetByID", approvedByUserID).Return(approvingUser, nil).Once()
-		mockDocumentationEntryStore.On("ApproveEntry", entryID, approvedByUserID).Return(nil).Once()
+		mockTeacherStore.On("GetByID", approvedByTeacherID).Return(approvingUser, nil).Once()
+		mockDocumentationEntryStore.On("ApproveEntry", entryID, approvedByTeacherID).Return(nil).Once()
 
-		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByUserID)
+		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByTeacherID)
 
 		assert.NoError(t, err)
 		mockDocumentationEntryStore.AssertExpectations(t)
-		mockUserStore.AssertExpectations(t)
+		mockTeacherStore.AssertExpectations(t)
 	})
 
 	// Test case 2: Entry not found
@@ -852,75 +852,75 @@ func TestApproveDocumentationEntry(t *testing.T) {
 	// Test case 4: Approving user not found
 	t.Run("approving user not found", func(t *testing.T) {
 		entryID := 1
-		approvedByUserID := 99
+		approvedByTeacherID := 99
 		existingEntry := &models.DocumentationEntry{ID: entryID, IsApproved: false}
 
 		mockDocumentationEntryStore.On("GetByID", entryID).Return(existingEntry, nil).Once()
-		mockUserStore.On("GetByID", approvedByUserID).Return(nil, data.ErrNotFound).Once()
+		mockTeacherStore.On("GetByID", approvedByTeacherID).Return(nil, data.ErrNotFound).Once()
 
-		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByUserID)
+		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByTeacherID)
 
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "approving user not found")
+		assert.Contains(t, err.Error(), "approving teacher not found")
 		mockDocumentationEntryStore.AssertExpectations(t)
-		mockUserStore.AssertExpectations(t)
+		mockTeacherStore.AssertExpectations(t)
 		mockDocumentationEntryStore.AssertNotCalled(t, "ApproveEntry")
 	})
 
-	// Test case 5: Internal error during user fetch
-	t.Run("internal error on user fetch", func(t *testing.T) {
+	// Test case 5: Internal error during teacher fetch
+	t.Run("internal error on teacher fetch", func(t *testing.T) {
 		entryID := 1
-		approvedByUserID := 1
+		approvedByTeacherID := 1
 		existingEntry := &models.DocumentationEntry{ID: entryID, IsApproved: false}
 
 		mockDocumentationEntryStore.On("GetByID", entryID).Return(existingEntry, nil).Once()
-		mockUserStore.On("GetByID", approvedByUserID).Return(nil, errors.New("db error")).Once()
+		mockTeacherStore.On("GetByID", approvedByTeacherID).Return(nil, errors.New("db error")).Once()
 
-		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByUserID)
+		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByTeacherID)
 
 		assert.Error(t, err)
 		assert.Equal(t, services.ErrInternal, err)
 		mockDocumentationEntryStore.AssertExpectations(t)
-		mockUserStore.AssertExpectations(t)
+		mockTeacherStore.AssertExpectations(t)
 		mockDocumentationEntryStore.AssertNotCalled(t, "ApproveEntry")
 	})
 
 	// Test case 6: Entry already approved
 	t.Run("already approved", func(t *testing.T) {
 		entryID := 1
-		approvedByUserID := 1
+		approvedByTeacherID := 1
 		existingEntry := &models.DocumentationEntry{ID: entryID, IsApproved: true} // Already approved
-		approvingUser := &models.User{ID: approvedByUserID}
+		approvingTeacher := &models.Teacher{ID: approvedByTeacherID}
 
 		mockDocumentationEntryStore.On("GetByID", entryID).Return(existingEntry, nil).Once()
-		mockUserStore.On("GetByID", approvedByUserID).Return(approvingUser, nil).Once()
+		mockTeacherStore.On("GetByID", approvedByTeacherID).Return(approvingTeacher, nil).Once()
 
-		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByUserID)
+		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByTeacherID)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "documentation entry is already approved")
 		mockDocumentationEntryStore.AssertExpectations(t)
-		mockUserStore.AssertExpectations(t)
+		mockTeacherStore.AssertExpectations(t)
 		mockDocumentationEntryStore.AssertNotCalled(t, "ApproveEntry")
 	})
 
 	// Test case 7: Internal error during approval
 	t.Run("internal error on approve", func(t *testing.T) {
 		entryID := 1
-		approvedByUserID := 1
+		approvedByTeacherID := 1
 		existingEntry := &models.DocumentationEntry{ID: entryID, IsApproved: false}
-		approvingUser := &models.User{ID: approvedByUserID}
+		approvingTeacher := &models.Teacher{ID: approvedByTeacherID}
 
 		mockDocumentationEntryStore.On("GetByID", entryID).Return(existingEntry, nil).Once()
-		mockUserStore.On("GetByID", approvedByUserID).Return(approvingUser, nil).Once()
-		mockDocumentationEntryStore.On("ApproveEntry", entryID, approvedByUserID).Return(errors.New("db error")).Once()
+		mockTeacherStore.On("GetByID", approvedByTeacherID).Return(approvingTeacher, nil).Once()
+		mockDocumentationEntryStore.On("ApproveEntry", entryID, approvedByTeacherID).Return(errors.New("db error")).Once()
 
-		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByUserID)
+		err := service.ApproveDocumentationEntry(logger, ctx, entryID, approvedByTeacherID)
 
 		assert.Error(t, err)
 		assert.Equal(t, services.ErrInternal, err)
 		mockDocumentationEntryStore.AssertExpectations(t)
-		mockUserStore.AssertExpectations(t)
+		mockTeacherStore.AssertExpectations(t)
 	})
 }
 

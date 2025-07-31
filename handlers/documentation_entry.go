@@ -167,9 +167,16 @@ func (handler *DocumentationEntryHandler) ApproveDocumentationEntry(writer http.
 		return
 	}
 
-	// TODO(hannes): In a real application, the approvedByUserID would come from the authenticated user's context.
-	// For now, we'll use a placeholder.
-	approvedByUserID := 1 // Placeholder for the approving user's ID
+	// Parse approvedByTeacherId from the request body
+	var requestBody struct {
+		ApprovedByTeacherId int `json:"approvedByTeacherId"`
+	}
+	if err := json.NewDecoder(request.Body).Decode(&requestBody); err != nil {
+		logger.WithError(err).Error("Invalid request body for ApproveDocumentationEntry")
+		http.Error(writer, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	approvedByUserID := requestBody.ApprovedByTeacherId
 	err = handler.DocumentationEntryService.ApproveDocumentationEntry(logger, request.Context(), entryID, approvedByUserID)
 	if err != nil {
 		if err == services.ErrNotFound {

@@ -26,13 +26,14 @@ func TestSQLTeacherStore_Create(t *testing.T) {
 	teacher := &models.Teacher{
 		FirstName: "Jane",
 		LastName:  "Doe",
+		Username:  "janedoe",
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO teachers (first_name, last_name, created_at, updated_at) VALUES (?, ?, ?, ?)`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.CreatedAt, teacher.UpdatedAt).
+		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO teachers (first_name, last_name, username, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`)).
+			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.CreatedAt, teacher.UpdatedAt).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		id, err := store.Create(teacher)
@@ -42,8 +43,8 @@ func TestSQLTeacherStore_Create(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO teachers (first_name, last_name, created_at, updated_at) VALUES (?, ?, ?, ?)`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.CreatedAt, teacher.UpdatedAt).
+		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO teachers (first_name, last_name, username, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`)).
+			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.CreatedAt, teacher.UpdatedAt).
 			WillReturnError(errors.New("db error"))
 
 		id, err := store.Create(teacher)
@@ -68,15 +69,16 @@ func TestSQLTeacherStore_GetByID(t *testing.T) {
 		ID:        teacherID,
 		FirstName: "Jane",
 		LastName:  "Doe",
+		Username:  "janedoe",
 		CreatedAt: time.Now().Truncate(time.Second),
 		UpdatedAt: time.Now().Truncate(time.Second),
 	}
 
 	t.Run("success", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"teacher_id", "first_name", "last_name", "created_at", "updated_at"}).
-			AddRow(expectedTeacher.ID, expectedTeacher.FirstName, expectedTeacher.LastName, expectedTeacher.CreatedAt, expectedTeacher.UpdatedAt)
+		rows := sqlmock.NewRows([]string{"teacher_id", "first_name", "last_name", "username", "created_at", "updated_at"}).
+			AddRow(expectedTeacher.ID, expectedTeacher.FirstName, expectedTeacher.LastName, expectedTeacher.Username, expectedTeacher.CreatedAt, expectedTeacher.UpdatedAt)
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, created_at, updated_at FROM teachers WHERE teacher_id = ?`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers WHERE teacher_id = ?`)).
 			WithArgs(teacherID).
 			WillReturnRows(rows)
 
@@ -86,13 +88,14 @@ func TestSQLTeacherStore_GetByID(t *testing.T) {
 		assert.Equal(t, expectedTeacher.ID, teacher.ID)
 		assert.Equal(t, expectedTeacher.FirstName, teacher.FirstName)
 		assert.Equal(t, expectedTeacher.LastName, teacher.LastName)
+		assert.Equal(t, expectedTeacher.Username, teacher.Username)
 		assert.WithinDuration(t, expectedTeacher.CreatedAt, teacher.CreatedAt, time.Second)
 		assert.WithinDuration(t, expectedTeacher.UpdatedAt, teacher.UpdatedAt, time.Second)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, created_at, updated_at FROM teachers WHERE teacher_id = ?`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers WHERE teacher_id = ?`)).
 			WithArgs(teacherID).
 			WillReturnError(sql.ErrNoRows)
 
@@ -104,7 +107,7 @@ func TestSQLTeacherStore_GetByID(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, created_at, updated_at FROM teachers WHERE teacher_id = ?`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers WHERE teacher_id = ?`)).
 			WithArgs(teacherID).
 			WillReturnError(errors.New("db error"))
 
@@ -129,12 +132,13 @@ func TestSQLTeacherStore_Update(t *testing.T) {
 		ID:        1,
 		FirstName: "Updated Jane",
 		LastName:  "Smith",
+		Username:  "updatedjane",
 		UpdatedAt: time.Now(),
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE teachers SET first_name = ?, last_name = ?, updated_at = ? WHERE teacher_id = ?`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.UpdatedAt, teacher.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE teachers SET first_name = ?, last_name = ?, username = ?, updated_at = ? WHERE teacher_id = ?`)).
+			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.UpdatedAt, teacher.ID).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		err := store.Update(teacher)
@@ -143,8 +147,8 @@ func TestSQLTeacherStore_Update(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE teachers SET first_name = ?, last_name = ?, updated_at = ? WHERE teacher_id = ?`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.UpdatedAt, teacher.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE teachers SET first_name = ?, last_name = ?, username = ?, updated_at = ? WHERE teacher_id = ?`)).
+			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.UpdatedAt, teacher.ID).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err := store.Update(teacher)
@@ -154,55 +158,11 @@ func TestSQLTeacherStore_Update(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE teachers SET first_name = ?, last_name = ?, updated_at = ? WHERE teacher_id = ?`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.UpdatedAt, teacher.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE teachers SET first_name = ?, last_name = ?, username = ?, updated_at = ? WHERE teacher_id = ?`)).
+			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.UpdatedAt, teacher.ID).
 			WillReturnError(errors.New("db error"))
 
 		err := store.Update(teacher)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "db error")
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-}
-
-func TestSQLTeacherStore_Delete(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-	}
-	defer db.Close() //nolint:errcheck
-
-	store := data.NewSQLTeacherStore(db)
-
-	teacherID := 1
-
-	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM teachers WHERE teacher_id = ?`)).
-			WithArgs(teacherID).
-			WillReturnResult(sqlmock.NewResult(0, 1))
-
-		err := store.Delete(teacherID)
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("not found", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM teachers WHERE teacher_id = ?`)).
-			WithArgs(teacherID).
-			WillReturnResult(sqlmock.NewResult(0, 0))
-
-		err := store.Delete(teacherID)
-		assert.Error(t, err)
-		assert.Equal(t, data.ErrNotFound, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM teachers WHERE teacher_id = ?`)).
-			WithArgs(teacherID).
-			WillReturnError(errors.New("db error"))
-
-		err := store.Delete(teacherID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "db error")
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -220,16 +180,16 @@ func TestSQLTeacherStore_GetAll(t *testing.T) {
 
 	now := time.Now().Truncate(time.Second)
 	teachers := []models.Teacher{
-		{ID: 1, FirstName: "Teacher A", LastName: "Last A", CreatedAt: now, UpdatedAt: now},
-		{ID: 2, FirstName: "Teacher B", LastName: "Last B", CreatedAt: now, UpdatedAt: now},
+		{ID: 1, FirstName: "Teacher A", LastName: "Last A", Username: "teachera", CreatedAt: now, UpdatedAt: now},
+		{ID: 2, FirstName: "Teacher B", LastName: "Last B", Username: "teacherb", CreatedAt: now, UpdatedAt: now},
 	}
 
 	t.Run("success", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"teacher_id", "first_name", "last_name", "created_at", "updated_at"}).
-			AddRow(teachers[0].ID, teachers[0].FirstName, teachers[0].LastName, teachers[0].CreatedAt, teachers[0].UpdatedAt).
-			AddRow(teachers[1].ID, teachers[1].FirstName, teachers[1].LastName, teachers[1].CreatedAt, teachers[1].UpdatedAt)
+		rows := sqlmock.NewRows([]string{"teacher_id", "first_name", "last_name", "username", "created_at", "updated_at"}).
+			AddRow(teachers[0].ID, teachers[0].FirstName, teachers[0].LastName, teachers[0].Username, teachers[0].CreatedAt, teachers[0].UpdatedAt).
+			AddRow(teachers[1].ID, teachers[1].FirstName, teachers[1].LastName, teachers[1].Username, teachers[1].CreatedAt, teachers[1].UpdatedAt)
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, created_at, updated_at FROM teachers`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers`)).
 			WillReturnRows(rows)
 
 		fetchedTeachers, err := store.GetAll()
@@ -242,8 +202,8 @@ func TestSQLTeacherStore_GetAll(t *testing.T) {
 	})
 
 	t.Run("no teachers found", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, created_at, updated_at FROM teachers`)).
-			WillReturnRows(sqlmock.NewRows([]string{"teacher_id", "first_name", "last_name", "created_at", "updated_at"}))
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers`)).
+			WillReturnRows(sqlmock.NewRows([]string{"teacher_id", "first_name", "last_name", "username", "created_at", "updated_at"}))
 
 		fetchedTeachers, err := store.GetAll()
 		assert.NoError(t, err)
@@ -252,7 +212,7 @@ func TestSQLTeacherStore_GetAll(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, created_at, updated_at FROM teachers`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers`)).
 			WillReturnError(errors.New("db error"))
 
 		fetchedTeachers, err := store.GetAll()

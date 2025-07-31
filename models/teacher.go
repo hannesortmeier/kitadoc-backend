@@ -11,6 +11,7 @@ type Teacher struct {
 	ID        int       `json:"id"`
 	FirstName string    `json:"first_name" validate:"required,min=1,max=100"`
 	LastName  string    `json:"last_name" validate:"required,min=1,max=100"`
+	Username  string    `json:"username" validate:"required,min=1,max=100"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

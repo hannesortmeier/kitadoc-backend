@@ -472,9 +472,10 @@ func TestPublicRoutes(t *testing.T) {
 		var teacherID int
 		// Test POST /api/v1/teachers
 		t.Run("Create Teacher", func(t *testing.T) {
-			resp := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/teachers", adminAuthToken, map[string]string{
+			resp := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/teachers", authToken, map[string]string{
 				"first_name": "Alice",
 				"last_name":  "Smith",
+				"username":   "alicesmith",
 			}, "application/json")
 			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusCreated {
@@ -525,6 +526,7 @@ func TestPublicRoutes(t *testing.T) {
 			resp := makeAuthenticatedRequest(t, http.MethodPut, fmt.Sprintf("/api/v1/teachers/%d", teacherID), adminAuthToken, map[string]string{
 				"first_name": "Alicia",
 				"last_name":  "Smith",
+				"username":   "aliciasmith",
 			}, "application/json")
 			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
@@ -647,6 +649,7 @@ func TestPublicRoutes(t *testing.T) {
 			respTeacher := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/teachers", adminAuthToken, map[string]string{
 				"first_name": "AssignTeacher",
 				"last_name":  "Test",
+				"username":   "assignteacher",
 			}, "application/json")
 			defer respTeacher.Body.Close() //nolint:errcheck
 			var teacherResp struct {
@@ -701,6 +704,7 @@ func TestPublicRoutes(t *testing.T) {
 			respNewTeacher := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/teachers", adminAuthToken, map[string]string{
 				"first_name": "NewAssignTeacher",
 				"last_name":  "Test",
+				"username":   "newassignteacher",
 			}, "application/json")
 			defer respNewTeacher.Body.Close() //nolint:errcheck
 			var newTeacherResp struct {
@@ -844,7 +848,6 @@ func TestPublicRoutes(t *testing.T) {
 			if err := os.WriteFile("child_report.docx", body, 0644); err != nil {
 				t.Fatalf("Failed to write report to file: %v", err)
 			}
-			t.Log("Child report generated and saved as child_report.docx")
 		})
 	})
 
@@ -880,6 +883,7 @@ func TestPublicRoutes(t *testing.T) {
 			respTeacher := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/teachers", adminAuthToken, map[string]string{
 				"first_name": "DocTeacher",
 				"last_name":  "Test",
+				"username":   "doctestteacher",
 			}, "application/json")
 			defer respTeacher.Body.Close() //nolint:errcheck
 			var teacherResp struct {
@@ -965,7 +969,10 @@ func TestPublicRoutes(t *testing.T) {
 
 		// Test PUT /api/v1/documentation/{entry_id}/approve
 		t.Run("Approve Documentation Entry", func(t *testing.T) {
-			resp := makeAuthenticatedRequest(t, http.MethodPut, fmt.Sprintf("/api/v1/documentation/%d/approve", entryID), authToken, nil, "application/json")
+			reqBody := map[string]interface{}{
+				"approvedByTeacherId": teacherID,
+			}
+			resp := makeAuthenticatedRequest(t, http.MethodPut, fmt.Sprintf("/api/v1/documentation/%d/approve", entryID), authToken, reqBody, "application/json")
 			defer resp.Body.Close() //nolint:errcheck
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)

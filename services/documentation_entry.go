@@ -229,7 +229,7 @@ func (service *DocumentationEntryServiceImpl) GetAllDocumentationForChild(logger
 }
 
 // ApproveDocumentationEntry approves a documentation entry.
-func (service *DocumentationEntryServiceImpl) ApproveDocumentationEntry(logger *logrus.Entry, ctx context.Context, entryID int, approvedByUserID int) error {
+func (service *DocumentationEntryServiceImpl) ApproveDocumentationEntry(logger *logrus.Entry, ctx context.Context, entryID int, approvedByTeacherID int) error {
 	// Check if the entry exists
 	entry, err := service.documentationEntryStore.GetByID(entryID)
 	if err != nil {
@@ -241,14 +241,14 @@ func (service *DocumentationEntryServiceImpl) ApproveDocumentationEntry(logger *
 		return ErrInternal
 	}
 
-	// Check if the approving user exists
-	_, err = service.userStore.GetByID(approvedByUserID)
+	// Check if the approving teacher exists
+	_, err = service.teacherStore.GetByID(approvedByTeacherID)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
-			logger.WithField("user_id", approvedByUserID).Warn("Approving user not found")
-			return errors.New("approving user not found")
+			logger.WithField("teacher_id", approvedByTeacherID).Warn("Approving teacher not found")
+			return errors.New("approving teacher not found")
 		}
-		logger.WithError(err).WithField("user_id", approvedByUserID).Error("Error fetching user by ID for approval")
+		logger.WithError(err).WithField("teacher_id", approvedByTeacherID).Error("Error fetching teacher by ID for approval")
 		return ErrInternal
 	}
 
@@ -258,7 +258,7 @@ func (service *DocumentationEntryServiceImpl) ApproveDocumentationEntry(logger *
 		return errors.New("documentation entry is already approved")
 	}
 
-	err = service.documentationEntryStore.ApproveEntry(entryID, approvedByUserID)
+	err = service.documentationEntryStore.ApproveEntry(entryID, approvedByTeacherID)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
 			logger.WithField("entry_id", entryID).Warn("Documentation entry not found during approval process")

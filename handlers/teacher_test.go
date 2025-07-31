@@ -37,6 +37,7 @@ func TestCreateTeacher(t *testing.T) {
 		inputTeacher := models.Teacher{
 			FirstName: "John",
 			LastName:  "Doe",
+			Username:  "johndoe",
 		}
 
 		createdTime := time.Now()
@@ -44,6 +45,7 @@ func TestCreateTeacher(t *testing.T) {
 			ID:        1,
 			FirstName: "John",
 			LastName:  "Doe",
+			Username:  "johndoe",
 			CreatedAt: createdTime,
 			UpdatedAt: createdTime,
 		}, nil).Once()
@@ -66,6 +68,7 @@ func TestCreateTeacher(t *testing.T) {
 		assert.Equal(t, 1, actualTeacher.ID)
 		assert.Equal(t, "John", actualTeacher.FirstName)
 		assert.Equal(t, "Doe", actualTeacher.LastName)
+		assert.Equal(t, "johndoe", actualTeacher.Username)
 		assert.WithinDuration(t, createdTime, actualTeacher.CreatedAt, 5*time.Second)
 		assert.WithinDuration(t, createdTime, actualTeacher.UpdatedAt, 5*time.Second)
 
@@ -95,6 +98,7 @@ func TestCreateTeacher(t *testing.T) {
 
 		inputTeacher := models.Teacher{
 			FirstName: "John",
+			Username:  "johndoe",
 		}
 
 		mockService.On("CreateTeacher", mock.AnythingOfType("*models.Teacher")).Return(nil, services.ErrInvalidInput).Once()
@@ -122,6 +126,7 @@ func TestCreateTeacher(t *testing.T) {
 		inputTeacher := models.Teacher{
 			FirstName: "John",
 			LastName:  "Doe",
+			Username:  "johndoe",
 		}
 
 		mockService.On("CreateTeacher", mock.AnythingOfType("*models.Teacher")).Return(nil, errors.New("database error")).Once()
@@ -151,8 +156,8 @@ func TestGetAllTeachers(t *testing.T) {
 		handler := NewTeacherHandler(mockService)
 
 		mockService.On("GetAllTeachers").Return([]models.Teacher{
-			{ID: 1, FirstName: "Jane", LastName: "Smith"},
-			{ID: 2, FirstName: "Peter", LastName: "Jones"},
+			{ID: 1, FirstName: "Jane", LastName: "Smith", Username: "janesmith"},
+			{ID: 2, FirstName: "Peter", LastName: "Jones", Username: "peterjones"},
 		}, nil).Once()
 
 		req := httptest.NewRequest(http.MethodGet, "/teachers", nil)
@@ -162,7 +167,7 @@ func TestGetAllTeachers(t *testing.T) {
 		handler.GetAllTeachers(recorder, req)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Equal(t, `[{"id":1,"first_name":"Jane","last_name":"Smith","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":2,"first_name":"Peter","last_name":"Jones","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]`+"\n", recorder.Body.String())
+		assert.Equal(t, `[{"id":1,"first_name":"Jane","last_name":"Smith","username":"janesmith","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":2,"first_name":"Peter","last_name":"Jones","username":"peterjones","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]`+"\n", recorder.Body.String())
 
 		mockService.AssertExpectations(t)
 	})
@@ -193,7 +198,7 @@ func TestGetTeacherByID(t *testing.T) {
 		mockService := new(mocks.MockTeacherService)
 		handler := NewTeacherHandler(mockService)
 
-		mockService.On("GetTeacherByID", 1).Return(&models.Teacher{ID: 1, FirstName: "John"}, nil).Once()
+		mockService.On("GetTeacherByID", 1).Return(&models.Teacher{ID: 1, FirstName: "John", Username: "johndoe"}, nil).Once()
 
 		req := httptest.NewRequest(http.MethodGet, "/teachers/1", nil)
 		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
@@ -204,7 +209,7 @@ func TestGetTeacherByID(t *testing.T) {
 		handler.GetTeacherByID(recorder, req)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Equal(t, `{"id":1,"first_name":"John","last_name":"","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`+"\n", recorder.Body.String())
+		assert.Equal(t, `{"id":1,"first_name":"John","last_name":"","username":"johndoe","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`+"\n", recorder.Body.String())
 
 		mockService.AssertExpectations(t)
 	})

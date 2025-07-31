@@ -8,13 +8,6 @@ PRAGMA foreign_keys = ON;
 -- TABLE DEFINITIONS
 -- =============================================================================
 
--- Groups Table (Kindergarten Classes)
-CREATE TABLE IF NOT EXISTS groups (
-    group_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    group_name VARCHAR(100) UNIQUE NOT NULL,
-    CONSTRAINT chk_group_name_not_empty CHECK (LENGTH(TRIM(group_name)) > 0)
-);
-
 -- Categories Table (Observation Categories)
 CREATE TABLE IF NOT EXISTS categories (
     category_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,6 +21,7 @@ CREATE TABLE IF NOT EXISTS teachers (
     teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_teacher_first_name_not_empty CHECK (LENGTH(TRIM(first_name)) > 0),
@@ -40,7 +34,6 @@ CREATE TABLE IF NOT EXISTS children (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     birthdate DATE NOT NULL,
-    group_id INTEGER,
     family_language VARCHAR(100),
     migration_background BOOLEAN,
     admission_date DATE NOT NULL,
@@ -50,7 +43,6 @@ CREATE TABLE IF NOT EXISTS children (
     parent2_name VARCHAR(200),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (group_id) REFERENCES groups(group_id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT chk_child_first_name_not_empty CHECK (LENGTH(TRIM(first_name)) > 0),
     CONSTRAINT chk_child_last_name_not_empty CHECK (LENGTH(TRIM(last_name)) > 0),
     CONSTRAINT chk_birthdate_realistic CHECK (birthdate BETWEEN DATE('now', '-8 years') AND DATE('now')),
@@ -97,7 +89,6 @@ CREATE TABLE IF NOT EXISTS documentation_entries (
 
 -- Indexes on frequently queried columns
 CREATE INDEX IF NOT EXISTS idx_children_names ON children(last_name, first_name);
-CREATE INDEX IF NOT EXISTS idx_children_group ON children(group_id);
 
 CREATE INDEX IF NOT EXISTS idx_teachers_names ON teachers(last_name, first_name);
 

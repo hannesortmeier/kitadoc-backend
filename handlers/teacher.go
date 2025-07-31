@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"kitadoc-backend/middleware"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
 )
@@ -22,8 +23,10 @@ func NewTeacherHandler(teacherService services.TeacherService) *TeacherHandler {
 
 // CreateTeacher handles creating a new teacher.
 func (teacherHandler *TeacherHandler) CreateTeacher(writer http.ResponseWriter, request *http.Request) {
+	logger := middleware.GetLoggerWithReqID(request.Context())
 	var teacher models.Teacher
 	if err := json.NewDecoder(request.Body).Decode(&teacher); err != nil {
+		logger.Errorf("Error decoding request body: %v", err)
 		http.Error(writer, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -50,8 +53,10 @@ func (teacherHandler *TeacherHandler) CreateTeacher(writer http.ResponseWriter, 
 
 // GetAllTeachers handles fetching all teachers.
 func (teacherHandler *TeacherHandler) GetAllTeachers(writer http.ResponseWriter, request *http.Request) {
+	logger := middleware.GetLoggerWithReqID(request.Context())
 	teachers, err := teacherHandler.TeacherService.GetAllTeachers()
 	if err != nil {
+		logger.Errorf("Error fetching all teachers: %v", err)
 		http.Error(writer, "Internal server error", http.StatusInternalServerError)
 		return
 	}

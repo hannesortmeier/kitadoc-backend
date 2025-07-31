@@ -59,7 +59,7 @@ func TestCreateDocumentationEntry(t *testing.T) {
 				}, nil).Once()
 			},
 			expectedStatusCode: http.StatusCreated,
-			expectedBody:       `{"id":1,"child_id":1,"teacher_id":1,"category_id":1,"observation_date":"2023-01-15T00:00:00Z","observation_description":"Test observation","is_approved":false,"approved_by_user_id":null,"created_at":"%s","updated_at":"%s"}`,
+			expectedBody:       `{"id":1,"child_id":1,"teacher_id":1,"category_id":1,"observation_date":"2023-01-15T00:00:00Z","observation_description":"Test observation","is_approved":false,"approved_by_teacher_id":null,"created_at":"%s","updated_at":"%s"}`,
 		},
 		{
 			name:               "Invalid JSON Payload",
@@ -155,7 +155,7 @@ func TestGetDocumentationEntriesByChildID(t *testing.T) {
 				}, nil).Once()
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `[{"id":1,"child_id":1,"teacher_id":0,"category_id":0,"observation_date":"0001-01-01T00:00:00Z","observation_description":"Entry 1","is_approved":false,"approved_by_user_id":null,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":2,"child_id":1,"teacher_id":0,"category_id":0,"observation_date":"0001-01-01T00:00:00Z","observation_description":"Entry 2","is_approved":false,"approved_by_user_id":null,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]` + "\n",
+			expectedBody:       `[{"id":1,"child_id":1,"teacher_id":0,"category_id":0,"observation_date":"0001-01-01T00:00:00Z","observation_description":"Entry 1","is_approved":false,"approved_by_teacher_id":null,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":2,"child_id":1,"teacher_id":0,"category_id":0,"observation_date":"0001-01-01T00:00:00Z","observation_description":"Entry 2","is_approved":false,"approved_by_teacher_id":null,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]` + "\n",
 		},
 		{
 			name:         "Invalid Child ID",
@@ -388,6 +388,7 @@ func TestApproveDocumentationEntry(t *testing.T) {
 	tests := []struct {
 		name               string
 		entryIDParam       string
+		inputPayload       interface{}
 		mockServiceSetup   func(*mocks.MockDocumentationEntryService)
 		expectedStatusCode int
 		expectedBody       string
@@ -395,6 +396,9 @@ func TestApproveDocumentationEntry(t *testing.T) {
 		{
 			name:         "Successful Approval",
 			entryIDParam: "1",
+			inputPayload: struct {
+				ApprovedByTeacherId int `json:"approvedByTeacherId"`
+			}{ApprovedByTeacherId: 1},
 			mockServiceSetup: func(m *mocks.MockDocumentationEntryService) {
 				m.On("ApproveDocumentationEntry", mock.Anything, mock.Anything, 1, 1).Return(nil).Once()
 			},
@@ -404,6 +408,9 @@ func TestApproveDocumentationEntry(t *testing.T) {
 		{
 			name:         "Invalid Entry ID",
 			entryIDParam: "abc",
+			inputPayload: struct {
+				ApprovedByTeacherId int `json:"approvedByTeacherId"`
+			}{ApprovedByTeacherId: 1},
 			mockServiceSetup: func(m *mocks.MockDocumentationEntryService) {
 				// No service call expected
 			},
@@ -413,6 +420,9 @@ func TestApproveDocumentationEntry(t *testing.T) {
 		{
 			name:         "Service Returns ErrNotFound",
 			entryIDParam: "99",
+			inputPayload: struct {
+				ApprovedByTeacherId int `json:"approvedByTeacherId"`
+			}{ApprovedByTeacherId: 1},
 			mockServiceSetup: func(m *mocks.MockDocumentationEntryService) {
 				m.On("ApproveDocumentationEntry", mock.Anything, mock.Anything, 99, 1).Return(services.ErrNotFound).Once()
 			},
@@ -422,6 +432,9 @@ func TestApproveDocumentationEntry(t *testing.T) {
 		{
 			name:         "Service Returns Other Error",
 			entryIDParam: "1",
+			inputPayload: struct {
+				ApprovedByTeacherId int `json:"approvedByTeacherId"`
+			}{ApprovedByTeacherId: 1},
 			mockServiceSetup: func(m *mocks.MockDocumentationEntryService) {
 				m.On("ApproveDocumentationEntry", mock.Anything, mock.Anything, 1, 1).Return(errors.New("service error")).Once()
 			},
@@ -437,7 +450,10 @@ func TestApproveDocumentationEntry(t *testing.T) {
 
 			handler := NewDocumentationEntryHandler(mockService)
 
-			req := httptest.NewRequest(http.MethodPost, "/entries/"+tt.entryIDParam+"/approve", nil)
+			var reqBody bytes.Buffer
+			json.NewEncoder(&reqBody).Encode(tt.inputPayload) //nolint:errcheck
+
+			req := httptest.NewRequest(http.MethodPost, "/entries/"+tt.entryIDParam+"/approve", &reqBody)
 			ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
 			req.SetPathValue("entry_id", tt.entryIDParam)
 			req = req.WithContext(ctx)

@@ -12,12 +12,12 @@ INSERT INTO categories (category_name, description) VALUES
     ('Emotionale Entwicklung', 'Beobachtungen zur emotionalen Reife und Regulation');
 
 -- Insert Teachers
-INSERT INTO teachers (first_name, last_name) VALUES
-    ('Maria', 'Schmidt'),
-    ('Anna', 'Müller'),
-    ('Thomas', 'Weber'),
-    ('Sarah', 'Fischer'),
-    ('Michael', 'Wagner');
+INSERT INTO teachers (first_name, last_name, username) VALUES
+    ('Maria', 'Schmidt', 'maria.schmidt'),
+    ('Anna', 'Müller', 'anna.mueller'),
+    ('Thomas', 'Weber', 'thomas.weber'),
+    ('Sarah', 'Fischer', 'sarah.fischer'),
+    ('Michael', 'Wagner', 'michael.wagner');
 
 -- Insert Children
 INSERT INTO children (first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES
@@ -44,14 +44,14 @@ INSERT INTO child_teacher_assignments (child_id, teacher_id, start_date, end_dat
     (3, 1, '2023-09-15', '2023-11-30');  -- Sophie had Maria Schmidt briefly
 
 -- Insert Documentation Entries
-INSERT INTO documentation_entries (child_id, documenting_teacher_id, category_id, observation_description, observation_date, approved, approved_at) VALUES
-    (1, 1, 1, 'Emma zeigt große Hilfsbereitschaft gegenüber anderen Kindern. Sie hilft beim Aufräumen und tröstet weinende Kinder.', '2024-01-15', 1, '2024-01-16 10:30:00'),
-    (1, 1, 2, 'Emma verwendet komplexe Sätze und erzählt zusammenhängende Geschichten. Ihr Wortschatz erweitert sich täglich.', '2024-02-10', 1, '2024-02-11 14:20:00'),
-    (2, 1, 2, 'Liam macht große Fortschritte in der deutschen Sprache. Er kommuniziert zunehmend auf Deutsch mit anderen Kindern.', '2024-01-20', 1, '2024-01-21 09:15:00'),
-    (3, 2, 4, 'Sophie löst Puzzles mit 50+ Teilen selbständig und zeigt dabei große Ausdauer und logisches Denken.', '2024-02-05', 1, '2024-02-06 11:45:00'),
-    (4, 2, 3, 'Noah zeigt ausgezeichnete Feinmotorik beim Basteln und kann bereits seinen Namen schreiben.', '2024-01-25', 0, NULL),
-    (5, 3, 6, 'Mia reguliert ihre Emotionen sehr gut und kann Konflikte verbal lösen, anstatt zu weinen oder zu schreien.', '2024-02-12', 1, '2024-02-13 08:30:00'),
-    (6, 3, 1, 'Lucas integriert sich gut in die Gruppe und hat bereits enge Freundschaften entwickelt.', '2024-01-30', 1, NULL),
-    (7, 4, 5, 'Charlotte zeigt große Kreativität beim Malen und Basteln. Ihre Kunstwerke sind sehr detailreich und fantasievoll.', '2024-02-08', 1, '2024-02-09 13:20:00'),
-    (8, 4, 3, 'Oliver turnt gerne und zeigt gute Koordination beim Klettern und Balancieren.', '2024-02-01', 0, NULL),
-    (1, 1, 4, 'Emma zeigt Interesse an mathematischen Konzepten und kann bis 20 zählen.', '2024-02-20', 0, NULL);
+INSERT INTO documentation_entries (child_id, documenting_teacher_id, category_id, observation_description, observation_date, approved, approved_by_teacher_id, approved_at) VALUES
+    (1, 1, 1, 'Emma zeigt große Hilfsbereitschaft gegenüber anderen Kindern. Sie hilft beim Aufräumen und tröstet weinende Kinder.', '2024-01-15', 1, 1, '2024-01-16 10:30:00'),
+    (1, 1, 2, 'Emma verwendet komplexe Sätze und erzählt zusammenhängende Geschichten. Ihr Wortschatz erweitert sich täglich.', '2024-02-10', 1, 1, '2024-02-11 14:20:00'),
+    (2, 1, 2, 'Liam macht große Fortschritte in der deutschen Sprache. Er kommuniziert zunehmend auf Deutsch mit anderen Kindern.', '2024-01-20', 1, 1, '2024-01-21 09:15:00'),
+    (3, 2, 4, 'Sophie löst Puzzles mit 50+ Teilen selbständig und zeigt dabei große Ausdauer und logisches Denken.', '2024-02-05', 1, 2, '2024-02-06 11:45:00'),
+    (4, 2, 3, 'Noah zeigt ausgezeichnete Feinmotorik beim Basteln und kann bereits seinen Namen schreiben.', '2024-01-25', 0, NULL, NULL),
+    (5, 3, 6, 'Mia reguliert ihre Emotionen sehr gut und kann Konflikte verbal lösen, anstatt zu weinen oder zu schreien.', '2024-02-12', 1, 3, '2024-02-13 08:30:00'),
+    (6, 3, 1, 'Lucas integriert sich gut in die Gruppe und hat bereits enge Freundschaften entwickelt.', '2024-01-30', 1, 3, '2024-01-30 09:00:00'),
+    (7, 4, 5, 'Charlotte zeigt große Kreativität beim Malen und Basteln. Ihre Kunstwerke sind sehr detailreich und fantasievoll.', '2024-02-08', 1, 4, '2024-02-09 13:20:00'),
+    (8, 4, 3, 'Oliver turnt gerne und zeigt gute Koordination beim Klettern und Balancieren.', '2024-02-01', 0, NULL, NULL),
+    (1, 1, 4, 'Emma zeigt Interesse an mathematischen Konzepten und kann bis 20 zählen.', '2024-02-20', 0, NULL, NULL);

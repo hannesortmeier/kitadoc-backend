@@ -14,7 +14,7 @@ type DocumentationEntryStore interface {
 	Update(entry *models.DocumentationEntry) error
 	Delete(id int) error
 	GetAllForChild(childID int) ([]models.DocumentationEntry, error)
-	ApproveEntry(entryID int, approvedByUserID int) error
+	ApproveEntry(entryID int, approvedByTeacherID int) error
 }
 
 // SQLDocumentationEntryStore implements DocumentationEntryStore using database/sql.
@@ -29,7 +29,7 @@ func NewSQLDocumentationEntryStore(db *sql.DB) *SQLDocumentationEntryStore {
 
 // Create inserts a new documentation entry into the database.
 func (s *SQLDocumentationEntryStore) Create(entry *models.DocumentationEntry) (int, error) {
-	query := `INSERT INTO documentation_entries (child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO documentation_entries (child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_teacher_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	result, err := s.db.Exec(query, entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, entry.ObservationDescription, entry.IsApproved, entry.ApprovedByUserID, entry.CreatedAt, entry.UpdatedAt)
 	if err != nil {
 		return 0, err
@@ -43,7 +43,7 @@ func (s *SQLDocumentationEntryStore) Create(entry *models.DocumentationEntry) (i
 
 // GetByID fetches a documentation entry by ID from the database.
 func (s *SQLDocumentationEntryStore) GetByID(id int) (*models.DocumentationEntry, error) {
-	query := `SELECT entry_id, child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_user_id, created_at, updated_at FROM documentation_entries WHERE entry_id = ?`
+	query := `SELECT entry_id, child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_teacher_id, created_at, updated_at FROM documentation_entries WHERE entry_id = ?`
 	row := s.db.QueryRow(query, id)
 	entry := &models.DocumentationEntry{}
 	err := row.Scan(&entry.ID, &entry.ChildID, &entry.TeacherID, &entry.CategoryID, &entry.ObservationDate, &entry.ObservationDescription, &entry.IsApproved, &entry.ApprovedByUserID, &entry.CreatedAt, &entry.UpdatedAt)
@@ -58,7 +58,7 @@ func (s *SQLDocumentationEntryStore) GetByID(id int) (*models.DocumentationEntry
 
 // Update updates an existing documentation entry in the database.
 func (s *SQLDocumentationEntryStore) Update(entry *models.DocumentationEntry) error {
-	query := `UPDATE documentation_entries SET child_id = ?, documenting_teacher_id = ?, category_id = ?, observation_date = ?, observation_description = ?, approved = ?, approved_by_user_id = ?, updated_at = ? WHERE entry_id = ?`
+	query := `UPDATE documentation_entries SET child_id = ?, documenting_teacher_id = ?, category_id = ?, observation_date = ?, observation_description = ?, approved = ?, approved_by_teacher_id = ?, updated_at = ? WHERE entry_id = ?`
 	result, err := s.db.Exec(query, entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, entry.ObservationDescription, entry.IsApproved, entry.ApprovedByUserID, entry.UpdatedAt, entry.ID)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func (s *SQLDocumentationEntryStore) Delete(id int) error {
 
 // GetAllForChild fetches all documentation entries for a specific child.
 func (s *SQLDocumentationEntryStore) GetAllForChild(childID int) ([]models.DocumentationEntry, error) {
-	query := `SELECT entry_id, child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_user_id, created_at, updated_at FROM documentation_entries WHERE child_id = ? ORDER BY observation_date DESC`
+	query := `SELECT entry_id, child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_teacher_id, created_at, updated_at FROM documentation_entries WHERE child_id = ? ORDER BY observation_date DESC`
 	rows, err := s.db.Query(query, childID)
 	if err != nil {
 		return nil, err
@@ -116,10 +116,10 @@ func (s *SQLDocumentationEntryStore) GetAllForChild(childID int) ([]models.Docum
 	return entries, nil
 }
 
-// ApproveEntry sets the approved_by_user_id for a documentation entry.
-func (s *SQLDocumentationEntryStore) ApproveEntry(entryID int, approvedByUserID int) error {
-	query := `UPDATE documentation_entries SET approved_by_user_id = ?, approved = 1, updated_at = CURRENT_TIMESTAMP WHERE entry_id = ?`
-	result, err := s.db.Exec(query, approvedByUserID, entryID)
+// ApproveEntry sets the approved_by_teacher_id for a documentation entry.
+func (s *SQLDocumentationEntryStore) ApproveEntry(entryID int, approvedByTeacherID int) error {
+	query := `UPDATE documentation_entries SET approved_by_teacher_id = ?, approved = 1, updated_at = CURRENT_TIMESTAMP WHERE entry_id = ?`
+	result, err := s.db.Exec(query, approvedByTeacherID, entryID)
 	if err != nil {
 		return err
 	}

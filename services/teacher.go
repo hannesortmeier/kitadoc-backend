@@ -56,6 +56,7 @@ func (s *TeacherServiceImpl) CreateTeacher(teacher *models.Teacher) (*models.Tea
 func (s *TeacherServiceImpl) GetTeacherByID(id int) (*models.Teacher, error) {
 	teacher, err := s.teacherStore.GetByID(id)
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error fetching teacher with ID %d: %v", id, err)
 		if errors.Is(err, data.ErrNotFound) {
 			return nil, ErrNotFound
 		}
@@ -67,12 +68,14 @@ func (s *TeacherServiceImpl) GetTeacherByID(id int) (*models.Teacher, error) {
 // UpdateTeacher updates an existing teacher.
 func (s *TeacherServiceImpl) UpdateTeacher(teacher *models.Teacher) error {
 	if err := models.ValidateTeacher(*teacher); err != nil {
+		logger.GetGlobalLogger().Errorf("Invalid teacher data: %v", err)
 		return ErrInvalidInput
 	}
 
 	teacher.UpdatedAt = time.Now()
 	err := s.teacherStore.Update(teacher)
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error updating teacher with ID %d: %v", teacher.ID, err)
 		if errors.Is(err, data.ErrNotFound) {
 			return ErrNotFound
 		}
@@ -85,6 +88,7 @@ func (s *TeacherServiceImpl) UpdateTeacher(teacher *models.Teacher) error {
 func (s *TeacherServiceImpl) DeleteTeacher(id int) error {
 	err := s.teacherStore.Delete(id)
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error deleting teacher with ID %d: %v", id, err)
 		if errors.Is(err, data.ErrNotFound) {
 			return ErrNotFound
 		}
@@ -99,6 +103,7 @@ func (s *TeacherServiceImpl) GetAllTeachers() ([]models.Teacher, error) {
 	// so we can directly call it.
 	teachers, err := s.teacherStore.GetAll()
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error fetching all teachers: %v", err)
 		return nil, ErrInternal
 	}
 	return teachers, nil

@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS teachers (
     teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_teacher_first_name_not_empty CHECK (LENGTH(TRIM(first_name)) > 0),
@@ -83,14 +84,14 @@ CREATE TABLE IF NOT EXISTS documentation_entries (
     observation_description TEXT NOT NULL,
     observation_date DATE NOT NULL,
     approved BOOLEAN NOT NULL DEFAULT 0,
-    approved_by_user_id INTEGER,
+    approved_by_teacher_id INTEGER,
     approved_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (child_id) REFERENCES children(child_id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (documenting_teacher_id) REFERENCES teachers(teacher_id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    FOREIGN KEY (approved_by_user_id) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (approved_by_teacher_id) REFERENCES teachers(teacher_id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT chk_observation_description_not_empty CHECK (LENGTH(TRIM(observation_description)) > 0)
 );
 

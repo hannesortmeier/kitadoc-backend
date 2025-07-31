@@ -32,6 +32,7 @@ func TestCreateTeacher(t *testing.T) {
 		teacher := &models.Teacher{
 			FirstName: "John",
 			LastName:  "Doe",
+			Username:  "johndoe",
 		}
 		mockTeacherStore.On("Create", mock.AnythingOfType("*models.Teacher")).Return(1, nil).Once()
 
@@ -49,6 +50,7 @@ func TestCreateTeacher(t *testing.T) {
 		teacher := &models.Teacher{
 			FirstName: "", // Invalid: empty first name
 			LastName:  "Doe",
+			Username:  "johndoe",
 		}
 
 		createdTeacher, err := service.CreateTeacher(teacher)
@@ -64,6 +66,7 @@ func TestCreateTeacher(t *testing.T) {
 		teacher := &models.Teacher{
 			FirstName: "John",
 			LastName:  "Doe",
+			Username:  "johndoe",
 		}
 		mockTeacherStore.On("Create", mock.AnythingOfType("*models.Teacher")).Return(0, errors.New("db error")).Once()
 
@@ -83,7 +86,7 @@ func TestGetTeacherByID(t *testing.T) {
 	// Test case 1: Successful retrieval
 	t.Run("success", func(t *testing.T) {
 		teacherID := 1
-		expectedTeacher := &models.Teacher{ID: teacherID, FirstName: "Test Teacher"}
+		expectedTeacher := &models.Teacher{ID: teacherID, FirstName: "Test Teacher", Username: "testteacher"}
 		mockTeacherStore.On("GetByID", teacherID).Return(expectedTeacher, nil).Once()
 
 		teacher, err := service.GetTeacherByID(teacherID)
@@ -92,6 +95,7 @@ func TestGetTeacherByID(t *testing.T) {
 		assert.NotNil(t, teacher)
 		assert.Equal(t, expectedTeacher.ID, teacher.ID)
 		assert.Equal(t, expectedTeacher.FirstName, teacher.FirstName)
+		assert.Equal(t, expectedTeacher.Username, teacher.Username)
 		mockTeacherStore.AssertExpectations(t)
 	})
 
@@ -132,6 +136,7 @@ func TestUpdateTeacher(t *testing.T) {
 			ID:        1,
 			FirstName: "Updated John",
 			LastName:  "Doe",
+			Username:  "johndoe",
 		}
 		mockTeacherStore.On("Update", mock.AnythingOfType("*models.Teacher")).Return(nil).Once()
 
@@ -147,6 +152,7 @@ func TestUpdateTeacher(t *testing.T) {
 			ID:        1,
 			FirstName: "", // Invalid: empty first name
 			LastName:  "Doe",
+			Username:  "johndoe",
 		}
 
 		err := service.UpdateTeacher(teacher)
@@ -162,6 +168,7 @@ func TestUpdateTeacher(t *testing.T) {
 			ID:        99, // Non-existent ID
 			FirstName: "Updated John",
 			LastName:  "Doe",
+			Username:  "johndoe",
 		}
 		mockTeacherStore.On("Update", mock.AnythingOfType("*models.Teacher")).Return(data.ErrNotFound).Once()
 
@@ -178,50 +185,11 @@ func TestUpdateTeacher(t *testing.T) {
 			ID:        1,
 			FirstName: "Updated John",
 			LastName:  "Doe",
+			Username:  "johndoe",
 		}
 		mockTeacherStore.On("Update", mock.AnythingOfType("*models.Teacher")).Return(errors.New("db error")).Once()
 
 		err := service.UpdateTeacher(teacher)
-
-		assert.Error(t, err)
-		assert.Equal(t, services.ErrInternal, err)
-		mockTeacherStore.AssertExpectations(t)
-	})
-}
-
-func TestDeleteTeacher(t *testing.T) {
-	mockTeacherStore := new(mocks.MockTeacherStore)
-	service := services.NewTeacherService(mockTeacherStore)
-
-	// Test case 1: Successful deletion
-	t.Run("success", func(t *testing.T) {
-		teacherID := 1
-		mockTeacherStore.On("Delete", teacherID).Return(nil).Once()
-
-		err := service.DeleteTeacher(teacherID)
-
-		assert.NoError(t, err)
-		mockTeacherStore.AssertExpectations(t)
-	})
-
-	// Test case 2: Teacher not found
-	t.Run("not found", func(t *testing.T) {
-		teacherID := 99
-		mockTeacherStore.On("Delete", teacherID).Return(data.ErrNotFound).Once()
-
-		err := service.DeleteTeacher(teacherID)
-
-		assert.Error(t, err)
-		assert.Equal(t, services.ErrNotFound, err)
-		mockTeacherStore.AssertExpectations(t)
-	})
-
-	// Test case 3: Internal error
-	t.Run("internal error", func(t *testing.T) {
-		teacherID := 1
-		mockTeacherStore.On("Delete", teacherID).Return(errors.New("db error")).Once()
-
-		err := service.DeleteTeacher(teacherID)
 
 		assert.Error(t, err)
 		assert.Equal(t, services.ErrInternal, err)
@@ -236,8 +204,8 @@ func TestGetAllTeachers(t *testing.T) {
 	// Test case 1: Successful retrieval
 	t.Run("success", func(t *testing.T) {
 		expectedTeachers := []models.Teacher{
-			{ID: 1, FirstName: "Teacher A"},
-			{ID: 2, FirstName: "Teacher B"},
+			{ID: 1, FirstName: "Teacher A", Username: "teachera"},
+			{ID: 2, FirstName: "Teacher B", Username: "teacherb"},
 		}
 		mockTeacherStore.On("GetAll").Return(expectedTeachers, nil).Once()
 

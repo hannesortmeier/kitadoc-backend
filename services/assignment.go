@@ -176,13 +176,16 @@ func (s *AssignmentServiceImpl) GetAssignmentHistoryForChild(childID int) ([]mod
 	_, err := s.childStore.GetByID(childID)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.GetGlobalLogger().Errorf("Child with ID %d not found", childID)
 			return nil, errors.New("child not found")
 		}
+		logger.GetGlobalLogger().Errorf("Error fetching child by ID %d: %v", childID, err)
 		return nil, ErrInternal
 	}
 
 	assignments, err := s.assignmentStore.GetAssignmentHistoryForChild(childID)
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error fetching assignment history for child ID %d: %v", childID, err)
 		return nil, ErrInternal
 	}
 	return assignments, nil

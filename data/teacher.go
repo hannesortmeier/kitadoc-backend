@@ -28,8 +28,8 @@ func NewSQLTeacherStore(db *sql.DB) *SQLTeacherStore {
 
 // Create inserts a new teacher into the database.
 func (s *SQLTeacherStore) Create(teacher *models.Teacher) (int, error) {
-	query := `INSERT INTO teachers (first_name, last_name, created_at, updated_at) VALUES (?, ?, ?, ?)`
-	result, err := s.db.Exec(query, teacher.FirstName, teacher.LastName, teacher.CreatedAt, teacher.UpdatedAt)
+	query := `INSERT INTO teachers (first_name, last_name, username, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
+	result, err := s.db.Exec(query, teacher.FirstName, teacher.LastName, teacher.Username, teacher.CreatedAt, teacher.UpdatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -42,10 +42,10 @@ func (s *SQLTeacherStore) Create(teacher *models.Teacher) (int, error) {
 
 // GetByID fetches a teacher by ID from the database.
 func (s *SQLTeacherStore) GetByID(id int) (*models.Teacher, error) {
-	query := `SELECT teacher_id, first_name, last_name, created_at, updated_at FROM teachers WHERE teacher_id = ?`
+	query := `SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers WHERE teacher_id = ?`
 	row := s.db.QueryRow(query, id)
 	teacher := &models.Teacher{}
-	err := row.Scan(&teacher.ID, &teacher.FirstName, &teacher.LastName, &teacher.CreatedAt, &teacher.UpdatedAt)
+	err := row.Scan(&teacher.ID, &teacher.FirstName, &teacher.LastName, &teacher.Username, &teacher.CreatedAt, &teacher.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
@@ -57,8 +57,8 @@ func (s *SQLTeacherStore) GetByID(id int) (*models.Teacher, error) {
 
 // Update updates an existing teacher in the database.
 func (s *SQLTeacherStore) Update(teacher *models.Teacher) error {
-	query := `UPDATE teachers SET first_name = ?, last_name = ?, updated_at = ? WHERE teacher_id = ?`
-	result, err := s.db.Exec(query, teacher.FirstName, teacher.LastName, teacher.UpdatedAt, teacher.ID)
+	query := `UPDATE teachers SET first_name = ?, last_name = ?, username = ?, updated_at = ? WHERE teacher_id = ?`
+	result, err := s.db.Exec(query, teacher.FirstName, teacher.LastName, teacher.Username, teacher.UpdatedAt, teacher.ID)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (s *SQLTeacherStore) Delete(id int) error {
 
 // GetAll fetches all teachers from the database.
 func (s *SQLTeacherStore) GetAll() ([]models.Teacher, error) {
-	query := `SELECT teacher_id, first_name, last_name, created_at, updated_at FROM teachers`
+	query := `SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers`
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (s *SQLTeacherStore) GetAll() ([]models.Teacher, error) {
 	var teachers []models.Teacher
 	for rows.Next() {
 		teacher := &models.Teacher{}
-		err := rows.Scan(&teacher.ID, &teacher.FirstName, &teacher.LastName, &teacher.CreatedAt, &teacher.UpdatedAt)
+		err := rows.Scan(&teacher.ID, &teacher.FirstName, &teacher.LastName, &teacher.Username, &teacher.CreatedAt, &teacher.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
