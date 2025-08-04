@@ -20,15 +20,15 @@ INSERT INTO teachers (first_name, last_name, username) VALUES
     ('Michael', 'Wagner', 'michael.wagner');
 
 -- Insert Children
-INSERT INTO children (first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES
-    ('Anna', 'Müller', '2019-03-15', 'Deutsch', 0, '2023-08-01', '2025-08-01', 'Musterstraße 12, 12345 Berlin', 'Peter Johnson', 'Lisa Johnson'),
-    ('Liam', 'Kowalski', '2018-11-20', 'Polnisch', 1, '2023-08-01', '2024-08-01', 'Hauptstraße 45, 12345 Berlin', 'Jan Kowalski', 'Anna Kowalski'),
-    ('Ben', 'Springer', '2019-07-08', 'Spanisch', 1, '2023-09-15', '2025-08-01', 'Parkweg 23, 12345 Berlin', 'Carlos Martinez', 'Elena Martinez'),
-    ('Noah', 'Brown', '2019-01-12', 'Englisch', 1, '2023-08-01', '2025-08-01', 'Lindenallee 67, 12345 Berlin', 'James Brown', 'Emma Brown'),
-    ('Mia', 'Schneider', '2018-09-30', 'Deutsch', 0, '2023-08-01', '2024-08-01', 'Rosenstraße 89, 12345 Berlin', 'Klaus Schneider', 'Petra Schneider'),
-    ('Lucas', 'Ahmed', '2019-05-22', 'Arabisch', 1, '2023-10-01', '2025-08-01', 'Friedensplatz 34, 12345 Berlin', 'Omar Ahmed', 'Fatima Ahmed'),
-    ('Charlotte', 'Becker', '2019-02-18', 'Deutsch', 0, '2023-08-01', '2025-08-01', 'Kastanienweg 56, 12345 Berlin', 'Frank Becker', 'Sabine Becker'),
-    ('Oliver', 'Popovic', '2018-12-05', 'Serbisch', 1, '2023-09-01', '2024-08-01', 'Eichenstraße 78, 12345 Berlin', 'Marko Popovic', 'Milica Popovic');
+INSERT INTO children (first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES
+    ('Anna', 'Müller', '2019-03-15', 'weiblich', 'Deutsch', 0, '2023-08-01', '2025-08-01', 'Musterstraße 12, 12345 Berlin', 'Peter Johnson', 'Lisa Johnson'),
+    ('Liam', 'Kowalski', '2018-11-20', 'männlich', 'Polnisch', 1, '2023-08-01', '2024-08-01', 'Hauptstraße 45, 12345 Berlin', 'Jan Kowalski', 'Anna Kowalski'),
+    ('Ben', 'Springer', '2019-07-08', 'männlich', 'Spanisch', 1, '2023-09-15', '2025-08-01', 'Parkweg 23, 12345 Berlin', 'Carlos Martinez', 'Elena Martinez'),
+    ('Noah', 'Brown', '2019-01-12', 'männlich', 'Englisch', 1, '2023-08-01', '2025-08-01', 'Lindenallee 67, 12345 Berlin', 'James Brown', 'Emma Brown'),
+    ('Mia', 'Schneider', '2018-09-30', 'divers', 'Deutsch', 0, '2023-08-01', '2024-08-01', 'Rosenstraße 89, 12345 Berlin', 'Klaus Schneider', 'Petra Schneider'),
+    ('Lucas', 'Ahmed', '2019-05-22', 'männlich', 'Arabisch', 1, '2023-10-01', '2025-08-01', 'Friedensplatz 34, 12345 Berlin', 'Omar Ahmed', 'Fatima Ahmed'),
+    ('Charlotte', 'Becker', '2019-02-18', 'weiblich', 'Deutsch', 0, '2023-08-01', '2025-08-01', 'Kastanienweg 56, 12345 Berlin', 'Frank Becker', 'Sabine Becker'),
+    ('Oliver', 'Popovic', '2018-12-05', 'männlich', 'Serbisch', 1, '2023-09-01', '2024-08-01', 'Eichenstraße 78, 12345 Berlin', 'Marko Popovic', 'Milica Popovic');
 
 -- Insert Child-Teacher Assignments
 INSERT INTO child_teacher_assignments (child_id, teacher_id, start_date, end_date) VALUES
