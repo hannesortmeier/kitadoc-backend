@@ -14,7 +14,36 @@ type AssignmentStore interface {
 	Update(assignment *models.Assignment) error
 	Delete(id int) error
 	GetAssignmentHistoryForChild(childID int) ([]models.Assignment, error)
+	GetAllAssignments() ([]models.Assignment, error)
 	EndAssignment(assignmentID int) error
+}
+
+// GetAllAssignments fetches all assignments from the database.
+func (s *SQLAssignmentStore) GetAllAssignments() ([]models.Assignment, error) {
+	query := `SELECT assignment_id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments ORDER BY start_date DESC`
+	rows, err := s.db.Query(query)
+	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error fetching all assignments: %v", err)
+		return nil, err
+	}
+	defer rows.Close() //nolint:errcheck
+
+	var assignments []models.Assignment
+	for rows.Next() {
+		assignment := &models.Assignment{}
+		err := rows.Scan(&assignment.ID, &assignment.ChildID, &assignment.TeacherID, &assignment.StartDate, &assignment.EndDate, &assignment.CreatedAt, &assignment.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		assignments = append(assignments, *assignment)
+	}
+
+	if err = rows.Err(); err != nil {
+		logger.GetGlobalLogger().Errorf("Error iterating over all assignments: %v", err)
+		return nil, err
+	}
+
+	return assignments, nil
 }
 
 // Update updates an existing assignment in the database.

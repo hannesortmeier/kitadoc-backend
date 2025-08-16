@@ -70,6 +70,20 @@ func (assignmentHandler *AssignmentHandler) GetAssignmentsByChildID(writer http.
 	}
 }
 
+// GetAllAssignments handles fetching all assignments.
+func (assignmentHandler *AssignmentHandler) GetAllAssignments(writer http.ResponseWriter, request *http.Request) {
+	assignments, err := assignmentHandler.AssignmentService.GetAllAssignments()
+	if err != nil {
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(writer).Encode(assignments); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
+
 // UpdateAssignment handles updating an existing assignment.
 func (assignmentHandler *AssignmentHandler) UpdateAssignment(writer http.ResponseWriter, request *http.Request) {
 	assignmentIDStr := request.PathValue("assignment_id")

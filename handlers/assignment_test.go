@@ -391,3 +391,50 @@ func TestDeleteAssignment(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 }
+
+func TestGetAllAssignments(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockService := new(mocks.AssignmentService)
+		handler := NewAssignmentHandler(mockService)
+
+		assignments := []models.Assignment{
+			{ID: 1, ChildID: 1, StartDate: time.Now()},
+			{ID: 2, ChildID: 2, StartDate: time.Now()},
+		}
+		mockService.On("GetAllAssignments").Return(assignments, nil).Once()
+
+		router := http.NewServeMux()
+		router.HandleFunc("GET /assignments", handler.GetAllAssignments)
+
+		req := httptest.NewRequest(http.MethodGet, "/assignments", nil)
+		rr := httptest.NewRecorder()
+
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		var fetchedAssignments []models.Assignment
+		json.NewDecoder(rr.Body).Decode(&fetchedAssignments) //nolint:errcheck
+		assert.Len(t, fetchedAssignments, 2)
+		assert.Equal(t, assignments[0].ID, fetchedAssignments[0].ID)
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("service returns error", func(t *testing.T) {
+		mockService := new(mocks.AssignmentService)
+		handler := NewAssignmentHandler(mockService)
+
+		mockService.On("GetAllAssignments").Return(nil, errors.New("db error")).Once()
+
+		router := http.NewServeMux()
+		router.HandleFunc("GET /assignments", handler.GetAllAssignments)
+
+		req := httptest.NewRequest(http.MethodGet, "/assignments", nil)
+		rr := httptest.NewRecorder()
+
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Internal server error")
+		mockService.AssertExpectations(t)
+	})
+}

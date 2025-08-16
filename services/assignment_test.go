@@ -651,3 +651,50 @@ func TestGetAssignmentHistoryForChild(t *testing.T) {
 		mockAssignmentStore.AssertExpectations(t)
 	})
 }
+
+func TestGetAllAssignments(t *testing.T) {
+	log_level, _ := logrus.ParseLevel("debug")
+
+	logger.InitGlobalLogger(
+		log_level,
+		&logrus.TextFormatter{
+			FullTimestamp: true,
+		},
+	)
+
+	t.Run("success", func(t *testing.T) {
+		mockAssignmentStore := new(mocks.MockAssignmentStore)
+		mockChildStore := new(mocks.MockChildStore)
+		mockTeacherStore := new(mocks.MockTeacherStore)
+		service := services.NewAssignmentService(mockAssignmentStore, mockChildStore, mockTeacherStore)
+
+		expectedAssignments := []models.Assignment{
+			{ID: 1, ChildID: 1},
+			{ID: 2, ChildID: 2},
+		}
+		mockAssignmentStore.On("GetAllAssignments").Return(expectedAssignments, nil).Once()
+
+		assignments, err := service.GetAllAssignments()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, assignments)
+		assert.Equal(t, expectedAssignments, assignments)
+		mockAssignmentStore.AssertExpectations(t)
+	})
+
+	t.Run("internal error", func(t *testing.T) {
+		mockAssignmentStore := new(mocks.MockAssignmentStore)
+		mockChildStore := new(mocks.MockChildStore)
+		mockTeacherStore := new(mocks.MockTeacherStore)
+		service := services.NewAssignmentService(mockAssignmentStore, mockChildStore, mockTeacherStore)
+
+		mockAssignmentStore.On("GetAllAssignments").Return(nil, errors.New("db error")).Once()
+
+		assignments, err := service.GetAllAssignments()
+
+		assert.Error(t, err)
+		assert.Equal(t, services.ErrInternal, err)
+		assert.Nil(t, assignments)
+		mockAssignmentStore.AssertExpectations(t)
+	})
+}

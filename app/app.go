@@ -117,6 +117,7 @@ func (app *Application) Routes() http.Handler {
 
 	// Child-Teacher Assignments Endpoints
 	app.Router.Handle("POST /api/v1/assignments", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AssignmentHandler.CreateAssignment)))))))
+	app.Router.Handle("GET /api/v1/assignments", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AssignmentHandler.GetAllAssignments)))))))
 	app.Router.Handle("GET /api/v1/assignments/child/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AssignmentHandler.GetAssignmentsByChildID)))))))
 	app.Router.Handle("PUT /api/v1/assignments/{assignment_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AssignmentHandler.UpdateAssignment)))))))
 	app.Router.Handle("DELETE /api/v1/assignments/{assignment_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AssignmentHandler.DeleteAssignment)))))))

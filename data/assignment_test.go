@@ -343,3 +343,47 @@ func TestSQLAssignmentStore_EndAssignment(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
+
+func TestSQLAssignmentStore_GetAllAssignments(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close() //nolint:errcheck
+
+	store := data.NewSQLAssignmentStore(db)
+
+	now := time.Now().Truncate(time.Second)
+	assignments := []models.Assignment{
+		{ID: 1, ChildID: 1, TeacherID: 1, StartDate: now.Add(-time.Hour * 24), EndDate: &now, CreatedAt: now.Add(-time.Hour * 25), UpdatedAt: now},
+		{ID: 2, ChildID: 2, TeacherID: 2, StartDate: now.Add(-time.Hour * 48), EndDate: nil, CreatedAt: now.Add(-time.Hour * 49), UpdatedAt: now.Add(-time.Hour * 49)},
+	}
+
+	t.Run("success", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"assignment_id", "child_id", "teacher_id", "start_date", "end_date", "created_at", "updated_at"}).
+			AddRow(assignments[0].ID, assignments[0].ChildID, assignments[0].TeacherID, assignments[0].StartDate, assignments[0].EndDate, assignments[0].CreatedAt, assignments[0].UpdatedAt).
+			AddRow(assignments[1].ID, assignments[1].ChildID, assignments[1].TeacherID, assignments[1].StartDate, assignments[1].EndDate, assignments[1].CreatedAt, assignments[1].UpdatedAt)
+
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT assignment_id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments ORDER BY start_date DESC`)).
+			WillReturnRows(rows)
+
+		fetchedAssignments, err := store.GetAllAssignments()
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedAssignments)
+		assert.Len(t, fetchedAssignments, 2)
+		assert.Equal(t, assignments[0].ID, fetchedAssignments[0].ID)
+		assert.Equal(t, assignments[1].ID, fetchedAssignments[1].ID)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT assignment_id, child_id, teacher_id, start_date, end_date, created_at, updated_at FROM child_teacher_assignments ORDER BY start_date DESC`)).
+			WillReturnError(errors.New("db error"))
+
+		fetchedAssignments, err := store.GetAllAssignments()
+		assert.Error(t, err)
+		assert.Nil(t, fetchedAssignments)
+		assert.Contains(t, err.Error(), "db error")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}

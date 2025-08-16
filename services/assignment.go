@@ -18,6 +18,17 @@ type AssignmentService interface {
 	UpdateAssignment(assignment *models.Assignment) error
 	DeleteAssignment(id int) error
 	GetAssignmentHistoryForChild(childID int) ([]models.Assignment, error)
+	GetAllAssignments() ([]models.Assignment, error)
+}
+
+// GetAllAssignments fetches all assignments.
+func (s *AssignmentServiceImpl) GetAllAssignments() ([]models.Assignment, error) {
+	assignments, err := s.assignmentStore.GetAllAssignments()
+	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error fetching all assignments: %v", err)
+		return nil, ErrInternal
+	}
+	return assignments, nil
 }
 
 // UpdateAssignment updates an existing assignment.

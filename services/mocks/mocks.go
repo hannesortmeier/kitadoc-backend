@@ -46,6 +46,14 @@ func (m *MockAssignmentStore) EndAssignment(assignmentID int) error {
 	return args.Error(0)
 }
 
+func (m *MockAssignmentStore) GetAllAssignments() ([]models.Assignment, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Assignment), args.Error(1)
+}
+
 // MockChildStore is a mock implementation of data.ChildStore
 type MockChildStore struct {
 	mock.Mock
