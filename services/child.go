@@ -48,6 +48,7 @@ func (s *ChildServiceImpl) CreateChild(child *models.Child) (*models.Child, erro
 
 	id, err := s.childStore.Create(child)
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Failed to create child: %v", err)
 		return nil, ErrInternal
 	}
 	child.ID = id
@@ -59,8 +60,10 @@ func (s *ChildServiceImpl) GetChildByID(id int) (*models.Child, error) {
 	child, err := s.childStore.GetByID(id)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.GetGlobalLogger().Errorf("Child not found: %d", id)
 			return nil, ErrNotFound
 		}
+		logger.GetGlobalLogger().Errorf("Failed to get child: %v", err)
 		return nil, ErrInternal
 	}
 	return child, nil
@@ -69,6 +72,7 @@ func (s *ChildServiceImpl) GetChildByID(id int) (*models.Child, error) {
 // UpdateChild updates an existing child.
 func (s *ChildServiceImpl) UpdateChild(child *models.Child) error {
 	if err := s.validate.Struct(child); err != nil {
+		logger.GetGlobalLogger().Errorf("Validation error: %v", err)
 		return ErrInvalidInput
 	}
 
@@ -76,8 +80,10 @@ func (s *ChildServiceImpl) UpdateChild(child *models.Child) error {
 	err := s.childStore.Update(child)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.GetGlobalLogger().Errorf("Child not found: %d", child.ID)
 			return ErrNotFound
 		}
+		logger.GetGlobalLogger().Errorf("Failed to update child: %v", err)
 		return ErrInternal
 	}
 	return nil
@@ -88,8 +94,10 @@ func (s *ChildServiceImpl) DeleteChild(id int) error {
 	err := s.childStore.Delete(id)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.GetGlobalLogger().Errorf("Child not found: %d", id)
 			return ErrNotFound
 		}
+		logger.GetGlobalLogger().Errorf("Failed to delete child: %v", err)
 		return ErrInternal
 	}
 	return nil
@@ -99,6 +107,7 @@ func (s *ChildServiceImpl) DeleteChild(id int) error {
 func (s *ChildServiceImpl) GetAllChildren() ([]models.Child, error) {
 	children, err := s.childStore.GetAll()
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Failed to get all children: %v", err)
 		return nil, ErrInternal
 	}
 	return children, nil

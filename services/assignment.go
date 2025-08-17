@@ -33,7 +33,10 @@ func (s *AssignmentServiceImpl) GetAllAssignments() ([]models.Assignment, error)
 
 // UpdateAssignment updates an existing assignment.
 func (s *AssignmentServiceImpl) UpdateAssignment(assignment *models.Assignment) error {
+	// print assignment
+	logger.GetGlobalLogger().Infof("Updating assignment: %v", assignment)
 	if err := models.ValidateAssignment(*assignment); err != nil {
+		logger.GetGlobalLogger().Errorf("Error validating assignment: %v", err)
 		return ErrInvalidInput
 	}
 
@@ -41,6 +44,7 @@ func (s *AssignmentServiceImpl) UpdateAssignment(assignment *models.Assignment) 
 	_, err := s.assignmentStore.GetByID(assignment.ID)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.GetGlobalLogger().Errorf("Assignment not found: %d", assignment.ID)
 			return ErrNotFound
 		}
 		logger.GetGlobalLogger().Errorf("Error fetching assignment by ID %d: %v", assignment.ID, err)
@@ -51,6 +55,7 @@ func (s *AssignmentServiceImpl) UpdateAssignment(assignment *models.Assignment) 
 	err = s.assignmentStore.Update(assignment)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.GetGlobalLogger().Errorf("Error updating assignment: %v", err)
 			return ErrNotFound
 		}
 		logger.GetGlobalLogger().Errorf("Error updating assignment: %v", err)

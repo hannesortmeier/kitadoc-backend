@@ -12,7 +12,7 @@ type Child struct {
 	FirstName                string    `json:"first_name" validate:"required,min=1,max=100"`
 	LastName                 string    `json:"last_name" validate:"required,min=1,max=100"`
 	Birthdate                time.Time `json:"birthdate" validate:"required,childbirthdate"` // Custom validation for age range
-	Gender                   string    `json:"gender" validate:"required,oneof=male female other"`
+	Gender                   string    `json:"gender" validate:"required"`
 	FamilyLanguage           string    `json:"family_language" validate:"required"`
 	MigrationBackground      bool      `json:"migration_background"`
 	AdmissionDate            time.Time `json:"admission_date" validate:"required"`

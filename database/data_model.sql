@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS children (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     birthdate DATE NOT NULL,
+    gender VARCHAR(20) NOT NULL,
     family_language VARCHAR(100) NOT NULL,
     migration_background BOOLEAN NOT NULL,
     admission_date DATE NOT NULL,

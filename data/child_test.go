@@ -27,6 +27,7 @@ func TestSQLChildStore_Create(t *testing.T) {
 		FirstName:                "John",
 		LastName:                 "Doe",
 		Birthdate:                time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC),
+		Gender:                   "Male",
 		FamilyLanguage:           "English",
 		MigrationBackground:      false,
 		AdmissionDate:            time.Date(2020, 9, 1, 0, 0, 0, 0, time.UTC),
@@ -37,8 +38,8 @@ func TestSQLChildStore_Create(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO children (first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)).
-			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name).
+		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO children (first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)).
+			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		id, err := store.Create(child)
@@ -48,8 +49,8 @@ func TestSQLChildStore_Create(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO children (first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)).
-			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name).
+		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO children (first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)).
+			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name).
 			WillReturnError(errors.New("db error"))
 
 		id, err := store.Create(child)
@@ -87,10 +88,10 @@ func TestSQLChildStore_GetByID(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "family_language", "migration_background", "admission_date", "expected_school_enrollment", "address", "parent1_name", "parent2_name", "created_at", "updated_at"}).
-			AddRow(expectedChild.ID, expectedChild.FirstName, expectedChild.LastName, expectedChild.Birthdate, expectedChild.FamilyLanguage, expectedChild.MigrationBackground, expectedChild.AdmissionDate, expectedChild.ExpectedSchoolEnrollment, expectedChild.Address, expectedChild.Parent1Name, expectedChild.Parent2Name, expectedChild.CreatedAt, expectedChild.UpdatedAt)
+		rows := sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "gender", "family_language", "migration_background", "admission_date", "expected_school_enrollment", "address", "parent1_name", "parent2_name", "created_at", "updated_at"}).
+			AddRow(expectedChild.ID, expectedChild.FirstName, expectedChild.LastName, expectedChild.Birthdate, expectedChild.Gender, expectedChild.FamilyLanguage, expectedChild.MigrationBackground, expectedChild.AdmissionDate, expectedChild.ExpectedSchoolEnrollment, expectedChild.Address, expectedChild.Parent1Name, expectedChild.Parent2Name, expectedChild.CreatedAt, expectedChild.UpdatedAt)
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`)).
 			WithArgs(childID).
 			WillReturnRows(rows)
 
@@ -114,7 +115,7 @@ func TestSQLChildStore_GetByID(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`)).
 			WithArgs(childID).
 			WillReturnError(sql.ErrNoRows)
 
@@ -126,7 +127,7 @@ func TestSQLChildStore_GetByID(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`)).
 			WithArgs(childID).
 			WillReturnError(errors.New("db error"))
 
@@ -162,8 +163,8 @@ func TestSQLChildStore_Update(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`)).
-			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name, child.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, gender = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`)).
+			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name, child.ID).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		err := store.Update(child)
@@ -172,8 +173,8 @@ func TestSQLChildStore_Update(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`)).
-			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name, child.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, gender = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`)).
+			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name, child.ID).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err := store.Update(child)
@@ -183,8 +184,8 @@ func TestSQLChildStore_Update(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`)).
-			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name, child.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, gender = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`)).
+			WithArgs(child.FirstName, child.LastName, child.Birthdate, child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, child.Address, child.Parent1Name, child.Parent2Name, child.ID).
 			WillReturnError(errors.New("db error"))
 
 		err := store.Update(child)
@@ -282,11 +283,11 @@ func TestSQLChildStore_GetAll(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "family_language", "migration_background", "admission_date", "expected_school_enrollment", "address", "parent1_name", "parent2_name", "created_at", "updated_at"}).
-			AddRow(children[0].ID, children[0].FirstName, children[0].LastName, children[0].Birthdate, children[0].FamilyLanguage, children[0].MigrationBackground, children[0].AdmissionDate, children[0].ExpectedSchoolEnrollment, children[0].Address, children[0].Parent1Name, children[0].Parent2Name, children[0].CreatedAt, children[0].UpdatedAt).
-			AddRow(children[1].ID, children[1].FirstName, children[1].LastName, children[1].Birthdate, children[1].FamilyLanguage, children[1].MigrationBackground, children[1].AdmissionDate, children[1].ExpectedSchoolEnrollment, children[1].Address, children[1].Parent1Name, children[1].Parent2Name, children[1].CreatedAt, children[1].UpdatedAt)
+		rows := sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "gender", "family_language", "migration_background", "admission_date", "expected_school_enrollment", "address", "parent1_name", "parent2_name", "created_at", "updated_at"}).
+			AddRow(children[0].ID, children[0].FirstName, children[0].LastName, children[0].Birthdate, children[0].Gender, children[0].FamilyLanguage, children[0].MigrationBackground, children[0].AdmissionDate, children[0].ExpectedSchoolEnrollment, children[0].Address, children[0].Parent1Name, children[0].Parent2Name, children[0].CreatedAt, children[0].UpdatedAt).
+			AddRow(children[1].ID, children[1].FirstName, children[1].LastName, children[1].Birthdate, children[1].Gender, children[1].FamilyLanguage, children[1].MigrationBackground, children[1].AdmissionDate, children[1].ExpectedSchoolEnrollment, children[1].Address, children[1].Parent1Name, children[1].Parent2Name, children[1].CreatedAt, children[1].UpdatedAt)
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`)).
 			WillReturnRows(rows)
 
 		fetchedChildren, err := store.GetAll()
@@ -299,8 +300,8 @@ func TestSQLChildStore_GetAll(t *testing.T) {
 	})
 
 	t.Run("no children found", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`)).
-			WillReturnRows(sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "family_language", "migration_background", "admission_date", "expected_school_enrollment", "address", "parent1_name", "parent2_name", "created_at", "updated_at"}))
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`)).
+			WillReturnRows(sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "gender", "family_language", "migration_background", "admission_date", "expected_school_enrollment", "address", "parent1_name", "parent2_name", "created_at", "updated_at"}))
 
 		fetchedChildren, err := store.GetAll()
 		assert.NoError(t, err)
@@ -309,7 +310,7 @@ func TestSQLChildStore_GetAll(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`)).
 			WillReturnError(errors.New("db error"))
 
 		fetchedChildren, err := store.GetAll()
