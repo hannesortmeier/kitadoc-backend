@@ -30,7 +30,7 @@ func setupTest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to query tables: %v", err)
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var tables []string
 	for rows.Next() {
@@ -81,7 +81,7 @@ func setupTest(t *testing.T) {
 		"password": "password123",
 		"role":     "teacher",
 	}, "application/json")
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("failed to register user: %s", readResponseBody(t, resp))
 	}
@@ -90,7 +90,7 @@ func setupTest(t *testing.T) {
 		"username": "testuser",
 		"password": "password123",
 	}, "application/json")
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("failed to login user: %s", readResponseBody(t, resp))
 	}
@@ -108,7 +108,7 @@ func setupTest(t *testing.T) {
 		"password": "password123",
 		"role":     "admin",
 	}, "application/json")
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("failed to register admin user: %s", readResponseBody(t, resp))
 	}
@@ -117,7 +117,7 @@ func setupTest(t *testing.T) {
 		"username": "adminuser",
 		"password": "password123",
 	}, "application/json")
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("failed to login admin user: %s", readResponseBody(t, resp))
 	}
@@ -139,7 +139,7 @@ func teardownTest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to query tables: %v", err)
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var tables []string
 	for rows.Next() {
@@ -234,7 +234,7 @@ func TestPublicRoutes(t *testing.T) {
 	})
 }
 
-	func TestAuthEndpoints(t *testing.T) {
+func TestAuthEndpoints(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
@@ -269,7 +269,7 @@ func TestPublicRoutes(t *testing.T) {
 	})
 }
 
-	func TestChildrenManagementEndpoints(t *testing.T) {
+func TestChildrenManagementEndpoints(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
@@ -389,7 +389,7 @@ func TestPublicRoutes(t *testing.T) {
 	})
 }
 
-	func TestTeachersManagementEndpoints(t *testing.T) {
+func TestTeachersManagementEndpoints(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
@@ -476,7 +476,7 @@ func TestPublicRoutes(t *testing.T) {
 	})
 }
 
-	func TestCategoriesManagementEndpoints(t *testing.T) {
+func TestCategoriesManagementEndpoints(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
@@ -547,7 +547,7 @@ func TestPublicRoutes(t *testing.T) {
 	})
 }
 
-	func TestChildTeacherAssignmentsEndpoints(t *testing.T) {
+func TestChildTeacherAssignmentsEndpoints(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
@@ -670,7 +670,7 @@ func TestPublicRoutes(t *testing.T) {
 	})
 }
 
-	func TestAudioRecordingsEndpoints(t *testing.T) {
+func TestAudioRecordingsEndpoints(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
@@ -735,7 +735,7 @@ func TestPublicRoutes(t *testing.T) {
 	})
 }
 
-	func TestDocumentGenerationEndpoints(t *testing.T) {
+func TestDocumentGenerationEndpoints(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
@@ -783,7 +783,7 @@ func TestPublicRoutes(t *testing.T) {
 	})
 }
 
-	func TestDocumentationEntriesEndpoints(t *testing.T) {
+func TestDocumentationEntriesEndpoints(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
@@ -931,7 +931,7 @@ func TestPublicRoutes(t *testing.T) {
 	})
 }
 
-	func TestBulkOperationsEndpoints(t *testing.T) {
+func TestBulkOperationsEndpoints(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 

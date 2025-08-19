@@ -1,7 +1,11 @@
 name: Dependabot
 
 on:
-  push:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
     branches:
       - dependabot/*
 
@@ -9,6 +13,8 @@ jobs:
   pre-commit:
     name: Pre-commit
     runs-on: ubuntu-latest
+    env:
+      GOPROXY: "https://proxy.golang.org,direct"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
