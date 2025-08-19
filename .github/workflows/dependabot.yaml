@@ -1,0 +1,31 @@
+name: Dependabot
+
+on:
+  push:
+    branches:
+      - dependabot/*
+
+jobs:
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Run pre-commit
+        run: make pre-commit
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Run tests
+        run: make test
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: coverage.txt
+          overwrite: true

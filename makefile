@@ -21,6 +21,9 @@ build-arm64:
 test:
 	go test -v ./... -coverprofile=coverage.txt -covermode=atomic
 
+pre-commit:
+	pre-commit run --all-files
+
 # Clean build artifacts
 clean:
 	rm -rf bin/
