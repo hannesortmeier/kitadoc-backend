@@ -29,7 +29,7 @@ func TestGetAllAssignments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	// Check the status code
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
