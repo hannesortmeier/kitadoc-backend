@@ -18,7 +18,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
       - name: Run pre-commit
-        run: make pre-commit
+        run: pip install pre-commit && make pre-commit
 
   test:
     name: Test
