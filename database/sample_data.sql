@@ -4,12 +4,18 @@
 
 -- Insert Categories
 INSERT INTO categories (category_name, description) VALUES
-    ('Soziale Entwicklung', 'Beobachtungen zur sozialen Interaktion und Entwicklung'),
-    ('Sprachentwicklung', 'Beobachtungen zur sprachlichen Entwicklung'),
-    ('Motorische Entwicklung', 'Beobachtungen zur körperlichen und motorischen Entwicklung'),
-    ('Kognitive Entwicklung', 'Beobachtungen zur geistigen und kognitiven Entwicklung'),
-    ('Kreativität', 'Beobachtungen zu kreativen Aktivitäten und Ausdrucksformen'),
-    ('Emotionale Entwicklung', 'Beobachtungen zur emotionalen Reife und Regulation');
+    ('Bewegung', 'Beobachtungen zur Bewegungsfreude, Koordination, Grundbewegungen (Robben, Klettern, Springen, Balancieren etc.) und Selbstständigkeit bei motorischen Aufgaben.'),
+    ('Körper, Gesundheit, Ernährung', 'Körperwahrnehmung, Körperschema, Spannungsverhalten, Essverhalten, Gesundheitsfragen, U-Untersuchungen und Impfstatus.'),
+    ('Sprache und Kommunikation', 'Sprachgebrauch, Lautbildung, Wortschatz, Erzählen, Hörverständnis, Zuhören, Grammatik und frühe Schriftsprache.'),
+    ('Soziale und (inter-) kulturelle Bildung', 'Sozialverhalten in Gruppen und gegenüber Erwachsenen, Trennung, Spielverhalten, Kooperation, Konfliktlösung, Empathie und interkulturelle Anpassung.'),
+    ('Musisch- ästhetische Bildung', 'Kreativität beim Gestalten, Umgang mit Farben und Materialien, Musizieren, Rhythmusgefühl und Gedächtnis für Lieder/Reime.'),
+    ('Religion und Ethik', 'Interesse an religiösen Ritualen und Festen, Kenntnis biblischer Geschichten, Gerechtigkeitssinn, Solidarität und philosophische Fragen zu Leben und Tod.'),
+    ('Mathematische Bildung', 'Zahlenverständnis, Mengenverständnis, Puzzeln, räumliches Vorstellungsvermögen, Vergleichen (mehr/weniger) und erste mathematische Zusammenhänge.'),
+    ('Naturwissenschaftlich- technische Bildung', 'Neugier für Natur und Technik, Experimentieren mit Materialien, Beobachtung von Prozessen und Teilen von Wissen.'),
+    ('Ökologische Bildung', 'Umweltbewusstsein, Kreisläufe der Natur, Trennen/Recycle von Rohstoffen und nachhaltiges Verhalten.'),
+    ('Medien', 'Umgang mit Bilderbüchern und digitalen Medien, Zuhören bei Geschichten, Wiedergeben/Weitererzählen und kreativer Medieneinsatz.'),
+    ('Eingewöhnung', 'Trennungs- und Bindungsfähigkeit, Erkundungsverhalten in der Kita, Nähe-Distanz-Regulation und Wohlbefinden.'),
+    ('Inklusion', 'Orientierung an Teil- und Förderplan, individuelle Förderung und inklusive Unterstützung.');
 
 -- Insert Teachers
 INSERT INTO teachers (first_name, last_name, username) VALUES
