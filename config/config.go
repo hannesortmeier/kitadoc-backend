@@ -58,7 +58,7 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("file_storage.upload_dir", "uploads")
 	v.SetDefault("file_storage.max_size_mb", 10)
 	v.SetDefault("file_storage.allowed_types", []string{"audio/mpeg", "audio/wav"})
-	v.SetDefault("audio_proc_service_url", "http://localhost:8000/analyze-audio")
+	v.SetDefault("audio_proc_service_url", "http://127.0.0.1:8000/analyze-audio")
 
 	// Set config file name and path
 	v.SetConfigName("config")   // name of config file (without extension)
