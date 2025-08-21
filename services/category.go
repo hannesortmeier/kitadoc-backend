@@ -35,12 +35,14 @@ func NewCategoryService(categoryStore data.CategoryStore) *CategoryServiceImpl {
 // CreateCategory creates a new category.
 func (s *CategoryServiceImpl) CreateCategory(category *models.Category) (*models.Category, error) {
 	if err := models.ValidateCategory(*category); err != nil {
+		logger.GetGlobalLogger().Errorf("Invalid category input: %v", err)
 		return nil, ErrInvalidInput
 	}
 
 	// Check for unique category name
 	existingCategory, err := s.categoryStore.GetByName(category.Name)
 	if err == nil && existingCategory != nil {
+		logger.GetGlobalLogger().Errorf("Category already exists: %v", existingCategory)
 		return nil, ErrAlreadyExists
 	}
 	if err != nil && !errors.Is(err, data.ErrNotFound) {
@@ -62,8 +64,10 @@ func (s *CategoryServiceImpl) GetCategoryByID(id int) (*models.Category, error) 
 	category, err := s.categoryStore.GetByID(id)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.GetGlobalLogger().Errorf("Category not found: %d", id)
 			return nil, ErrNotFound
 		}
+		logger.GetGlobalLogger().Errorf("Error fetching category by ID: %v", err)
 		return nil, ErrInternal
 	}
 	return category, nil
@@ -72,23 +76,28 @@ func (s *CategoryServiceImpl) GetCategoryByID(id int) (*models.Category, error) 
 // UpdateCategory updates an existing category.
 func (s *CategoryServiceImpl) UpdateCategory(category *models.Category) error {
 	if err := models.ValidateCategory(*category); err != nil {
+		logger.GetGlobalLogger().Errorf("Invalid category input: %v", err)
 		return ErrInvalidInput
 	}
 
 	// Check for unique category name if name is changed
 	existingCategory, err := s.categoryStore.GetByName(category.Name)
 	if err == nil && existingCategory != nil && existingCategory.ID != category.ID {
+		logger.GetGlobalLogger().Errorf("Category already exists: %v", existingCategory)
 		return ErrAlreadyExists
 	}
 	if err != nil && !errors.Is(err, data.ErrNotFound) {
+		logger.GetGlobalLogger().Errorf("Error checking category name uniqueness: %v", err)
 		return ErrInternal
 	}
 
 	err = s.categoryStore.Update(category)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.GetGlobalLogger().Errorf("Category not found: %d", category.ID)
 			return ErrNotFound
 		}
+		logger.GetGlobalLogger().Errorf("Error updating category: %v", err)
 		return ErrInternal
 	}
 	return nil
@@ -99,8 +108,10 @@ func (s *CategoryServiceImpl) DeleteCategory(id int) error {
 	err := s.categoryStore.Delete(id)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
+			logger.GetGlobalLogger().Errorf("Category not found: %d", id)
 			return ErrNotFound
 		}
+		logger.GetGlobalLogger().Errorf("Error deleting category: %v", err)
 		return ErrInternal
 	}
 	return nil
@@ -110,6 +121,7 @@ func (s *CategoryServiceImpl) DeleteCategory(id int) error {
 func (s *CategoryServiceImpl) GetAllCategories() ([]models.Category, error) {
 	categories, err := s.categoryStore.GetAll()
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error fetching all categories: %v", err)
 		return nil, ErrInternal
 	}
 	return categories, nil
