@@ -48,7 +48,7 @@ func LoadConfig() (*Config, error) {
 
 	// Set default values
 	v.SetDefault("environment", "dev")
-	v.SetDefault("server.port", 8080)
+	v.SetDefault("server.port", 8070)
 	v.SetDefault("server.read_timeout", 5*time.Second)
 	v.SetDefault("server.write_timeout", 10*time.Second)
 	v.SetDefault("server.idle_timeout", 120*time.Second)
