@@ -12,10 +12,10 @@ run-dev:
 	KINDERGARTEN_LOG_LEVEL=debug KINDERGARTEN_LOG_FORMAT=text KINDERGARTEN_SERVER_JWT_SECRET=dsjfhaksdfhasfh KINDERGARTEN_ADMIN_USERNAME=admin KINDERGARTEN_ADMIN_PASSWORD=admin KINDERGARTEN_NORMAL_USERNAME=teacher KINDERGARTEN_NORMAL_PASSWORD=teacher bin/kitadoc-backend
 
 build-amd64:
-	env GOOS=linux GOARCH=amd64 go build -o bin/kitadoc-backend-linux-amd64 ./main.go
+	env GOOS=linux CGO_ENABLED=1 GOARCH=amd64 go build -o bin/kitadoc-backend-linux-amd64 ./main.go
 
 build-arm64:
-	env GOOS=linux GOARCH=arm64 go build -o bin/kitadoc-backend-linux-arm64 ./main.go
+	env GOOS=linux CGO_ENABLED=1 GOARCH=arm64 go build -o bin/kitadoc-backend-linux-arm64 ./main.go
 
 # Run tests
 test:
