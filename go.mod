@@ -11,7 +11,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	golang.org/x/crypto v0.38.0
 )
 
