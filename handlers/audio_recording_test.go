@@ -29,7 +29,6 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		mockDocEntryService := &mocks.MockDocumentationEntryService{}
 		h := handlers.NewAudioRecordingHandler(mockAudioAnalysisService, mockDocEntryService, &config.Config{
 			FileStorage: struct {
-				UploadDir    string   `mapstructure:"upload_dir"`
 				MaxSizeMB    int      `mapstructure:"max_size_mb"`
 				AllowedTypes []string `mapstructure:"allowed_types"`
 			}{
@@ -93,7 +92,6 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		mockDocEntryService := &mocks.MockDocumentationEntryService{}
 		h := handlers.NewAudioRecordingHandler(mockAudioAnalysisService, mockDocEntryService, &config.Config{
 			FileStorage: struct {
-				UploadDir    string   `mapstructure:"upload_dir"`
 				MaxSizeMB    int      `mapstructure:"max_size_mb"`
 				AllowedTypes []string `mapstructure:"allowed_types"`
 			}{

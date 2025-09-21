@@ -2,11 +2,8 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"time"
-
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"time"
 )
 
 // Config holds all application configuration settings.
@@ -35,7 +32,6 @@ type Config struct {
 		Format string `mapstructure:"format"` // "text" or "json"
 	} `mapstructure:"log"`
 	FileStorage struct {
-		UploadDir    string   `mapstructure:"upload_dir"`
 		MaxSizeMB    int      `mapstructure:"max_size_mb"`
 		AllowedTypes []string `mapstructure:"allowed_types"`
 	} `mapstructure:"file_storage"`
@@ -150,22 +146,11 @@ func validateConfig(cfg *Config) error {
 	if cfg.Database.DSN == "" {
 		return fmt.Errorf("database DSN cannot be empty")
 	}
-	if cfg.FileStorage.UploadDir == "" {
-		return fmt.Errorf("file storage upload directory cannot be empty")
-	}
 	if cfg.FileStorage.MaxSizeMB <= 0 {
 		return fmt.Errorf("file storage max size must be greater than 0")
 	}
 	if len(cfg.FileStorage.AllowedTypes) == 0 {
 		return fmt.Errorf("file storage allowed types cannot be empty")
-	}
-
-	// Ensure upload directory exists
-	if _, err := os.Stat(cfg.FileStorage.UploadDir); os.IsNotExist(err) {
-		logrus.Infof("Creating upload directory: %s", cfg.FileStorage.UploadDir)
-		if err := os.MkdirAll(cfg.FileStorage.UploadDir, 0755); err != nil {
-			return fmt.Errorf("failed to create upload directory %s: %w", cfg.FileStorage.UploadDir, err)
-		}
 	}
 
 	return nil

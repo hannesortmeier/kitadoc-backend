@@ -78,13 +78,11 @@ func TestMain(m *testing.M) {
 			DSN: ":memory:?_foreign_keys=on", // Use in-memory database for testing
 		},
 		FileStorage: struct {
-			UploadDir    string   `mapstructure:"upload_dir"`
 			MaxSizeMB    int      `mapstructure:"max_size_mb"`
 			AllowedTypes []string `mapstructure:"allowed_types"`
 		}{
 			MaxSizeMB:    10, // Set a small limit for testing
 			AllowedTypes: []string{"audio/mpeg", "audio/wav", "audio/ogg", "application/octet-stream"},
-			UploadDir:    "test_uploads", // Use a test directory for uploads
 		},
 		AudioProcServiceURL: mockAudioProc.URL,
 	}
