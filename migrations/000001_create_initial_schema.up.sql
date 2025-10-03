@@ -1,8 +1,10 @@
 -- Kindergarten Behavioral Documentation System - SQLite Database
 -- Complete DDL with tables, constraints, indexes, and sample data
 
--- Enable foreign key constraints (SQLite specific)
 PRAGMA foreign_keys = ON;
+PRAGMA busy_timeout = 5000;
+PRAGMA journal_mode=WAL;
+PRAGMA synchronous = NORMAL;
 
 -- =============================================================================
 -- TABLE DEFINITIONS
