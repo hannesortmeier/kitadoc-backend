@@ -55,7 +55,7 @@ jobs:
 
   build-linux-arm64:
     name: Build linux arm64
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     needs: [test, pre-commit]
     steps:
       - name: Checkout Code
