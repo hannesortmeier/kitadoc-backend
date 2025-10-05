@@ -37,5 +37,5 @@ deps:
 # Create test sqlite database
 test-db:
 	rm -rf test.db
-	sqlite3 test.db < database/data_model.sql
+	sqlite3 test.db < migrations/000001_create_initial_schema.up.sql
 	sqlite3 test.db < database/sample_data.sql

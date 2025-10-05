@@ -73,6 +73,12 @@ func main() {
 	}
 	log.Info("Successfully connected to the database!")
 
+	// Make sure journal mode is WAL
+	_, err = db.Exec("PRAGMA journal_mode=WAL;")
+	if err != nil {
+		log.Fatalf("Failed to set journal mode to WAL: %v", err)
+	}
+
 	// Check if the database schema is initialized
 	err = data.MigrateDB(db, migrationFS)
 	if err != nil {
