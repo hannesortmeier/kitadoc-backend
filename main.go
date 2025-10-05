@@ -78,6 +78,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to set journal mode to WAL: %v", err)
 	}
+	// Set busy timeout and synchronous mode
+	_, err = db.Exec("PRAGMA busy_timeout = 5000;")
+	if err != nil {
+		log.Fatalf("Failed to set busy timeout: %v", err)
+	}
+	_, err = db.Exec("PRAGMA synchronous = NORMAL;")
+	if err != nil {
+		log.Fatalf("Failed to set synchronous mode: %v", err)
+	}
 
 	// Check if the database schema is initialized
 	err = data.MigrateDB(db, migrationFS)
