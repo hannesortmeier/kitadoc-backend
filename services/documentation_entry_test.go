@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"kitadoc-backend/data"
+	datamocks "kitadoc-backend/data/mocks"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
-	"kitadoc-backend/services/mocks"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -22,11 +22,11 @@ func TestCreateDocumentationEntry(t *testing.T) {
 
 	// Test case 1: Successful creation
 	t.Run("success", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -64,11 +64,11 @@ func TestCreateDocumentationEntry(t *testing.T) {
 
 	// Test case 2: Invalid input (validation error)
 	t.Run("invalid input", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -94,11 +94,11 @@ func TestCreateDocumentationEntry(t *testing.T) {
 
 	// Test case 3: Child not found
 	t.Run("child not found", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -130,11 +130,11 @@ func TestCreateDocumentationEntry(t *testing.T) {
 
 	// Test case 4: Teacher not found
 	t.Run("teacher not found", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -168,11 +168,11 @@ func TestCreateDocumentationEntry(t *testing.T) {
 
 	// Test case 5: Category not found
 	t.Run("category not found", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -208,11 +208,11 @@ func TestCreateDocumentationEntry(t *testing.T) {
 
 	// Test case 6: Observation date in the future
 	t.Run("future observation date", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -242,11 +242,11 @@ func TestCreateDocumentationEntry(t *testing.T) {
 
 	// Test case 7: Internal error during store creation
 	t.Run("internal error on create", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -284,11 +284,11 @@ func TestCreateDocumentationEntry(t *testing.T) {
 }
 
 func TestGetDocumentationEntryByID(t *testing.T) {
-	mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-	mockChildStore := new(mocks.MockChildStore)
-	mockTeacherStore := new(mocks.MockTeacherStore)
-	mockCategoryStore := new(mocks.MockCategoryStore)
-	mockUserStore := new(mocks.MockUserStore)
+	mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+	mockChildStore := new(datamocks.MockChildStore)
+	mockTeacherStore := new(datamocks.MockTeacherStore)
+	mockCategoryStore := new(datamocks.MockCategoryStore)
+	mockUserStore := new(datamocks.MockUserStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
@@ -348,11 +348,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 
 	// Test case 1: Successful update
 	t.Run("success", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -389,11 +389,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 
 	// Test case 2: Invalid input (validation error)
 	t.Run("invalid input", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -420,11 +420,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 
 	// Test case 3: Child not found
 	t.Run("child not found", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -456,11 +456,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 
 	// Test case 4: Teacher not found
 	t.Run("teacher not found", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -494,11 +494,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 
 	// Test case 5: Category not found
 	t.Run("category not found", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -534,11 +534,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 
 	// Test case 6: Observation date in the future
 	t.Run("future observation date", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -568,11 +568,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 
 	// Test case 7: Entry not found during update
 	t.Run("not found on update", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -610,11 +610,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 
 	// Test case 8: Internal error during update
 	t.Run("internal error on update", func(t *testing.T) {
-		mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-		mockChildStore := new(mocks.MockChildStore)
-		mockTeacherStore := new(mocks.MockTeacherStore)
-		mockCategoryStore := new(mocks.MockCategoryStore)
-		mockUserStore := new(mocks.MockUserStore)
+		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+		mockChildStore := new(datamocks.MockChildStore)
+		mockTeacherStore := new(datamocks.MockTeacherStore)
+		mockCategoryStore := new(datamocks.MockCategoryStore)
+		mockUserStore := new(datamocks.MockUserStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
@@ -652,11 +652,11 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 }
 
 func TestDeleteDocumentationEntry(t *testing.T) {
-	mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-	mockChildStore := new(mocks.MockChildStore)
-	mockTeacherStore := new(mocks.MockTeacherStore)
-	mockCategoryStore := new(mocks.MockCategoryStore)
-	mockUserStore := new(mocks.MockUserStore)
+	mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+	mockChildStore := new(datamocks.MockChildStore)
+	mockTeacherStore := new(datamocks.MockTeacherStore)
+	mockCategoryStore := new(datamocks.MockCategoryStore)
+	mockUserStore := new(datamocks.MockUserStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
@@ -705,11 +705,11 @@ func TestDeleteDocumentationEntry(t *testing.T) {
 }
 
 func TestGetAllDocumentationForChild(t *testing.T) {
-	mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-	mockChildStore := new(mocks.MockChildStore)
-	mockTeacherStore := new(mocks.MockTeacherStore)
-	mockCategoryStore := new(mocks.MockCategoryStore)
-	mockUserStore := new(mocks.MockUserStore)
+	mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+	mockChildStore := new(datamocks.MockChildStore)
+	mockTeacherStore := new(datamocks.MockTeacherStore)
+	mockCategoryStore := new(datamocks.MockCategoryStore)
+	mockUserStore := new(datamocks.MockUserStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
@@ -787,11 +787,11 @@ func TestGetAllDocumentationForChild(t *testing.T) {
 }
 
 func TestApproveDocumentationEntry(t *testing.T) {
-	mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-	mockChildStore := new(mocks.MockChildStore)
-	mockTeacherStore := new(mocks.MockTeacherStore)
-	mockCategoryStore := new(mocks.MockCategoryStore)
-	mockUserStore := new(mocks.MockUserStore)
+	mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+	mockChildStore := new(datamocks.MockChildStore)
+	mockTeacherStore := new(datamocks.MockTeacherStore)
+	mockCategoryStore := new(datamocks.MockCategoryStore)
+	mockUserStore := new(datamocks.MockUserStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
@@ -925,11 +925,11 @@ func TestApproveDocumentationEntry(t *testing.T) {
 }
 
 func TestGenerateChildReport(t *testing.T) {
-	mockDocumentationEntryStore := new(mocks.MockDocumentationEntryStore)
-	mockChildStore := new(mocks.MockChildStore)
-	mockTeacherStore := new(mocks.MockTeacherStore)
-	mockCategoryStore := new(mocks.MockCategoryStore)
-	mockUserStore := new(mocks.MockUserStore)
+	mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
+	mockChildStore := new(datamocks.MockChildStore)
+	mockTeacherStore := new(datamocks.MockTeacherStore)
+	mockCategoryStore := new(datamocks.MockCategoryStore)
+	mockUserStore := new(datamocks.MockUserStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
