@@ -13,9 +13,9 @@ import (
 
 	"kitadoc-backend/config"
 	"kitadoc-backend/data"
+	"kitadoc-backend/data/mocks"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
-	"kitadoc-backend/services/mocks"
 )
 
 // TestUserService_RegisterUser tests the RegisterUser method of UserService.

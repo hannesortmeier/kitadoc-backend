@@ -5,6 +5,7 @@ import (
 	"errors"
 	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
+	"time"
 )
 
 // UserStore defines the interface for User data operations.
@@ -14,6 +15,8 @@ type UserStore interface {
 	Update(user *models.User) error
 	Delete(id int) error
 	GetUserByUsername(username string) (*models.User, error)
+	GetAll() ([]*models.User, error)
+	UpdatePassword(id int, passwordHash string) error
 }
 
 // SQLUserStore implements UserStore using database/sql.
@@ -105,4 +108,47 @@ func (s *SQLUserStore) GetUserByUsername(username string) (*models.User, error) 
 		return nil, err
 	}
 	return user, nil
+}
+
+// GetAll fetches all users from the database.
+func (s *SQLUserStore) GetAll() ([]*models.User, error) {
+	query := `SELECT user_id, username, password_hash, role, created_at, updated_at FROM users`
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() //nolint:errcheck
+
+	var users []*models.User
+	for rows.Next() {
+		user := &models.User{}
+		err := rows.Scan(&user.ID, &user.Username, &user.PasswordHash, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// UpdatePassword updates a user's password in the database.
+func (s *SQLUserStore) UpdatePassword(id int, passwordHash string) error {
+	query := `UPDATE users SET password_hash = ?, updated_at = ? WHERE user_id = ?`
+	result, err := s.db.Exec(query, passwordHash, time.Now(), id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
 }

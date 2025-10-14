@@ -130,3 +130,40 @@ func (_m *UserService) DeleteUser(logger *logrus.Entry, userID int) error {
 
 	return r0
 }
+
+// GetAllUsers provides a mock function with given fields: logger
+func (_m *UserService) GetAllUsers(logger *logrus.Entry) ([]*models.User, error) {
+	ret := _m.Called(logger)
+
+	var r0 []*models.User
+	if rf, ok := ret.Get(0).(func(*logrus.Entry) []*models.User); ok {
+		r0 = rf(logger)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*models.User)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*logrus.Entry) error); ok {
+		r1 = rf(logger)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ChangePassword provides a mock function with given fields: logger, actor, userID, oldPassword, newPassword
+func (_m *UserService) ChangePassword(logger *logrus.Entry, actor *models.User, userID int, oldPassword string, newPassword string) error {
+	ret := _m.Called(logger, actor, userID, oldPassword, newPassword)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*logrus.Entry, *models.User, int, string, string) error); ok {
+		r0 = rf(logger, actor, userID, oldPassword, newPassword)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

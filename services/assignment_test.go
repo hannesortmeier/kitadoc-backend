@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"kitadoc-backend/data"
+	"kitadoc-backend/data/mocks"
 	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
-	"kitadoc-backend/services/mocks"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
