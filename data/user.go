@@ -5,7 +5,6 @@ import (
 	"errors"
 	"kitadoc-backend/internal/logger"
 	"kitadoc-backend/models"
-	"time"
 )
 
 // UserStore defines the interface for User data operations.
@@ -138,9 +137,9 @@ func (s *SQLUserStore) GetAll() ([]*models.User, error) {
 
 // UpdatePassword updates a user's password in the database.
 func (s *SQLUserStore) UpdatePassword(id int, passwordHash string) error {
-	query := `UPDATE users SET password_hash = ?, updated_at = ? WHERE user_id = ?`
+	query := `UPDATE users SET password_hash = ? WHERE user_id = ?`
 	logger.GetGlobalLogger().Infof("Updating password for user ID %d", id)
-	result, err := s.db.Exec(query, passwordHash, time.Now().Format(time.RFC3339), id)
+	result, err := s.db.Exec(query, passwordHash, id)
 	if err != nil {
 		logger.GetGlobalLogger().Errorf("Error updating password for user ID %d: %v", id, err)
 		return err
