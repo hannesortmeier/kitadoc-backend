@@ -155,5 +155,5 @@ CREATE TRIGGER IF NOT EXISTS trg_users_updated_at
     AFTER UPDATE ON users
     FOR EACH ROW
 BEGIN
-    UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+    UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE user_id = NEW.user_id;
 END;
