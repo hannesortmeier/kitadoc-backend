@@ -140,11 +140,7 @@ func (s *SQLUserStore) GetAll() ([]*models.User, error) {
 func (s *SQLUserStore) UpdatePassword(id int, passwordHash string) error {
 	query := `UPDATE users SET password_hash = ?, updated_at = ? WHERE user_id = ?`
 	logger.GetGlobalLogger().Infof("Updating password for user ID %d", id)
-	logger.GetGlobalLogger().Infof("New password hash: %s", passwordHash)
-	logger.GetGlobalLogger().Infof("Executing query: %s", query)
-	result, err := s.db.Exec(query, passwordHash, time.Now(), id)
-	logger.GetGlobalLogger().Infof("Executed result: %v", result)
-	logger.GetGlobalLogger().Infof("Executed error: %v", err)
+	result, err := s.db.Exec(query, passwordHash, time.Now().Format(time.RFC3339), id)
 	if err != nil {
 		logger.GetGlobalLogger().Errorf("Error updating password for user ID %d: %v", id, err)
 		return err
