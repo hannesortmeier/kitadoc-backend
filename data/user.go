@@ -143,14 +143,19 @@ func (s *SQLUserStore) UpdatePassword(id int, passwordHash string) error {
 	logger.GetGlobalLogger().Infof("New password hash: %s", passwordHash)
 	logger.GetGlobalLogger().Infof("Executing query: %s", query)
 	result, err := s.db.Exec(query, passwordHash, time.Now(), id)
+	logger.GetGlobalLogger().Infof("Executed result: %v", result)
+	logger.GetGlobalLogger().Infof("Executed error: %v", err)
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error updating password for user ID %d: %v", id, err)
 		return err
 	}
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		logger.GetGlobalLogger().Errorf("Error getting rows affected for user ID %d: %v", id, err)
 		return err
 	}
 	if rowsAffected == 0 {
+		logger.GetGlobalLogger().Infof("No user found with ID %d to update password", id)
 		return ErrNotFound
 	}
 	return nil
