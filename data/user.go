@@ -155,8 +155,9 @@ func (s *SQLUserStore) UpdatePassword(id int, passwordHash string) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		logger.GetGlobalLogger().Infof("No user found with ID %d to update password", id)
+		logger.GetGlobalLogger().Errorf("No user found with ID %d to update password", id)
 		return ErrNotFound
 	}
+	logger.GetGlobalLogger().Debugf("Password updated successfully for user ID %d", id)
 	return nil
 }
