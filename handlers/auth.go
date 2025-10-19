@@ -222,9 +222,9 @@ func (authHandler *AuthHandler) DeleteUser(writer http.ResponseWriter, request *
 	}
 }
 
-// GetAllUsers returns all users.
 func (authHandler *AuthHandler) GetAllUsers(writer http.ResponseWriter, request *http.Request) {
 	logger := middleware.GetLoggerWithReqID(request.Context())
+	logger.Info("Fetching all users")
 
 	users, err := authHandler.UserService.GetAllUsers(logger)
 	if err != nil {

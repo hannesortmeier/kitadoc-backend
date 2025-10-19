@@ -254,6 +254,7 @@ func (s *UserServiceImpl) ChangePassword(logger *logrus.Entry, actor *models.Use
 
 	// Admin can change any user's password without the old password
 	if actor.Role == string(data.RoleAdmin) {
+		logger.WithField("admin_id", actor.ID).WithField("user_id", userID).Info("Admin changing user's password")
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 		if err != nil {
 			logger.WithError(err).Error("Error hashing new password")
@@ -277,6 +278,7 @@ func (s *UserServiceImpl) ChangePassword(logger *logrus.Entry, actor *models.Use
 		}).Warn("Permission denied to change another user's password")
 		return ErrPermissionDenied
 	}
+	logger.WithField("user_id", userID).Info("User changing own password")
 
 	// Verify old password
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword))
