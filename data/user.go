@@ -139,6 +139,9 @@ func (s *SQLUserStore) GetAll() ([]*models.User, error) {
 // UpdatePassword updates a user's password in the database.
 func (s *SQLUserStore) UpdatePassword(id int, passwordHash string) error {
 	query := `UPDATE users SET password_hash = ?, updated_at = ? WHERE user_id = ?`
+	logger.GetGlobalLogger().Infof("Updating password for user ID %d", id)
+	logger.GetGlobalLogger().Infof("New password hash: %s", passwordHash)
+	logger.GetGlobalLogger().Infof("Executing query: %s", query)
 	result, err := s.db.Exec(query, passwordHash, time.Now(), id)
 	if err != nil {
 		return err
