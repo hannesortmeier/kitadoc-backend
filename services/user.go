@@ -24,6 +24,8 @@ type UserService interface {
 	GetUserByID(logger *logrus.Entry, ctx context.Context, id int) (*models.User, error)
 	UpdateUser(logger *logrus.Entry, user *models.User) error
 	DeleteUser(logger *logrus.Entry, id int) error
+	GetAllUsers(logger *logrus.Entry) ([]*models.User, error)
+	ChangePassword(logger *logrus.Entry, actor *models.User, userID int, oldPassword, newPassword string) error
 }
 
 // UserServiceImpl implements UserService.
@@ -225,4 +227,78 @@ func (s *UserServiceImpl) GetUserByID(logger *logrus.Entry, ctx context.Context,
 	}
 	logger.WithField("user_id", id).Debug("User fetched by ID successfully")
 	return user, nil
+}
+
+// GetAllUsers fetches all users.
+func (s *UserServiceImpl) GetAllUsers(logger *logrus.Entry) ([]*models.User, error) {
+	users, err := s.userStore.GetAll()
+	if err != nil {
+		logger.WithError(err).Error("Error fetching all users from store")
+		return nil, ErrInternal
+	}
+	logger.Info("All users fetched successfully")
+	return users, nil
+}
+
+// ChangePassword changes a user's password.
+func (s *UserServiceImpl) ChangePassword(logger *logrus.Entry, actor *models.User, userID int, oldPassword, newPassword string) error {
+	user, err := s.userStore.GetByID(userID)
+	if err != nil {
+		if errors.Is(err, data.ErrNotFound) {
+			logger.WithField("user_id", userID).Warn("User not found for password change")
+			return ErrNotFound
+		}
+		logger.WithError(err).WithField("user_id", userID).Error("Error fetching user for password change")
+		return ErrInternal
+	}
+
+	// Admin can change any user's password without the old password
+	if actor.Role == string(data.RoleAdmin) {
+		logger.WithField("admin_id", actor.ID).WithField("user_id", userID).Info("Admin changing user's password")
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+		if err != nil {
+			logger.WithError(err).Error("Error hashing new password")
+			return ErrInternal
+		}
+
+		err = s.userStore.UpdatePassword(userID, string(hashedPassword))
+		if err != nil {
+			logger.WithError(err).WithField("user_id", userID).Error("Error updating password in store")
+			return ErrInternal
+		}
+		logger.WithField("user_id", userID).Info("Password changed successfully by admin")
+		return nil
+	}
+
+	// Regular user can only change their own password
+	if actor.ID != userID {
+		logger.WithFields(logrus.Fields{
+			"actor_id": actor.ID,
+			"user_id":  userID,
+		}).Warn("Permission denied to change another user's password")
+		return ErrPermissionDenied
+	}
+	logger.WithField("user_id", userID).Info("User changing own password")
+
+	// Verify old password
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword))
+	if err != nil {
+		logger.WithField("user_id", userID).Warn("Invalid old password provided")
+		return ErrInvalidCredentials
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		logger.WithError(err).Error("Error hashing new password")
+		return ErrInternal
+	}
+
+	err = s.userStore.UpdatePassword(userID, string(hashedPassword))
+	if err != nil {
+		logger.WithError(err).WithField("user_id", userID).Error("Error updating password in store")
+		return ErrInternal
+	}
+
+	logger.WithField("user_id", userID).Info("Password changed successfully")
+	return nil
 }

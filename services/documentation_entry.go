@@ -5,14 +5,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
+
+	"kitadoc-backend/data"
+	"kitadoc-backend/models"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gomutex/godocx"
 	"github.com/gomutex/godocx/wml/stypes"
 	"github.com/sirupsen/logrus"
-	"kitadoc-backend/data"
-	"kitadoc-backend/models"
 )
 
 // DocumentationEntryService defines the interface for documentation entry-related business logic operations.
@@ -358,11 +360,24 @@ func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus
 		}
 	}
 
+	// Sort entries by creation date within each category
+	for categoryName := range entriesByCategory {
+		entriesList := entriesByCategory[categoryName]
+		slices.SortFunc(entriesList, func(a, b models.DocumentationEntry) int {
+			return a.CreatedAt.Compare(b.CreatedAt)
+		})
+		entriesByCategory[categoryName] = entriesList
+	}
+
 	// Add entries to the document
 	for categoryName, entries := range entriesByCategory {
 		document.AddHeading(fmt.Sprintf("Bildungsbereich: %s", categoryName), 2) //nolint:errcheck
 		for _, entry := range entries {
-			document.AddParagraph(entry.ObservationDescription).Style("List Bullet")
+			documentation := fmt.Sprintf("%s (%s)",
+				entry.ObservationDescription,
+				entry.ObservationDate.Format("02.01.2006"),
+			)
+			document.AddParagraph(documentation).Style("List Bullet") //nolint:errcheck
 		}
 	}
 

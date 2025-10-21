@@ -428,3 +428,125 @@ func TestDeleteUser(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 }
+
+func TestGetAllUsers(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockService := new(mocks.UserService)
+		handler := NewAuthHandler(mockService)
+
+		expectedUsers := []*models.User{
+			{ID: 1, Username: "user1", Role: "teacher"},
+			{ID: 2, Username: "user2", Role: "admin"},
+		}
+		mockService.On("GetAllUsers", mock.Anything).Return(expectedUsers, nil).Once()
+
+		req := httptest.NewRequest(http.MethodGet, "/users", nil)
+		rr := httptest.NewRecorder()
+
+		handler.GetAllUsers(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		var users []*models.User
+		json.NewDecoder(rr.Body).Decode(&users) //nolint:errcheck
+		assert.Equal(t, expectedUsers, users)
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("internal server error", func(t *testing.T) {
+		mockService := new(mocks.UserService)
+		handler := NewAuthHandler(mockService)
+
+		mockService.On("GetAllUsers", mock.Anything).Return(nil, errors.New("db error")).Once()
+
+		req := httptest.NewRequest(http.MethodGet, "/users", nil)
+		rr := httptest.NewRecorder()
+
+		handler.GetAllUsers(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Internal server error")
+		mockService.AssertExpectations(t)
+	})
+}
+
+func TestChangePassword(t *testing.T) {
+	t.Run("success - admin changes password", func(t *testing.T) {
+		mockService := new(mocks.UserService)
+		handler := NewAuthHandler(mockService)
+
+		adminUser := &models.User{ID: 1, Username: "admin", Role: "admin"}
+		reqBody := ChangePasswordRequest{UserID: 2, NewPassword: "newpassword"}
+		mockService.On("ChangePassword", mock.Anything, adminUser, reqBody.UserID, reqBody.OldPassword, reqBody.NewPassword).Return(nil).Once()
+
+		ctx := context.WithValue(context.Background(), middleware.ContextKeyUser, adminUser)
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPut, "/auth/change-password", bytes.NewBuffer(body)).WithContext(ctx)
+		rr := httptest.NewRecorder()
+
+		handler.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Password changed successfully")
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("success - user changes own password", func(t *testing.T) {
+		mockService := new(mocks.UserService)
+		handler := NewAuthHandler(mockService)
+
+		user := &models.User{ID: 1, Username: "testuser", Role: "teacher"}
+		reqBody := ChangePasswordRequest{UserID: 1, OldPassword: "oldpassword", NewPassword: "newpassword"}
+		mockService.On("ChangePassword", mock.Anything, user, reqBody.UserID, reqBody.OldPassword, reqBody.NewPassword).Return(nil).Once()
+
+		ctx := context.WithValue(context.Background(), middleware.ContextKeyUser, user)
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPut, "/auth/change-password", bytes.NewBuffer(body)).WithContext(ctx)
+		rr := httptest.NewRecorder()
+
+		handler.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Password changed successfully")
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("permission denied", func(t *testing.T) {
+		mockService := new(mocks.UserService)
+		handler := NewAuthHandler(mockService)
+
+		user := &models.User{ID: 1, Username: "testuser", Role: "teacher"}
+		reqBody := ChangePasswordRequest{UserID: 2, OldPassword: "oldpassword", NewPassword: "newpassword"}
+		mockService.On("ChangePassword", mock.Anything, user, reqBody.UserID, reqBody.OldPassword, reqBody.NewPassword).Return(services.ErrPermissionDenied).Once()
+
+		ctx := context.WithValue(context.Background(), middleware.ContextKeyUser, user)
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPut, "/auth/change-password", bytes.NewBuffer(body)).WithContext(ctx)
+		rr := httptest.NewRecorder()
+
+		handler.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusForbidden, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Permission denied")
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("invalid credentials", func(t *testing.T) {
+		mockService := new(mocks.UserService)
+		handler := NewAuthHandler(mockService)
+
+		user := &models.User{ID: 1, Username: "testuser", Role: "teacher"}
+		reqBody := ChangePasswordRequest{UserID: 1, OldPassword: "wrongpassword", NewPassword: "newpassword"}
+		mockService.On("ChangePassword", mock.Anything, user, reqBody.UserID, reqBody.OldPassword, reqBody.NewPassword).Return(services.ErrInvalidCredentials).Once()
+
+		ctx := context.WithValue(context.Background(), middleware.ContextKeyUser, user)
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPut, "/auth/change-password", bytes.NewBuffer(body)).WithContext(ctx)
+		rr := httptest.NewRecorder()
+
+		handler.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Invalid credentials")
+		mockService.AssertExpectations(t)
+	})
+}

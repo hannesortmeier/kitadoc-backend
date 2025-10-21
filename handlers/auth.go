@@ -32,6 +32,12 @@ type RegisterUserRequest struct {
 	Role     string `json:"role"` // e.g., "teacher" or "admin"
 }
 
+type ChangePasswordRequest struct {
+	UserID      int    `json:"user_id"`
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
 // Login handles user login.
 func (authHandler *AuthHandler) Login(writer http.ResponseWriter, request *http.Request) {
 	logger := middleware.GetLoggerWithReqID(request.Context())
@@ -211,6 +217,65 @@ func (authHandler *AuthHandler) DeleteUser(writer http.ResponseWriter, request *
 	writer.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "User deleted successfully"}); err != nil {
 		logger.WithError(err).Error("Failed to encode user deletion response")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (authHandler *AuthHandler) GetAllUsers(writer http.ResponseWriter, request *http.Request) {
+	logger := middleware.GetLoggerWithReqID(request.Context())
+	logger.Info("Fetching all users")
+
+	users, err := authHandler.UserService.GetAllUsers(logger)
+	if err != nil {
+		logger.WithError(err).Error("Internal server error during getting all users")
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(writer).Encode(users); err != nil {
+		logger.WithError(err).Error("Failed to encode users response")
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (authHandler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *http.Request) {
+	logger := middleware.GetLoggerWithReqID(request.Context())
+	user, ok := request.Context().Value(middleware.ContextKeyUser).(*models.User)
+	if !ok {
+		logger.Error("User not found in context for ChangePassword handler")
+		http.Error(writer, "User not found in context", http.StatusInternalServerError)
+		return
+	}
+
+	var req ChangePasswordRequest
+	if err := json.NewDecoder(request.Body).Decode(&req); err != nil {
+		logger.WithError(err).Error("Invalid request payload for ChangePassword")
+		http.Error(writer, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	err := authHandler.UserService.ChangePassword(logger, user, req.UserID, req.OldPassword, req.NewPassword)
+	if err != nil {
+		if err == services.ErrInvalidCredentials {
+			logger.WithField("user_id", req.UserID).Warn("Invalid credentials provided for password change")
+			http.Error(writer, "Invalid credentials", http.StatusUnauthorized)
+			return
+		}
+		if err == services.ErrPermissionDenied {
+			logger.WithField("user_id", req.UserID).Warn("Permission denied for password change")
+			http.Error(writer, "Permission denied", http.StatusForbidden)
+			return
+		}
+		logger.WithError(err).Error("Internal server error during password change")
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(writer).Encode(map[string]string{"message": "Password changed successfully"}); err != nil {
+		logger.WithError(err).Error("Failed to encode password change response")
 		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}

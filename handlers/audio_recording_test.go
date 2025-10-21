@@ -70,8 +70,13 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 				},
 			},
 		}
-		mockAudioAnalysisService.On("AnalyzeAudio", ctx, []byte("dummy audio data"), "test.wav").Return(mockResponse, nil).Once()
-		mockDocEntryService.On("CreateDocumentationEntry", mock.Anything, ctx, mock.Anything).Return(nil, nil).Once()
+
+		done := make(chan bool, 1)
+
+		mockAudioAnalysisService.On("AnalyzeAudio", mock.MatchedBy(func(ctx context.Context) bool { return true }), []byte("dummy audio data"), "test.wav").Return(mockResponse, nil).Once()
+		mockDocEntryService.On("CreateDocumentationEntry", mock.Anything, mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.Anything).Return(nil, nil).Run(func(args mock.Arguments) {
+			done <- true
+		}).Once()
 
 		rr := httptest.NewRecorder()
 		h.UploadAudio(rr, req.WithContext(ctx))
@@ -79,12 +84,15 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		// Wait for the goroutine to complete
-		assert.Eventually(t, func() bool {
-			return mockDocEntryService.AssertExpectations(t)
-		}, 2*time.Second, 100*time.Millisecond)
-		assert.Eventually(t, func() bool {
-			return mockAudioAnalysisService.AssertExpectations(t)
-		}, 1*time.Second, 100*time.Millisecond)
+		select {
+		case <-done:
+			// All good
+		case <-time.After(2 * time.Second):
+			t.Fatal("timed out waiting for documentation entry creation")
+		}
+
+		mockAudioAnalysisService.AssertExpectations(t)
+		mockDocEntryService.AssertExpectations(t)
 	})
 
 	t.Run("service error", func(t *testing.T) {

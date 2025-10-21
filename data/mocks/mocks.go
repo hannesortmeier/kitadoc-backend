@@ -1,9 +1,147 @@
 package mocks
 
 import (
-	"github.com/stretchr/testify/mock"
 	"kitadoc-backend/models"
+
+	"github.com/stretchr/testify/mock"
 )
+
+// MockUserStore is a mock type for the UserStore type
+type MockUserStore struct {
+	mock.Mock
+}
+
+// Create provides a mock function with given fields: user
+func (_m *MockUserStore) Create(user *models.User) (int, error) {
+	ret := _m.Called(user)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(*models.User) int); ok {
+		r0 = rf(user)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*models.User) error); ok {
+		r1 = rf(user)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByID provides a mock function with given fields: id
+func (_m *MockUserStore) GetByID(id int) (*models.User, error) {
+	ret := _m.Called(id)
+
+	var r0 *models.User
+	if rf, ok := ret.Get(0).(func(int) *models.User); ok {
+		r0 = rf(id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.User)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Update provides a mock function with given fields: user
+func (_m *MockUserStore) Update(user *models.User) error {
+	ret := _m.Called(user)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*models.User) error); ok {
+		r0 = rf(user)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Delete provides a mock function with given fields: id
+func (_m *MockUserStore) Delete(id int) error {
+	ret := _m.Called(id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int) error); ok {
+		r0 = rf(id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetUserByUsername provides a mock function with given fields: username
+func (_m *MockUserStore) GetUserByUsername(username string) (*models.User, error) {
+	ret := _m.Called(username)
+
+	var r0 *models.User
+	if rf, ok := ret.Get(0).(func(string) *models.User); ok {
+		r0 = rf(username)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.User)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(username)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetAll provides a mock function with given fields:
+func (_m *MockUserStore) GetAll() ([]*models.User, error) {
+	ret := _m.Called()
+
+	var r0 []*models.User
+	if rf, ok := ret.Get(0).(func() []*models.User); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*models.User)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UpdatePassword provides a mock function with given fields: id, passwordHash
+func (_m *MockUserStore) UpdatePassword(id int, passwordHash string) error {
+	ret := _m.Called(id, passwordHash)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int, string) error); ok {
+		r0 = rf(id, passwordHash)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
 
 // MockAssignmentStore is a mock implementation of data.AssignmentStore
 type MockAssignmentStore struct {
@@ -217,50 +355,6 @@ func (m *MockCategoryStore) Update(category *models.Category) error {
 func (m *MockCategoryStore) Delete(id int) error {
 	args := m.Called(id)
 	return args.Error(0)
-}
-
-// MockUserStore is a mock implementation of data.UserStore
-type MockUserStore struct {
-	mock.Mock
-}
-
-func (m *MockUserStore) Create(user *models.User) (int, error) {
-	args := m.Called(user)
-	return args.Int(0), args.Error(1)
-}
-
-func (m *MockUserStore) GetByID(id int) (*models.User, error) {
-	args := m.Called(id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.User), args.Error(1)
-}
-
-func (m *MockUserStore) GetUserByUsername(username string) (*models.User, error) {
-	args := m.Called(username)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.User), args.Error(1)
-}
-
-func (m *MockUserStore) Update(user *models.User) error {
-	args := m.Called(user)
-	return args.Error(0)
-}
-
-func (m *MockUserStore) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
-func (m *MockUserStore) GetAll() ([]models.User, error) {
-	args := m.Called()
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]models.User), args.Error(1)
 }
 
 // MockAudioRecordingStore is a mock implementation of data.AudioRecordingStore
