@@ -763,6 +763,57 @@ func TestDocumentGenerationEndpoints(t *testing.T) {
 		childID = childResp.ID
 	})
 
+	// Create a teacher for document generation
+	var teacherID int
+	t.Run("Setup Teacher for Document Generation", func(t *testing.T) {
+		respTeacher := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/teachers", adminAuthToken, map[string]string{
+			"first_name": "ReportTeacher",
+			"last_name":  "Test",
+			"username":   "reporttestteacher",
+		}, "application/json")
+		defer respTeacher.Body.Close() //nolint:errcheck
+		var teacherResp struct {
+			ID int `json:"id"`
+		}
+		json.Unmarshal(readResponseBody(t, respTeacher), &teacherResp) //nolint:errcheck
+		teacherID = teacherResp.ID
+	})
+
+	// Create a category for document generation
+	t.Run("Setup Category for Document Generation", func(t *testing.T) {
+		respCategory := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/categories", adminAuthToken, map[string]string{
+			"name": "ReportCategory",
+		}, "application/json")
+		defer respCategory.Body.Close() //nolint:errcheck
+	})
+
+	// Create a documentation entry for the child
+	var entryID int
+	t.Run("Setup Documentation Entry for Document Generation", func(t *testing.T) {
+		respEntry := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/documentation", authToken, map[string]interface{}{
+			"child_id":    childID,
+			"teacher_id":  teacherID,
+			"category_id": 1,
+
+			"observation_description": "Child showed excellent progress in language skills.",
+			"observation_date":        time.Date(2023, time.February, 1, 0, 0, 0, 0, time.UTC),
+		}, "application/json")
+		defer respEntry.Body.Close() //nolint:errcheck
+		var entryIDResp struct {
+			ID int `json:"id"`
+		}
+		json.Unmarshal(readResponseBody(t, respEntry), &entryIDResp) //nolint:errcheck
+		entryID = entryIDResp.ID
+	})
+
+	// Approve the documentation entry
+	t.Run("Approve Documentation Entry for Document Generation", func(t *testing.T) {
+		respApprove := makeAuthenticatedRequest(t, http.MethodPut, fmt.Sprintf("/api/v1/documentation/%d/approve", entryID), adminAuthToken, map[string]interface{}{
+			"approvedByTeacherId": teacherID,
+		}, "application/json")
+		defer respApprove.Body.Close() //nolint:errcheck
+	})
+
 	// Test GET /api/v1/documents/child-report/{child_id}
 	t.Run("Generate Child Report", func(t *testing.T) {
 		resp := makeAuthenticatedRequest(t, http.MethodGet, fmt.Sprintf("/api/v1/documents/child-report/%d", childID), authToken, nil, "application/json")
@@ -770,8 +821,7 @@ func TestDocumentGenerationEndpoints(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
 		}
-		// For document generation, we might expect a specific content type (e.g., application/pdf)
-		// and some non-empty body. A simple check for non-empty body is sufficient for happy path.
+
 		body := readResponseBody(t, resp)
 		if len(body) == 0 {
 			t.Error("Expected non-empty report content, got empty")
