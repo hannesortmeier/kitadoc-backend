@@ -375,7 +375,7 @@ func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus
 		for _, entry := range entries {
 			documentation := fmt.Sprintf("%s (%s)",
 				entry.ObservationDescription,
-				entry.ObservationDate.Format("26.01.2006"),
+				entry.ObservationDate.Format("02.01.2006"),
 			)
 			document.AddParagraph(documentation).Style("List Bullet") //nolint:errcheck
 		}
