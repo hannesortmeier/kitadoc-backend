@@ -36,7 +36,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	categoryService := services.NewCategoryService(dal.Categories)
 	assignmentService := services.NewAssignmentService(dal.Assignments, dal.Children, dal.Teachers)
 	documentationEntryService := services.NewDocumentationEntryService(dal.DocumentationEntries, dal.Children, dal.Teachers, dal.Categories, dal.Users)
-	audioAnalysisService := services.NewAudioAnalysisService(&http.Client{Timeout: 10 * time.Minute}, cfg.AudioProcServiceURL)
+	audioAnalysisService := services.NewAudioAnalysisService(&http.Client{Timeout: 10 * time.Minute}, cfg.AudioProcServiceURL, dal.Children, dal.Categories)
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userService)

@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 
+	"kitadoc-backend/data"
 	"kitadoc-backend/middleware"
 	"kitadoc-backend/models"
 
@@ -22,15 +23,19 @@ type AudioAnalysisService interface {
 
 // AudioAnalysisServiceImpl implements AudioAnalysisService.
 type AudioAnalysisServiceImpl struct {
-	httpClient   *http.Client
-	audioProcURL string
+	httpClient    *http.Client
+	audioProcURL  string
+	childStore    data.ChildStore
+	categoryStore data.CategoryStore
 }
 
 // NewAudioAnalysisService creates a new AudioAnalysisServiceImpl.
-func NewAudioAnalysisService(httpClient *http.Client, audioProcURL string) *AudioAnalysisServiceImpl {
+func NewAudioAnalysisService(httpClient *http.Client, audioProcURL string, childStore data.ChildStore, categoryStore data.CategoryStore) *AudioAnalysisServiceImpl {
 	return &AudioAnalysisServiceImpl{
-		httpClient:   httpClient,
-		audioProcURL: audioProcURL,
+		httpClient:    httpClient,
+		audioProcURL:  audioProcURL,
+		childStore:    childStore,
+		categoryStore: categoryStore,
 	}
 }
 
@@ -43,17 +48,99 @@ func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent
 	writer := multipart.NewWriter(body)
 
 	// Create a new form-data header with the provided filename.
-	part, err := writer.CreateFormFile("audio_file", filename)
+	audioPart, err := writer.CreateFormFile("audio_file", filename)
 	if err != nil {
 		logger.WithError(err).Error("Failed to create form file")
 		return models.AnalysisResult{}, fmt.Errorf("failed to create form file: %w", err)
 	}
 
 	// Copy the file content to the form file.
-	_, err = io.Copy(part, bytes.NewReader(fileContent))
+	_, err = io.Copy(audioPart, bytes.NewReader(fileContent))
 	if err != nil {
 		logger.WithError(err).Error("Failed to copy file content to form file")
 		return models.AnalysisResult{}, fmt.Errorf("failed to copy file content: %w", err)
+	}
+
+	// Fetch children data
+	children, err := s.childStore.GetAll()
+	if err != nil {
+		logger.WithError(err).Error("Failed to get all children")
+		return models.AnalysisResult{}, fmt.Errorf("failed to get all children: %w", err)
+	}
+
+	type ChildData struct {
+		ID        int    `json:"child_id"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+	}
+
+	childrenData := make([]ChildData, len(children))
+	for i, c := range children {
+		childrenData[i] = ChildData{
+			ID:        c.ID,
+			FirstName: c.FirstName,
+			LastName:  c.LastName,
+		}
+	}
+
+	childrenJSON, err := json.Marshal(childrenData)
+	if err != nil {
+		logger.WithError(err).Error("Failed to marshal children data")
+		return models.AnalysisResult{}, fmt.Errorf("failed to marshal children data: %w", err)
+	}
+
+	childrenPart, err := writer.CreateFormField("children_data")
+	if err != nil {
+		logger.WithError(err).Error("Failed to create form field for children data")
+		return models.AnalysisResult{}, fmt.Errorf("failed to create form field: %w", err)
+	}
+	_, err = childrenPart.Write(childrenJSON)
+	if err != nil {
+		logger.WithError(err).Error("Failed to write children data to form field")
+		return models.AnalysisResult{}, fmt.Errorf("failed to write children data: %w", err)
+	}
+
+	// Fetch category data
+	categories, err := s.categoryStore.GetAll()
+	if err != nil {
+		logger.WithError(err).Error("Failed to get all categories")
+		return models.AnalysisResult{}, fmt.Errorf("failed to get all categories: %w", err)
+	}
+
+	type CategoryData struct {
+		ID          int    `json:"category_id"`
+		Name        string `json:"category_name"`
+		Description string `json:"description"`
+	}
+
+	categoryData := make([]CategoryData, len(categories))
+	for i, c := range categories {
+		var description string
+		if c.Description != nil {
+			description = *c.Description
+		}
+		categoryData[i] = CategoryData{
+			ID:          c.ID,
+			Name:        c.Name,
+			Description: description,
+		}
+	}
+
+	categoryJSON, err := json.Marshal(categoryData)
+	if err != nil {
+		logger.WithError(err).Error("Failed to marshal category data")
+		return models.AnalysisResult{}, fmt.Errorf("failed to marshal category data: %w", err)
+	}
+
+	categoryPart, err := writer.CreateFormField("category_data")
+	if err != nil {
+		logger.WithError(err).Error("Failed to create form field for category data")
+		return models.AnalysisResult{}, fmt.Errorf("failed to create form field: %w", err)
+	}
+	_, err = categoryPart.Write(categoryJSON)
+	if err != nil {
+		logger.WithError(err).Error("Failed to write category data to form field")
+		return models.AnalysisResult{}, fmt.Errorf("failed to write category data: %w", err)
 	}
 
 	// Close the multipart writer.
@@ -62,6 +149,8 @@ func (s *AudioAnalysisServiceImpl) AnalyzeAudio(ctx context.Context, fileContent
 		logger.WithError(err).Error("Failed to close multipart writer")
 		return models.AnalysisResult{}, fmt.Errorf("failed to close multipart writer: %w", err)
 	}
+
+	logger.Debugf("Request body size: %d", body.Len())
 
 	// Create a new HTTP request to the audio-proc service.
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.audioProcURL, body)

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"kitadoc-backend/data/mocks"
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
 
@@ -39,7 +40,14 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 		}))
 		t.Cleanup(func() { mockServer.Close() })
 
-		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL)
+		mockChildStore := new(mocks.MockChildStore)
+		mockCategoryStore := new(mocks.MockCategoryStore)
+
+		mockChildStore.On("GetAll").Return([]models.Child{{ID: 1, FirstName: "John", LastName: "Doe"}}, nil)
+		description := ""
+		mockCategoryStore.On("GetAll").Return([]models.Category{{ID: 1, Name: "General", Description: &description}}, nil)
+
+		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL, mockChildStore, mockCategoryStore)
 
 		fileContent := []byte("dummy audio data")
 		filename := "test.wav"
@@ -60,7 +68,13 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 		}))
 		t.Cleanup(func() { mockServer.Close() })
 
-		service := services.NewAudioAnalysisService(mockServer.Client(), "http://invalid-url")
+		mockChildStore := new(mocks.MockChildStore)
+		mockCategoryStore := new(mocks.MockCategoryStore)
+
+		mockChildStore.On("GetAll").Return([]models.Child{}, nil)
+		mockCategoryStore.On("GetAll").Return([]models.Category{}, nil)
+
+		service := services.NewAudioAnalysisService(mockServer.Client(), "http://invalid-url", mockChildStore, mockCategoryStore)
 
 		fileContent := []byte("dummy audio data")
 		filename := "test.wav"
@@ -77,7 +91,13 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 		}))
 		t.Cleanup(func() { mockServer.Close() })
 
-		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL)
+		mockChildStore := new(mocks.MockChildStore)
+		mockCategoryStore := new(mocks.MockCategoryStore)
+
+		mockChildStore.On("GetAll").Return([]models.Child{}, nil)
+		mockCategoryStore.On("GetAll").Return([]models.Category{}, nil)
+
+		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL, mockChildStore, mockCategoryStore)
 
 		fileContent := []byte("dummy audio data")
 		filename := "test.wav"
@@ -96,7 +116,13 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 		}))
 		t.Cleanup(func() { mockServer.Close() })
 
-		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL)
+		mockChildStore := new(mocks.MockChildStore)
+		mockCategoryStore := new(mocks.MockCategoryStore)
+
+		mockChildStore.On("GetAll").Return([]models.Child{}, nil)
+		mockCategoryStore.On("GetAll").Return([]models.Category{}, nil)
+
+		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL, mockChildStore, mockCategoryStore)
 
 		fileContent := []byte("dummy audio data")
 		filename := "test.wav"
