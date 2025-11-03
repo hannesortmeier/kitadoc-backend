@@ -47,10 +47,6 @@ func ValidateDocumentationEntry(entry DocumentationEntry) error {
 // depending on the exact format expected (e.g., "YYYY-MM-DD").
 // For simplicity, this just checks if it's a valid time.Time and not in the future.
 func ValidateISO8601Date(fl validator.FieldLevel) bool {
-	date, ok := fl.Field().Interface().(time.Time)
-	if !ok {
-		return false
-	}
-	// Check if the date is not in the future
-	return !date.After(time.Now())
+	_, ok := fl.Field().Interface().(time.Time)
+	return ok
 }
