@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"embed"
 	"errors"
 	"fmt"
 	"net/http"
@@ -19,11 +18,9 @@ import (
 	"kitadoc-backend/config"
 	"kitadoc-backend/data"
 	"kitadoc-backend/internal/logger"
+	"kitadoc-backend/migrations"
 	"kitadoc-backend/services"
 )
-
-//go:embed migrations/*.sql
-var migrationFS embed.FS
 
 func main() {
 	// Load configuration
@@ -89,14 +86,14 @@ func main() {
 	}
 
 	// Check if the database schema is initialized
-	err = data.MigrateDB(db, migrationFS)
+	err = data.MigrateDB(db, migrations.Files)
 	if err != nil {
 		log.Fatalf("Database migration failed: %v", err)
 	}
 	log.Info("Database schema is up to date.")
 
 	// Initialize DAL
-	dal := data.NewDAL(db)
+	dal := data.NewDAL(db, []byte(cfg.Database.EncryptionKey))
 
 	// Initialize App
 	application := app.NewApplication(*cfg, dal)

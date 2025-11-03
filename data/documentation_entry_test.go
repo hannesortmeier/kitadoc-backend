@@ -21,7 +21,7 @@ func TestSQLDocumentationEntryStore_Create(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLDocumentationEntryStore(db)
+	store := data.NewSQLDocumentationEntryStore(db, []byte("0123456789abcdef0123456789abcdef"))
 
 	entry := &models.DocumentationEntry{
 		ChildID:                1,
@@ -36,7 +36,7 @@ func TestSQLDocumentationEntryStore_Create(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO documentation_entries (child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_teacher_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)).
-			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, entry.ObservationDescription, entry.IsApproved, entry.ApprovedByUserID, entry.CreatedAt, entry.UpdatedAt).
+			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, sqlmock.AnyArg(), entry.IsApproved, entry.ApprovedByUserID, entry.CreatedAt, entry.UpdatedAt).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		id, err := store.Create(entry)
@@ -47,7 +47,7 @@ func TestSQLDocumentationEntryStore_Create(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO documentation_entries (child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_teacher_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)).
-			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, entry.ObservationDescription, entry.IsApproved, entry.ApprovedByUserID, entry.CreatedAt, entry.UpdatedAt).
+			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, sqlmock.AnyArg(), entry.IsApproved, entry.ApprovedByUserID, entry.CreatedAt, entry.UpdatedAt).
 			WillReturnError(errors.New("db error"))
 
 		id, err := store.Create(entry)
@@ -65,7 +65,8 @@ func TestSQLDocumentationEntryStore_GetByID(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLDocumentationEntryStore(db)
+	key := []byte("0123456789abcdef0123456789abcdef")
+	store := data.NewSQLDocumentationEntryStore(db, key)
 
 	entryID := 1
 	approvedByUserID := 10
@@ -82,8 +83,10 @@ func TestSQLDocumentationEntryStore_GetByID(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
+		encryptedObservation, _ := data.Encrypt(expectedEntry.ObservationDescription, key)
+
 		rows := sqlmock.NewRows([]string{"entry_id", "child_id", "documenting_teacher_id", "category_id", "observation_date", "observation_description", "approved", "approved_by_teacher_id", "created_at", "updated_at"}).
-			AddRow(expectedEntry.ID, expectedEntry.ChildID, expectedEntry.TeacherID, expectedEntry.CategoryID, expectedEntry.ObservationDate, expectedEntry.ObservationDescription, expectedEntry.IsApproved, expectedEntry.ApprovedByUserID, expectedEntry.CreatedAt, expectedEntry.UpdatedAt)
+			AddRow(expectedEntry.ID, expectedEntry.ChildID, expectedEntry.TeacherID, expectedEntry.CategoryID, expectedEntry.ObservationDate, encryptedObservation, expectedEntry.IsApproved, expectedEntry.ApprovedByUserID, expectedEntry.CreatedAt, expectedEntry.UpdatedAt)
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT entry_id, child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_teacher_id, created_at, updated_at FROM documentation_entries WHERE entry_id = ?`)).
 			WithArgs(entryID).
@@ -136,7 +139,7 @@ func TestSQLDocumentationEntryStore_Update(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLDocumentationEntryStore(db)
+	store := data.NewSQLDocumentationEntryStore(db, []byte("0123456789abcdef0123456789abcdef"))
 
 	approvedByUserID := 10
 	entry := &models.DocumentationEntry{
@@ -152,7 +155,7 @@ func TestSQLDocumentationEntryStore_Update(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`UPDATE documentation_entries SET child_id = ?, documenting_teacher_id = ?, category_id = ?, observation_date = ?, observation_description = ?, approved = ?, approved_by_teacher_id = ?, updated_at = ? WHERE entry_id = ?`)).
-			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, entry.ObservationDescription, entry.IsApproved, entry.ApprovedByUserID, entry.UpdatedAt, entry.ID).
+			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, sqlmock.AnyArg(), entry.IsApproved, entry.ApprovedByUserID, entry.UpdatedAt, entry.ID).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		err := store.Update(entry)
@@ -162,7 +165,7 @@ func TestSQLDocumentationEntryStore_Update(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`UPDATE documentation_entries SET child_id = ?, documenting_teacher_id = ?, category_id = ?, observation_date = ?, observation_description = ?, approved = ?, approved_by_teacher_id = ?, updated_at = ? WHERE entry_id = ?`)).
-			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, entry.ObservationDescription, entry.IsApproved, entry.ApprovedByUserID, entry.UpdatedAt, entry.ID).
+			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, sqlmock.AnyArg(), entry.IsApproved, entry.ApprovedByUserID, entry.UpdatedAt, entry.ID).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err := store.Update(entry)
@@ -173,7 +176,7 @@ func TestSQLDocumentationEntryStore_Update(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`UPDATE documentation_entries SET child_id = ?, documenting_teacher_id = ?, category_id = ?, observation_date = ?, observation_description = ?, approved = ?, approved_by_teacher_id = ?, updated_at = ? WHERE entry_id = ?`)).
-			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, entry.ObservationDescription, entry.IsApproved, entry.ApprovedByUserID, entry.UpdatedAt, entry.ID).
+			WithArgs(entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, sqlmock.AnyArg(), entry.IsApproved, entry.ApprovedByUserID, entry.UpdatedAt, entry.ID).
 			WillReturnError(errors.New("db error"))
 
 		err := store.Update(entry)
@@ -190,7 +193,7 @@ func TestSQLDocumentationEntryStore_Delete(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLDocumentationEntryStore(db)
+	store := data.NewSQLDocumentationEntryStore(db, []byte("0123456789abcdef0123456789abcdef"))
 
 	entryID := 1
 
@@ -234,7 +237,8 @@ func TestSQLDocumentationEntryStore_GetAllForChild(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLDocumentationEntryStore(db)
+	key := []byte("0123456789abcdef0123456789abcdef")
+	store := data.NewSQLDocumentationEntryStore(db, key)
 
 	childID := 1
 	now := time.Now().Truncate(time.Second)
@@ -265,9 +269,11 @@ func TestSQLDocumentationEntryStore_GetAllForChild(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"entry_id", "child_id", "documenting_teacher_id", "category_id", "observation_date", "observation_description", "approved", "approved_by_teacher_id", "created_at", "updated_at"}).
-			AddRow(entries[0].ID, entries[0].ChildID, entries[0].TeacherID, entries[0].CategoryID, entries[0].ObservationDate, entries[0].ObservationDescription, entries[0].IsApproved, entries[0].ApprovedByUserID, entries[0].CreatedAt, entries[0].UpdatedAt).
-			AddRow(entries[1].ID, entries[1].ChildID, entries[1].TeacherID, entries[1].CategoryID, entries[1].ObservationDate, entries[1].ObservationDescription, entries[1].IsApproved, entries[1].ApprovedByUserID, entries[1].CreatedAt, entries[1].UpdatedAt)
+		rows := sqlmock.NewRows([]string{"entry_id", "child_id", "documenting_teacher_id", "category_id", "observation_date", "observation_description", "approved", "approved_by_teacher_id", "created_at", "updated_at"})
+		for _, entry := range entries {
+			encryptedObservation, _ := data.Encrypt(entry.ObservationDescription, key)
+			rows.AddRow(entry.ID, entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, encryptedObservation, entry.IsApproved, entry.ApprovedByUserID, entry.CreatedAt, entry.UpdatedAt)
+		}
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT entry_id, child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_teacher_id, created_at, updated_at FROM documentation_entries WHERE child_id = ? ORDER BY observation_date DESC`)).
 			WithArgs(childID).
@@ -328,7 +334,7 @@ func TestSQLDocumentationEntryStore_ApproveEntry(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLDocumentationEntryStore(db)
+	store := data.NewSQLDocumentationEntryStore(db, []byte("0123456789abcdef0123456789abcdef"))
 
 	entryID := 1
 	approvedByUserID := 10

@@ -13,11 +13,26 @@ type DocumentationEntry struct {
 	TeacherID              int       `json:"teacher_id" validate:"required"`
 	CategoryID             int       `json:"category_id" validate:"required"`
 	ObservationDate        time.Time `json:"observation_date" validate:"required,iso8601date"` // Assuming ISO8601 format for date
-	ObservationDescription string    `json:"observation_description" validate:"required,min=10"`
+	ObservationDescription string    `json:"observation_description" validate:"required,min=10" pii:"true"`
 	IsApproved             bool      `json:"is_approved"`
 	ApprovedByUserID       *int      `json:"approved_by_teacher_id"` // Pointer for nullable foreign key
 	CreatedAt              time.Time `json:"created_at"`
 	UpdatedAt              time.Time `json:"updated_at"`
+}
+
+// DocumentationEntryDB is a struct that matches the documentation_entries table in the database.
+// PII fields are stored as encrypted strings.
+type DocumentationEntryDB struct {
+	ID                     int
+	ChildID                int
+	TeacherID              int
+	CategoryID             int
+	ObservationDate        time.Time
+	ObservationDescription string
+	IsApproved             bool
+	ApprovedByUserID       *int
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
 }
 
 // ValidateDocumentationEntry validates the DocumentationEntry struct.

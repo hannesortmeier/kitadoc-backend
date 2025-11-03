@@ -8,7 +8,8 @@
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    username_hmac VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL, -- e.g., 'teacher', 'admin'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -44,7 +45,7 @@ CREATE TABLE IF NOT EXISTS children (
     child_id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    birthdate DATE NOT NULL,
+    birthdate VARCHAR(100) NOT NULL,
     gender VARCHAR(20) NOT NULL,
     family_language VARCHAR(100) NOT NULL,
     migration_background BOOLEAN NOT NULL,
@@ -56,8 +57,7 @@ CREATE TABLE IF NOT EXISTS children (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_child_first_name_not_empty CHECK (LENGTH(TRIM(first_name)) > 0),
-    CONSTRAINT chk_child_last_name_not_empty CHECK (LENGTH(TRIM(last_name)) > 0),
-    CONSTRAINT chk_school_enrollment_after_birth CHECK (expected_school_enrollment IS NULL OR expected_school_enrollment > birthdate)
+    CONSTRAINT chk_child_last_name_not_empty CHECK (LENGTH(TRIM(last_name)) > 0)
 );
 
 -- Child-Teacher Assignments Table (Many-to-Many with Time Intervals)
@@ -110,16 +110,11 @@ CREATE TABLE IF NOT EXISTS audio_recordings (
 -- =============================================================================
 
 -- Indexes on frequently queried columns
-CREATE INDEX IF NOT EXISTS idx_children_names ON children(last_name, first_name);
-
-CREATE INDEX IF NOT EXISTS idx_teachers_names ON teachers(last_name, first_name);
-
 CREATE INDEX IF NOT EXISTS idx_assignments_child ON child_teacher_assignments(child_id);
-
 CREATE INDEX IF NOT EXISTS idx_documentation_child ON documentation_entries(child_id);
 CREATE INDEX IF NOT EXISTS idx_documentation_date ON documentation_entries(observation_date);
 CREATE INDEX IF NOT EXISTS idx_documentation_approved ON documentation_entries(approved);
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username_hmac);
 CREATE INDEX IF NOT EXISTS idx_audio_recordings_entry ON audio_recordings(documentation_entry_id);
 
 -- =============================================================================

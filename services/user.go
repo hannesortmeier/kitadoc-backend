@@ -57,6 +57,12 @@ func (s *UserServiceImpl) RegisterUser(logger *logrus.Entry, username, password,
 		return nil, ErrInternal
 	}
 
+	// Add password length validation here
+	if len(password) < 8 {
+		logger.WithField("username", username).Warn("Password too short during registration attempt")
+		return nil, ErrInvalidInput
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		logger.WithError(err).Error("Error hashing password during registration")

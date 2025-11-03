@@ -3,6 +3,8 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"fmt"
+	"reflect"
 
 	"kitadoc-backend/models"
 )
@@ -19,18 +21,92 @@ type DocumentationEntryStore interface {
 
 // SQLDocumentationEntryStore implements DocumentationEntryStore using database/sql.
 type SQLDocumentationEntryStore struct {
-	db *sql.DB
+	db            *sql.DB
+	encryptionKey []byte
 }
 
 // NewSQLDocumentationEntryStore creates a new SQLDocumentationEntryStore.
-func NewSQLDocumentationEntryStore(db *sql.DB) *SQLDocumentationEntryStore {
-	return &SQLDocumentationEntryStore{db: db}
+func NewSQLDocumentationEntryStore(db *sql.DB, encryptionKey []byte) *SQLDocumentationEntryStore {
+	return &SQLDocumentationEntryStore{db: db, encryptionKey: encryptionKey}
+}
+
+// toDocumentationEntryDB converts a models.DocumentationEntry to a models.DocumentationEntryDB and encrypts PII fields.
+func toDocumentationEntryDB(entry *models.DocumentationEntry, key []byte) (*models.DocumentationEntryDB, error) {
+	dbEntry := &models.DocumentationEntryDB{}
+
+	entryVal := reflect.ValueOf(entry).Elem()
+	dbEntryVal := reflect.ValueOf(dbEntry).Elem()
+
+	for i := 0; i < entryVal.NumField(); i++ {
+		entryField := entryVal.Field(i)
+		entryTypeField := entryVal.Type().Field(i)
+		dbField := dbEntryVal.FieldByName(entryTypeField.Name)
+
+		if !dbField.IsValid() || !dbField.CanSet() {
+			continue
+		}
+
+		if tag := entryTypeField.Tag.Get("pii"); tag == "true" {
+			encrypted, err := Encrypt(entryField.String(), key)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encrypt field %s: %w", entryTypeField.Name, err)
+			}
+			dbField.SetString(encrypted)
+		} else {
+			if dbField.Type() == entryField.Type() {
+				dbField.Set(entryField)
+			}
+		}
+	}
+	return dbEntry, nil
+}
+
+// fromDocumentationEntryDB converts a models.DocumentationEntryDB to a models.DocumentationEntry and decrypts PII fields.
+func fromDocumentationEntryDB(dbEntry *models.DocumentationEntryDB, key []byte) (*models.DocumentationEntry, error) {
+	entry := &models.DocumentationEntry{}
+
+	dbEntryVal := reflect.ValueOf(dbEntry).Elem()
+	entryVal := reflect.ValueOf(entry).Elem()
+	entryType := entryVal.Type()
+
+	for i := 0; i < dbEntryVal.NumField(); i++ {
+		dbField := dbEntryVal.Field(i)
+		dbTypeField := dbEntryVal.Type().Field(i)
+		entryField := entryVal.FieldByName(dbTypeField.Name)
+
+		if !entryField.IsValid() || !entryField.CanSet() {
+			continue
+		}
+
+		structField, found := entryType.FieldByName(dbTypeField.Name)
+		if !found {
+			continue
+		}
+
+		if tag := structField.Tag.Get("pii"); tag == "true" {
+			decrypted, err := Decrypt(dbField.String(), key)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decrypt field %s: %w", dbTypeField.Name, err)
+			}
+			entryField.SetString(decrypted)
+		} else {
+			if entryField.Type() == dbField.Type() {
+				entryField.Set(dbField)
+			}
+		}
+	}
+	return entry, nil
 }
 
 // Create inserts a new documentation entry into the database.
 func (s *SQLDocumentationEntryStore) Create(entry *models.DocumentationEntry) (int, error) {
+	dbEntry, err := toDocumentationEntryDB(entry, s.encryptionKey)
+	if err != nil {
+		return 0, err
+	}
+
 	query := `INSERT INTO documentation_entries (child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_teacher_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	result, err := s.db.Exec(query, entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, entry.ObservationDescription, entry.IsApproved, entry.ApprovedByUserID, entry.CreatedAt, entry.UpdatedAt)
+	result, err := s.db.Exec(query, dbEntry.ChildID, dbEntry.TeacherID, dbEntry.CategoryID, dbEntry.ObservationDate, dbEntry.ObservationDescription, dbEntry.IsApproved, dbEntry.ApprovedByUserID, dbEntry.CreatedAt, dbEntry.UpdatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -45,21 +121,27 @@ func (s *SQLDocumentationEntryStore) Create(entry *models.DocumentationEntry) (i
 func (s *SQLDocumentationEntryStore) GetByID(id int) (*models.DocumentationEntry, error) {
 	query := `SELECT entry_id, child_id, documenting_teacher_id, category_id, observation_date, observation_description, approved, approved_by_teacher_id, created_at, updated_at FROM documentation_entries WHERE entry_id = ?`
 	row := s.db.QueryRow(query, id)
-	entry := &models.DocumentationEntry{}
-	err := row.Scan(&entry.ID, &entry.ChildID, &entry.TeacherID, &entry.CategoryID, &entry.ObservationDate, &entry.ObservationDescription, &entry.IsApproved, &entry.ApprovedByUserID, &entry.CreatedAt, &entry.UpdatedAt)
+	dbEntry := &models.DocumentationEntryDB{}
+	err := row.Scan(&dbEntry.ID, &dbEntry.ChildID, &dbEntry.TeacherID, &dbEntry.CategoryID, &dbEntry.ObservationDate, &dbEntry.ObservationDescription, &dbEntry.IsApproved, &dbEntry.ApprovedByUserID, &dbEntry.CreatedAt, &dbEntry.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-	return entry, nil
+
+	return fromDocumentationEntryDB(dbEntry, s.encryptionKey)
 }
 
 // Update updates an existing documentation entry in the database.
 func (s *SQLDocumentationEntryStore) Update(entry *models.DocumentationEntry) error {
+	dbEntry, err := toDocumentationEntryDB(entry, s.encryptionKey)
+	if err != nil {
+		return err
+	}
+
 	query := `UPDATE documentation_entries SET child_id = ?, documenting_teacher_id = ?, category_id = ?, observation_date = ?, observation_description = ?, approved = ?, approved_by_teacher_id = ?, updated_at = ? WHERE entry_id = ?`
-	result, err := s.db.Exec(query, entry.ChildID, entry.TeacherID, entry.CategoryID, entry.ObservationDate, entry.ObservationDescription, entry.IsApproved, entry.ApprovedByUserID, entry.UpdatedAt, entry.ID)
+	result, err := s.db.Exec(query, dbEntry.ChildID, dbEntry.TeacherID, dbEntry.CategoryID, dbEntry.ObservationDate, dbEntry.ObservationDescription, dbEntry.IsApproved, dbEntry.ApprovedByUserID, dbEntry.UpdatedAt, dbEntry.ID)
 	if err != nil {
 		return err
 	}
@@ -101,8 +183,13 @@ func (s *SQLDocumentationEntryStore) GetAllForChild(childID int) ([]models.Docum
 
 	var entries []models.DocumentationEntry
 	for rows.Next() {
-		entry := &models.DocumentationEntry{}
-		err := rows.Scan(&entry.ID, &entry.ChildID, &entry.TeacherID, &entry.CategoryID, &entry.ObservationDate, &entry.ObservationDescription, &entry.IsApproved, &entry.ApprovedByUserID, &entry.CreatedAt, &entry.UpdatedAt)
+		dbEntry := &models.DocumentationEntryDB{}
+		err := rows.Scan(&dbEntry.ID, &dbEntry.ChildID, &dbEntry.TeacherID, &dbEntry.CategoryID, &dbEntry.ObservationDate, &dbEntry.ObservationDescription, &dbEntry.IsApproved, &dbEntry.ApprovedByUserID, &dbEntry.CreatedAt, &dbEntry.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		entry, err := fromDocumentationEntryDB(dbEntry, s.encryptionKey)
 		if err != nil {
 			return nil, err
 		}

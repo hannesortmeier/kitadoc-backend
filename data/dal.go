@@ -17,14 +17,14 @@ type DAL struct {
 }
 
 // NewDAL creates a new DAL instance.
-func NewDAL(db *sql.DB) *DAL {
+func NewDAL(db *sql.DB, encryptionKey []byte) *DAL {
 	return &DAL{
-		Users:                NewSQLUserStore(db),
-		Children:             NewSQLChildStore(db),
-		Teachers:             NewSQLTeacherStore(db),
+		Users:                NewSQLUserStore(db, encryptionKey),
+		Children:             NewSQLChildStore(db, encryptionKey),
+		Teachers:             NewSQLTeacherStore(db, encryptionKey),
 		Categories:           NewSQLCategoryStore(db),
 		Assignments:          NewSQLAssignmentStore(db),
-		DocumentationEntries: NewSQLDocumentationEntryStore(db),
+		DocumentationEntries: NewSQLDocumentationEntryStore(db, encryptionKey),
 		AudioRecordings:      NewSQLAudioRecordingStore(db),
 	}
 }

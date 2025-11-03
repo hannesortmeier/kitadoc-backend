@@ -12,11 +12,14 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 
 	"kitadoc-backend/app"
 	"kitadoc-backend/config"
 	"kitadoc-backend/data"
 	"kitadoc-backend/internal/logger"
+	"kitadoc-backend/migrations"
+	"kitadoc-backend/models"
 )
 
 var (
@@ -59,7 +62,21 @@ func TestMain(m *testing.M) {
 			fmt.Printf("failed to remove test uploads directory: %v\n", err)
 		}
 	}()
-	// Initialize configuration for testing with an in-memory SQLite database
+	// Create a temporary file for the SQLite database so tests use a real file-backed DB
+	tmpDBFile, err := os.CreateTemp("", "kitadoc_test_*.db")
+	if err != nil {
+		panic(fmt.Sprintf("failed to create temporary test database file: %v", err))
+	}
+	// Close the file descriptor; SQLite will open it by path.
+	tmpDBFile.Close() // nolint:errcheck
+	// Ensure the temporary database file is removed after tests
+	defer func() {
+		if err := os.Remove(tmpDBFile.Name()); err != nil {
+			fmt.Printf("failed to remove temporary test database file: %v\n", err)
+		}
+	}()
+
+	// Initialize configuration for testing with a file-backed SQLite database
 	cfg := config.Config{
 		Environment: "test",
 		Server: struct {
@@ -73,9 +90,11 @@ func TestMain(m *testing.M) {
 			JWTSecret: "test_jwt_secret_very_long_and_secure_key_for_testing_purposes",
 		},
 		Database: struct {
-			DSN string `mapstructure:"dsn"`
+			DSN           string `mapstructure:"dsn"`
+			EncryptionKey string `mapstructure:"encryption_key"`
 		}{
-			DSN: ":memory:?_foreign_keys=on", // Use in-memory database for testing
+			DSN:           "file:" + tmpDBFile.Name() + "?_foreign_keys=on", // Use file-backed DB in tmp
+			EncryptionKey: "0123456789abcdef0123456789abcdef",
 		},
 		FileStorage: struct {
 			MaxSizeMB    int      `mapstructure:"max_size_mb"`
@@ -90,7 +109,6 @@ func TestMain(m *testing.M) {
 	logLevel, _ := logrus.ParseLevel("debug")
 	logger.InitGlobalLogger(logLevel, &logrus.TextFormatter{FullTimestamp: true})
 
-	var err error
 	// Initialize the database connection directly
 	db, err = sql.Open("sqlite3", cfg.Database.DSN)
 	if err != nil {
@@ -98,8 +116,27 @@ func TestMain(m *testing.M) {
 	}
 	defer db.Close() //nolint:errcheck
 
+	// Run migrations
+	if err := data.MigrateDB(db, migrations.Files); err != nil {
+		panic(fmt.Sprintf("failed to migrate database: %v", err))
+	}
+
 	// Initialize DAL
-	dal := data.NewDAL(db)
+	dal := data.NewDAL(db, []byte(cfg.Database.EncryptionKey))
+
+	// Pre-create users for testing
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+	adminUser := &models.User{Username: "admin", PasswordHash: string(hashedPassword), Role: "admin"}
+	_, err = dal.Users.Create(adminUser)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create admin user: %v", err))
+	}
+
+	normalUser := &models.User{Username: "testuser", PasswordHash: string(hashedPassword), Role: "teacher"}
+	_, err = dal.Users.Create(normalUser)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create normal user: %v", err))
+	}
 
 	// Initialize the application with test configuration and DAL
 	application = app.NewApplication(cfg, dal)

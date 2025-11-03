@@ -23,7 +23,8 @@ func TestSQLUserStore_Create(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLUserStore(db)
+	key := []byte("0123456789abcdef0123456789abcdef")
+	store := data.NewSQLUserStore(db, key)
 
 	user := &models.User{
 		Username:     "testuser",
@@ -43,8 +44,9 @@ func TestSQLUserStore_Create(t *testing.T) {
 	)
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO users (username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`)).
-			WithArgs(user.Username, user.PasswordHash, user.Role, user.CreatedAt, user.UpdatedAt).
+		usernameHMAC, _ := data.LookupHash(user.Username, key) // nolint:errcheck
+		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO users (username, username_hmac, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`)).
+			WithArgs(sqlmock.AnyArg(), usernameHMAC, user.PasswordHash, user.Role, user.CreatedAt, user.UpdatedAt).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		id, err := store.Create(user)
@@ -54,8 +56,9 @@ func TestSQLUserStore_Create(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO users (username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`)).
-			WithArgs(user.Username, user.PasswordHash, user.Role, user.CreatedAt, user.UpdatedAt).
+		usernameHMAC, _ := data.LookupHash(user.Username, key) // nolint:errcheck
+		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO users (username, username_hmac, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`)).
+			WithArgs(sqlmock.AnyArg(), usernameHMAC, user.PasswordHash, user.Role, user.CreatedAt, user.UpdatedAt).
 			WillReturnError(errors.New("db error"))
 
 		id, err := store.Create(user)
@@ -73,7 +76,8 @@ func TestSQLUserStore_GetByID(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLUserStore(db)
+	key := []byte("0123456789abcdef0123456789abcdef")
+	store := data.NewSQLUserStore(db, key)
 
 	userID := 1
 	expectedUser := &models.User{
@@ -86,8 +90,10 @@ func TestSQLUserStore_GetByID(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
+		encryptedUsername, _ := data.Encrypt(expectedUser.Username, key)
+
 		rows := sqlmock.NewRows([]string{"user_id", "username", "password_hash", "role", "created_at", "updated_at"}).
-			AddRow(expectedUser.ID, expectedUser.Username, expectedUser.PasswordHash, expectedUser.Role, expectedUser.CreatedAt, expectedUser.UpdatedAt)
+			AddRow(expectedUser.ID, encryptedUsername, expectedUser.PasswordHash, expectedUser.Role, expectedUser.CreatedAt, expectedUser.UpdatedAt)
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT user_id, username, password_hash, role, created_at, updated_at FROM users WHERE user_id = ?`)).
 			WithArgs(userID).
@@ -137,7 +143,8 @@ func TestSQLUserStore_Update(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLUserStore(db)
+	key := []byte("0123456789abcdef0123456789abcdef")
+	store := data.NewSQLUserStore(db, key)
 
 	user := &models.User{
 		ID:           1,
@@ -146,10 +153,11 @@ func TestSQLUserStore_Update(t *testing.T) {
 		Role:         "admin",
 		UpdatedAt:    time.Now(),
 	}
+	usernameHMAC, _ := data.LookupHash(user.Username, key) // nolint:errcheck
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE users SET username = ?, password_hash = ?, role = ?, updated_at = ? WHERE user_id = ?`)).
-			WithArgs(user.Username, user.PasswordHash, user.Role, user.UpdatedAt, user.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE users SET username = ?, username_hmac = ?, password_hash = ?, role = ?, updated_at = ? WHERE user_id = ?`)).
+			WithArgs(sqlmock.AnyArg(), usernameHMAC, user.PasswordHash, user.Role, user.UpdatedAt, user.ID).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		err := store.Update(user)
@@ -158,8 +166,8 @@ func TestSQLUserStore_Update(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE users SET username = ?, password_hash = ?, role = ?, updated_at = ? WHERE user_id = ?`)).
-			WithArgs(user.Username, user.PasswordHash, user.Role, user.UpdatedAt, user.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE users SET username = ?, username_hmac = ?, password_hash = ?, role = ?, updated_at = ? WHERE user_id = ?`)).
+			WithArgs(sqlmock.AnyArg(), usernameHMAC, user.PasswordHash, user.Role, user.UpdatedAt, user.ID).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err := store.Update(user)
@@ -169,8 +177,8 @@ func TestSQLUserStore_Update(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE users SET username = ?, password_hash = ?, role = ?, updated_at = ? WHERE user_id = ?`)).
-			WithArgs(user.Username, user.PasswordHash, user.Role, user.UpdatedAt, user.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE users SET username = ?, username_hmac = ?, password_hash = ?, role = ?, updated_at = ? WHERE user_id = ?`)).
+			WithArgs(sqlmock.AnyArg(), usernameHMAC, user.PasswordHash, user.Role, user.UpdatedAt, user.ID).
 			WillReturnError(errors.New("db error"))
 
 		err := store.Update(user)
@@ -187,7 +195,7 @@ func TestSQLUserStore_Delete(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLUserStore(db)
+	store := data.NewSQLUserStore(db, []byte("0123456789abcdef0123456789abcdef"))
 
 	userID := 1
 
@@ -231,9 +239,11 @@ func TestSQLUserStore_GetUserByUsername(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLUserStore(db)
+	key := []byte("0123456789abcdef0123456789abcdef")
+	store := data.NewSQLUserStore(db, key)
 
 	username := "testuser"
+	usernameHMAC, _ := data.LookupHash(username, key) // nolint:errcheck
 	expectedUser := &models.User{
 		ID:           1,
 		Username:     username,
@@ -244,11 +254,13 @@ func TestSQLUserStore_GetUserByUsername(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"user_id", "username", "password_hash", "role", "created_at", "updated_at"}).
-			AddRow(expectedUser.ID, expectedUser.Username, expectedUser.PasswordHash, expectedUser.Role, expectedUser.CreatedAt, expectedUser.UpdatedAt)
+		encryptedUsername, _ := data.Encrypt(expectedUser.Username, key) // nolint:errcheck
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT user_id, username, password_hash, role, created_at, updated_at FROM users WHERE username = ?`)).
-			WithArgs(username).
+		rows := sqlmock.NewRows([]string{"user_id", "username", "password_hash", "role", "created_at", "updated_at"}).
+			AddRow(expectedUser.ID, encryptedUsername, expectedUser.PasswordHash, expectedUser.Role, expectedUser.CreatedAt, expectedUser.UpdatedAt)
+
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT user_id, username, password_hash, role, created_at, updated_at FROM users WHERE username_hmac = ?`)).
+			WithArgs(usernameHMAC).
 			WillReturnRows(rows)
 
 		user, err := store.GetUserByUsername(username)
@@ -264,8 +276,8 @@ func TestSQLUserStore_GetUserByUsername(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT user_id, username, password_hash, role, created_at, updated_at FROM users WHERE username = ?`)).
-			WithArgs(username).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT user_id, username, password_hash, role, created_at, updated_at FROM users WHERE username_hmac = ?`)).
+			WithArgs(usernameHMAC).
 			WillReturnError(sql.ErrNoRows)
 
 		user, err := store.GetUserByUsername(username)
@@ -276,8 +288,8 @@ func TestSQLUserStore_GetUserByUsername(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT user_id, username, password_hash, role, created_at, updated_at FROM users WHERE username = ?`)).
-			WithArgs(username).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT user_id, username, password_hash, role, created_at, updated_at FROM users WHERE username_hmac = ?`)).
+			WithArgs(usernameHMAC).
 			WillReturnError(errors.New("db error"))
 
 		user, err := store.GetUserByUsername(username)

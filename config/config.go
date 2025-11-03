@@ -25,7 +25,8 @@ type Config struct {
 		JWTSecret    string        `mapstructure:"jwt_secret"`
 	} `mapstructure:"server"`
 	Database struct {
-		DSN string `mapstructure:"dsn"` // Data Source Name for SQLite
+		DSN           string `mapstructure:"dsn"` // Data Source Name for SQLite
+		EncryptionKey string `mapstructure:"encryption_key"`
 	} `mapstructure:"database"`
 	Log struct {
 		Level  string `mapstructure:"level"`
@@ -91,6 +92,9 @@ func LoadConfig() (*Config, error) {
 	if err := v.BindEnv("database.dsn", "KINDERGARTEN_DATABASE_DSN"); err != nil {
 		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_DATABASE_DSN: %w", err)
 	}
+	if err := v.BindEnv("database.encryption_key", "KINDERGARTEN_DATABASE_ENCRYPTION_KEY"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_DATABASE_ENCRYPTION_KEY: %w", err)
+	}
 	if err := v.BindEnv("log.level", "KINDERGARTEN_LOG_LEVEL"); err != nil {
 		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_LOG_LEVEL: %w", err)
 	}
@@ -145,6 +149,12 @@ func validateConfig(cfg *Config) error {
 	}
 	if cfg.Database.DSN == "" {
 		return fmt.Errorf("database DSN cannot be empty")
+	}
+	if cfg.Database.EncryptionKey == "" {
+		return fmt.Errorf("database encryption key cannot be empty")
+	}
+	if len(cfg.Database.EncryptionKey) != 32 {
+		return fmt.Errorf("database encryption key must be 32 bytes long")
 	}
 	if cfg.FileStorage.MaxSizeMB <= 0 {
 		return fmt.Errorf("file storage max size must be greater than 0")

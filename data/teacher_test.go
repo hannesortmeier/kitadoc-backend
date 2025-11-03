@@ -21,7 +21,7 @@ func TestSQLTeacherStore_Create(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLTeacherStore(db)
+	store := data.NewSQLTeacherStore(db, []byte("0123456789abcdef0123456789abcdef"))
 
 	teacher := &models.Teacher{
 		FirstName: "Jane",
@@ -33,7 +33,7 @@ func TestSQLTeacherStore_Create(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO teachers (first_name, last_name, username, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.CreatedAt, teacher.UpdatedAt).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), teacher.CreatedAt, teacher.UpdatedAt).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		id, err := store.Create(teacher)
@@ -44,7 +44,7 @@ func TestSQLTeacherStore_Create(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO teachers (first_name, last_name, username, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.CreatedAt, teacher.UpdatedAt).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), teacher.CreatedAt, teacher.UpdatedAt).
 			WillReturnError(errors.New("db error"))
 
 		id, err := store.Create(teacher)
@@ -62,7 +62,8 @@ func TestSQLTeacherStore_GetByID(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLTeacherStore(db)
+	key := []byte("0123456789abcdef0123456789abcdef")
+	store := data.NewSQLTeacherStore(db, key)
 
 	teacherID := 1
 	expectedTeacher := &models.Teacher{
@@ -75,8 +76,12 @@ func TestSQLTeacherStore_GetByID(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
+		encryptedFirstName, _ := data.Encrypt(expectedTeacher.FirstName, key)
+		encryptedLastName, _ := data.Encrypt(expectedTeacher.LastName, key)
+		encryptedUsername, _ := data.Encrypt(expectedTeacher.Username, key)
+
 		rows := sqlmock.NewRows([]string{"teacher_id", "first_name", "last_name", "username", "created_at", "updated_at"}).
-			AddRow(expectedTeacher.ID, expectedTeacher.FirstName, expectedTeacher.LastName, expectedTeacher.Username, expectedTeacher.CreatedAt, expectedTeacher.UpdatedAt)
+			AddRow(expectedTeacher.ID, encryptedFirstName, encryptedLastName, encryptedUsername, expectedTeacher.CreatedAt, expectedTeacher.UpdatedAt)
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers WHERE teacher_id = ?`)).
 			WithArgs(teacherID).
@@ -126,7 +131,7 @@ func TestSQLTeacherStore_Update(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLTeacherStore(db)
+	store := data.NewSQLTeacherStore(db, []byte("0123456789abcdef0123456789abcdef"))
 
 	teacher := &models.Teacher{
 		ID:        1,
@@ -138,7 +143,7 @@ func TestSQLTeacherStore_Update(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`UPDATE teachers SET first_name = ?, last_name = ?, username = ?, updated_at = ? WHERE teacher_id = ?`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.UpdatedAt, teacher.ID).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), teacher.UpdatedAt, teacher.ID).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		err := store.Update(teacher)
@@ -148,7 +153,7 @@ func TestSQLTeacherStore_Update(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`UPDATE teachers SET first_name = ?, last_name = ?, username = ?, updated_at = ? WHERE teacher_id = ?`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.UpdatedAt, teacher.ID).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), teacher.UpdatedAt, teacher.ID).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err := store.Update(teacher)
@@ -159,7 +164,7 @@ func TestSQLTeacherStore_Update(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta(`UPDATE teachers SET first_name = ?, last_name = ?, username = ?, updated_at = ? WHERE teacher_id = ?`)).
-			WithArgs(teacher.FirstName, teacher.LastName, teacher.Username, teacher.UpdatedAt, teacher.ID).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), teacher.UpdatedAt, teacher.ID).
 			WillReturnError(errors.New("db error"))
 
 		err := store.Update(teacher)
@@ -176,7 +181,8 @@ func TestSQLTeacherStore_GetAll(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck
 
-	store := data.NewSQLTeacherStore(db)
+	key := []byte("0123456789abcdef0123456789abcdef")
+	store := data.NewSQLTeacherStore(db, key)
 
 	now := time.Now().Truncate(time.Second)
 	teachers := []models.Teacher{
@@ -185,9 +191,13 @@ func TestSQLTeacherStore_GetAll(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"teacher_id", "first_name", "last_name", "username", "created_at", "updated_at"}).
-			AddRow(teachers[0].ID, teachers[0].FirstName, teachers[0].LastName, teachers[0].Username, teachers[0].CreatedAt, teachers[0].UpdatedAt).
-			AddRow(teachers[1].ID, teachers[1].FirstName, teachers[1].LastName, teachers[1].Username, teachers[1].CreatedAt, teachers[1].UpdatedAt)
+		rows := sqlmock.NewRows([]string{"teacher_id", "first_name", "last_name", "username", "created_at", "updated_at"})
+		for _, teacher := range teachers {
+			encryptedFirstName, _ := data.Encrypt(teacher.FirstName, key)
+			encryptedLastName, _ := data.Encrypt(teacher.LastName, key)
+			encryptedUsername, _ := data.Encrypt(teacher.Username, key)
+			rows.AddRow(teacher.ID, encryptedFirstName, encryptedLastName, encryptedUsername, teacher.CreatedAt, teacher.UpdatedAt)
+		}
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT teacher_id, first_name, last_name, username, created_at, updated_at FROM teachers`)).
 			WillReturnRows(rows)

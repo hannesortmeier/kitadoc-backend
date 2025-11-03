@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"kitadoc-backend/models"
 )
 
 var (
@@ -19,76 +21,9 @@ var (
 )
 
 func setupTest(t *testing.T) {
-	// Disable foreign keys
-	_, err := db.Exec("PRAGMA foreign_keys = OFF")
-	if err != nil {
-		t.Fatalf("failed to disable foreign keys: %v", err)
-	}
-
-	// Drop all tables to clean up the database
-	rows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name != 'sqlite_sequence';")
-	if err != nil {
-		t.Fatalf("failed to query tables: %v", err)
-	}
-	defer rows.Close() //nolint:errcheck
-
-	var tables []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			t.Fatalf("failed to scan table name: %v", err)
-		}
-		tables = append(tables, name)
-	}
-
-	for _, table := range tables {
-		if _, err := db.Exec("DROP TABLE IF EXISTS " + table); err != nil {
-			t.Fatalf("failed to drop table %s: %v", table, err)
-		}
-	}
-
-	// Enable foreign keys
-	_, err = db.Exec("PRAGMA foreign_keys = ON")
-	if err != nil {
-		t.Fatalf("failed to enable foreign keys: %v", err)
-	}
-
-	// Read and execute data_model.sql
-	sqlContent, err := os.ReadFile("../database/data_model.sql")
-	if err != nil {
-		t.Fatalf("failed to read data_model.sql: %v", err)
-	}
-
-	_, err = db.Exec(string(sqlContent))
-	if err != nil {
-		t.Fatalf("failed to execute data_model.sql: %v", err)
-	}
-
-	// Read and execute sample_data.sql
-	sqlContent, err = os.ReadFile("../database/sample_data.sql")
-	if err != nil {
-		t.Fatalf("failed to read sample_data.sql: %v", err)
-	}
-
-	_, err = db.Exec(string(sqlContent))
-	if err != nil {
-		t.Fatalf("failed to execute sample_data.sql: %v", err)
-	}
-
-	// Create a regular user and get token
-	resp := makeUnauthenticatedRequest(t, http.MethodPost, "/api/v1/auth/register", map[string]string{
+	resp := makeUnauthenticatedRequest(t, http.MethodPost, "/api/v1/auth/login", map[string]string{
 		"username": "testuser",
-		"password": "password123",
-		"role":     "teacher",
-	}, "application/json")
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("failed to register user: %s", readResponseBody(t, resp))
-	}
-
-	resp = makeUnauthenticatedRequest(t, http.MethodPost, "/api/v1/auth/login", map[string]string{
-		"username": "testuser",
-		"password": "password123",
+		"password": "password",
 	}, "application/json")
 	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusOK {
@@ -102,20 +37,9 @@ func setupTest(t *testing.T) {
 	}
 	authToken = loginResp.Token
 
-	// Create an admin user and get token
-	resp = makeUnauthenticatedRequest(t, http.MethodPost, "/api/v1/auth/register", map[string]string{
-		"username": "adminuser",
-		"password": "password123",
-		"role":     "admin",
-	}, "application/json")
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("failed to register admin user: %s", readResponseBody(t, resp))
-	}
-
 	resp = makeUnauthenticatedRequest(t, http.MethodPost, "/api/v1/auth/login", map[string]string{
-		"username": "adminuser",
-		"password": "password123",
+		"username": "admin",
+		"password": "password",
 	}, "application/json")
 	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusOK {
@@ -125,42 +49,6 @@ func setupTest(t *testing.T) {
 		t.Fatalf("failed to unmarshal admin login response: %v", err)
 	}
 	adminAuthToken = loginResp.Token
-}
-
-func teardownTest(t *testing.T) {
-	// Disable foreign keys
-	_, err := db.Exec("PRAGMA foreign_keys = OFF")
-	if err != nil {
-		t.Fatalf("failed to disable foreign keys: %v", err)
-	}
-
-	// Drop all tables to clean up the database
-	rows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name != 'sqlite_sequence';")
-	if err != nil {
-		t.Fatalf("failed to query tables: %v", err)
-	}
-	defer rows.Close() //nolint:errcheck
-
-	var tables []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			t.Fatalf("failed to scan table name: %v", err)
-		}
-		tables = append(tables, name)
-	}
-
-	for _, table := range tables {
-		if _, err := db.Exec("DROP TABLE IF EXISTS " + table); err != nil {
-			t.Fatalf("failed to drop table %s: %v", table, err)
-		}
-	}
-
-	// Enable foreign keys
-	_, err = db.Exec("PRAGMA foreign_keys = ON")
-	if err != nil {
-		t.Fatalf("failed to enable foreign keys: %v", err)
-	}
 }
 
 // Helper function to make authenticated requests
@@ -217,7 +105,6 @@ func readResponseBody(t *testing.T, resp *http.Response) []byte {
 
 func TestPublicRoutes(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	// Test GET /health
 	t.Run("Health Check", func(t *testing.T) {
@@ -236,7 +123,6 @@ func TestPublicRoutes(t *testing.T) {
 
 func TestAuthEndpoints(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	// Test GET /api/v1/auth/me
 	t.Run("Get Current User", func(t *testing.T) {
@@ -271,7 +157,6 @@ func TestAuthEndpoints(t *testing.T) {
 
 func TestChildrenManagementEndpoints(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	var childID int
 	// Test POST /api/v1/children
@@ -391,7 +276,6 @@ func TestChildrenManagementEndpoints(t *testing.T) {
 
 func TestTeachersManagementEndpoints(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	var teacherID int
 	// Test POST /api/v1/teachers
@@ -478,7 +362,6 @@ func TestTeachersManagementEndpoints(t *testing.T) {
 
 func TestCategoriesManagementEndpoints(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	var categoryID int
 	// Test POST /api/v1/categories
@@ -549,7 +432,6 @@ func TestCategoriesManagementEndpoints(t *testing.T) {
 
 func TestChildTeacherAssignmentsEndpoints(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	// First, create a child and a teacher for assignment
 	var childID, teacherID int
@@ -609,6 +491,25 @@ func TestChildTeacherAssignmentsEndpoints(t *testing.T) {
 		assignmentID = assignmentResp.ID
 		if assignmentID == 0 {
 			t.Error("Expected assignment ID, got empty string")
+		}
+	})
+
+	t.Run("Get All Assignments", func(t *testing.T) {
+		resp := makeAuthenticatedRequest(t, http.MethodGet, "/api/v1/assignments", authToken, nil, "application/json")
+		defer resp.Body.Close() //nolint:errcheck
+
+		if resp.StatusCode != http.StatusOK {
+			body := readResponseBody(t, resp)
+			t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, resp.StatusCode, string(body))
+			return
+		}
+
+		var assignments []models.Assignment
+		if err := json.Unmarshal(readResponseBody(t, resp), &assignments); err != nil {
+			t.Fatalf("failed to unmarshal assignments response: %v", err)
+		}
+		if len(assignments) == 0 {
+			t.Errorf("expected at least one assignment, got 0")
 		}
 	})
 
@@ -672,7 +573,6 @@ func TestChildTeacherAssignmentsEndpoints(t *testing.T) {
 
 func TestAudioRecordingsEndpoints(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	// Test POST /api/v1/audio/upload
 	// Create a category for documentation entry
@@ -737,7 +637,6 @@ func TestAudioRecordingsEndpoints(t *testing.T) {
 
 func TestDocumentGenerationEndpoints(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	// First, create a child for document generation
 	var childID int
@@ -835,7 +734,6 @@ func TestDocumentGenerationEndpoints(t *testing.T) {
 
 func TestDocumentationEntriesEndpoints(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	// First, create a child for documentation entry
 	var childID int
@@ -983,7 +881,6 @@ func TestDocumentationEntriesEndpoints(t *testing.T) {
 
 func TestBulkOperationsEndpoints(t *testing.T) {
 	setupTest(t)
-	defer teardownTest(t)
 
 	// Test POST /api/v1/bulk/import-children
 	t.Run("Import Children in Bulk", func(t *testing.T) {
