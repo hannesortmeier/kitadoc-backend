@@ -16,7 +16,8 @@ func RequestLogger(next http.Handler) http.Handler {
 		logger := GetLoggerWithReqID(request.Context()).WithFields(logrus.Fields{
 			"method": request.Method,
 			"uri":    request.RequestURI,
-			"proto":  request.Proto,
+			// Only log the first 6 characters of the device ID for privacy
+			"deviceId": request.Header.Get("X-Device-Id")[:6],
 		})
 
 		logger.Info("Incoming request")
