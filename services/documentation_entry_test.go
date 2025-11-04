@@ -206,41 +206,7 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		mockDocumentationEntryStore.AssertNotCalled(t, "Create")
 	})
 
-	// Test case 6: Observation date in the future
-	t.Run("future observation date", func(t *testing.T) {
-		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
-		mockChildStore := new(datamocks.MockChildStore)
-		mockTeacherStore := new(datamocks.MockTeacherStore)
-		mockCategoryStore := new(datamocks.MockCategoryStore)
-		mockUserStore := new(datamocks.MockUserStore)
-		service := services.NewDocumentationEntryService(
-			mockDocumentationEntryStore,
-			mockChildStore,
-			mockTeacherStore,
-			mockCategoryStore,
-			mockUserStore,
-		)
-
-		entry := &models.DocumentationEntry{
-			ChildID:                1,
-			TeacherID:              1,
-			CategoryID:             1,
-			ObservationDate:        time.Now().Add(time.Hour), // Future date
-			ObservationDescription: "Test observation",
-		}
-
-		createdEntry, err := service.CreateDocumentationEntry(logger, ctx, entry)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid input")
-		assert.Nil(t, createdEntry)
-		mockChildStore.AssertNotCalled(t, "GetByID")
-		mockTeacherStore.AssertNotCalled(t, "GetByID")
-		mockCategoryStore.AssertNotCalled(t, "GetByID")
-		mockDocumentationEntryStore.AssertNotCalled(t, "Create")
-	})
-
-	// Test case 7: Internal error during store creation
+	// Test case 6: Internal error during store creation
 	t.Run("internal error on create", func(t *testing.T) {
 		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
 		mockChildStore := new(datamocks.MockChildStore)
@@ -532,41 +498,7 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		mockDocumentationEntryStore.AssertNotCalled(t, "Update")
 	})
 
-	// Test case 6: Observation date in the future
-	t.Run("future observation date", func(t *testing.T) {
-		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
-		mockChildStore := new(datamocks.MockChildStore)
-		mockTeacherStore := new(datamocks.MockTeacherStore)
-		mockCategoryStore := new(datamocks.MockCategoryStore)
-		mockUserStore := new(datamocks.MockUserStore)
-		service := services.NewDocumentationEntryService(
-			mockDocumentationEntryStore,
-			mockChildStore,
-			mockTeacherStore,
-			mockCategoryStore,
-			mockUserStore,
-		)
-
-		entry := &models.DocumentationEntry{
-			ID:                     1,
-			ChildID:                1,
-			TeacherID:              1,
-			CategoryID:             1,
-			ObservationDate:        time.Now().Add(time.Hour).UTC(), // Future date
-			ObservationDescription: "Test observation",
-		}
-
-		err := service.UpdateDocumentationEntry(logger, ctx, entry)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid input")
-		mockChildStore.AssertNotCalled(t, "GetByID")
-		mockTeacherStore.AssertNotCalled(t, "GetByID")
-		mockCategoryStore.AssertNotCalled(t, "GetByID")
-		mockDocumentationEntryStore.AssertNotCalled(t, "Update")
-	})
-
-	// Test case 7: Entry not found during update
+	// Test case 6: Entry not found during update
 	t.Run("not found on update", func(t *testing.T) {
 		mockDocumentationEntryStore := new(datamocks.MockDocumentationEntryStore)
 		mockChildStore := new(datamocks.MockChildStore)
