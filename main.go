@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sort"
-	"strings"
 	"syscall"
 	"time"
 
@@ -45,33 +43,6 @@ func main() {
 		logFormatter = &logrus.TextFormatter{
 			FullTimestamp:   true,
 			TimestampFormat: time.RFC3339,
-			SortingFunc: func(entries []string) {
-				// method first, then uri, then ids and then the rest
-				sort.Slice(entries, func(i, j int) bool {
-					if entries[i] == "method" {
-						return true
-					} else if entries[j] == "method" {
-						return false
-					} else if entries[i] == "uri" {
-						return true
-					} else if entries[j] == "uri" {
-						return false
-					} else if entries[i] != "request_id" && strings.Contains(entries[i], "_id") {
-						return true
-					} else if entries[j] != "request_id" && strings.Contains(entries[j], "_id") {
-						return false
-					} else if entries[i] == "deviceId" {
-						return true
-					} else if entries[j] == "deviceId" {
-						return false
-					} else if entries[i] == "duration" {
-						return false
-					} else if entries[j] == "duration" {
-						return true
-					}
-					return entries[i] < entries[j]
-				})
-			},
 		}
 	default:
 		logrus.Fatalf("Unsupported log format: %s. Must be 'json' or 'text'.", cfg.Log.Format)
