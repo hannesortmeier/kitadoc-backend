@@ -14,4 +14,5 @@ var (
 	ErrFileUploadFailed            = errors.New("file upload failed")
 	ErrBulkImportFailed            = errors.New("bulk import failed")
 	ErrPermissionDenied            = errors.New("permission denied")
+	ErrForeignKeyConstraint        = errors.New("foreign key constraint violation")
 )

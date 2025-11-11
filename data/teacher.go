@@ -7,6 +7,8 @@ import (
 	"reflect"
 
 	"kitadoc-backend/models"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 // TeacherStore defines the interface for Teacher data operations.
@@ -159,6 +161,11 @@ func (s *SQLTeacherStore) Delete(id int) error {
 	query := `DELETE FROM teachers WHERE teacher_id = ?`
 	result, err := s.db.Exec(query, id)
 	if err != nil {
+		// Check for foreign key constraint violation
+		var sqliteErr sqlite3.Error
+		if errors.As(err, &sqliteErr) && (sqliteErr.ExtendedCode == 1811 || sqliteErr.ExtendedCode == 787) {
+			return ErrForeignKeyConstraint
+		}
 		return err
 	}
 	rowsAffected, err := result.RowsAffected()

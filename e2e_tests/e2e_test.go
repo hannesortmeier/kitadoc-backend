@@ -346,6 +346,78 @@ func TestTeachersManagementEndpoints(t *testing.T) {
 		}
 	})
 
+	// Test DELETE /api/v1/teachers/{teacher_id} with foreign key constraint
+	t.Run("Delete Teacher with Foreign Key Constraint", func(t *testing.T) {
+		// Create a child and assignment to enforce foreign key constraint
+		respChild := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/children", authToken, map[string]interface{}{
+			"first_name":                 "Test",
+			"last_name":                  "Child",
+			"birthdate":                  time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),
+			"gender":                     "female",
+			"migration_background":       true,
+			"family_language":            "Niederländisch",
+			"admission_date":             time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
+			"expected_school_enrollment": time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC),
+			"address":                    "123 Test St, Test City, TC 12345",
+			"parent1_name":               "Parent One",
+			"parent2_name":               "Parent Two",
+		}, "application/json")
+		defer respChild.Body.Close() //nolint:errcheck
+		if respChild.StatusCode != http.StatusCreated {
+			t.Fatalf("Failed to create child for foreign key constraint test: %s", readResponseBody(t, respChild))
+		}
+		var childResp struct {
+			ID int `json:"id"`
+		}
+		bodyChild := readResponseBody(t, respChild)
+		if err := json.Unmarshal(bodyChild, &childResp); err != nil {
+			t.Fatalf("Failed to unmarshal child creation response: %v", err)
+		}
+		childID := childResp.ID
+		if childID == 0 {
+			t.Fatalf("Expected child ID, got 0")
+		}
+		// First, create an assignment that links the teacher to a child
+		respAssign := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/assignments", adminAuthToken, map[string]interface{}{
+			"teacher_id": teacherID,
+			"child_id":   childID,
+			"start_date": time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
+		}, "application/json")
+		defer respAssign.Body.Close() //nolint:errcheck
+		if respAssign.StatusCode != http.StatusCreated {
+			t.Fatalf("Failed to create assignment for foreign key constraint test: %s", readResponseBody(t, respAssign))
+		}
+		var assignResp struct {
+			ID int `json:"id"`
+		}
+		bodyAssign := readResponseBody(t, respAssign)
+		if err := json.Unmarshal(bodyAssign, &assignResp); err != nil {
+			t.Fatalf("Failed to unmarshal assignment creation response: %v", err)
+		}
+		assignId := assignResp.ID
+		if assignId == 0 {
+			t.Fatalf("Expected assignment ID, got 0")
+		}
+
+		// Now attempt to delete the teacher
+		resp := makeAuthenticatedRequest(t, http.MethodDelete, fmt.Sprintf("/api/v1/teachers/%d", teacherID), adminAuthToken, nil, "application/json")
+		defer resp.Body.Close() //nolint:errcheck
+		if resp.StatusCode != http.StatusConflict {
+			t.Errorf("Expected status %d due to foreign key constraint, got %d", http.StatusConflict, resp.StatusCode)
+		}
+		body := readResponseBody(t, resp)
+		if !bytes.Contains(body, []byte("Cannot delete teacher")) {
+			t.Errorf("Expected foreign key constraint message, got %s", body)
+		}
+
+		// Clean up: delete the assignment
+		respCleanup := makeAuthenticatedRequest(t, http.MethodDelete, fmt.Sprintf("/api/v1/assignments/%d", assignId), adminAuthToken, nil, "application/json")
+		defer respCleanup.Body.Close() //nolint:errcheck
+		if respCleanup.StatusCode != http.StatusOK {
+			t.Fatalf("Failed to clean up assignment after foreign key constraint test: %s", readResponseBody(t, respCleanup))
+		}
+	})
+
 	// Test DELETE /api/v1/teachers/{teacher_id}
 	t.Run("Delete Teacher", func(t *testing.T) {
 		resp := makeAuthenticatedRequest(t, http.MethodDelete, fmt.Sprintf("/api/v1/teachers/%d", teacherID), adminAuthToken, nil, "application/json")

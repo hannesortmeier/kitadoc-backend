@@ -91,6 +91,8 @@ func (s *TeacherServiceImpl) DeleteTeacher(id int) error {
 		logger.GetGlobalLogger().Errorf("Error deleting teacher with ID %d: %v", id, err)
 		if errors.Is(err, data.ErrNotFound) {
 			return ErrNotFound
+		} else if errors.Is(err, data.ErrForeignKeyConstraint) {
+			return ErrForeignKeyConstraint
 		}
 		return ErrInternal
 	}

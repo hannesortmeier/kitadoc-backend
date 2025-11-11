@@ -142,8 +142,12 @@ func (teacherHandler *TeacherHandler) DeleteTeacher(writer http.ResponseWriter, 
 
 	err = teacherHandler.TeacherService.DeleteTeacher(id)
 	if err != nil {
-		if err == services.ErrNotFound {
+		switch err {
+		case services.ErrNotFound:
 			http.Error(writer, "Teacher not found", http.StatusNotFound)
+			return
+		case services.ErrForeignKeyConstraint:
+			http.Error(writer, "Cannot delete teacher: foreign key constraint violation", http.StatusConflict)
 			return
 		}
 		http.Error(writer, "Internal server error", http.StatusInternalServerError)

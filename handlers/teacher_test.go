@@ -509,4 +509,24 @@ func TestDeleteTeacher(t *testing.T) {
 
 		mockService.AssertExpectations(t)
 	})
+
+	t.Run("Service Returns ErrForeignKeyConstraint", func(t *testing.T) {
+		mockService := new(mocks.MockTeacherService)
+		handler := NewTeacherHandler(mockService)
+
+		mockService.On("DeleteTeacher", 2).Return(services.ErrForeignKeyConstraint).Once()
+
+		req := httptest.NewRequest(http.MethodDelete, "/teachers/2", nil)
+		ctx := context.WithValue(req.Context(), testutils.ContextKeyLogger, logger)
+		req.SetPathValue("teacher_id", "2")
+		req = req.WithContext(ctx)
+
+		recorder := httptest.NewRecorder()
+		handler.DeleteTeacher(recorder, req)
+
+		assert.Equal(t, http.StatusConflict, recorder.Code)
+		assert.Equal(t, "Cannot delete teacher: foreign key constraint violation\n", recorder.Body.String())
+
+		mockService.AssertExpectations(t)
+	})
 }
