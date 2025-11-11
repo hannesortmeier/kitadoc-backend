@@ -93,13 +93,15 @@ func (s *ChildServiceImpl) UpdateChild(child *models.Child) error {
 func (s *ChildServiceImpl) DeleteChild(id int) error {
 	err := s.childStore.Delete(id)
 	if err != nil {
+		log := logger.GetGlobalLogger()
 		if errors.Is(err, data.ErrNotFound) {
-			logger.GetGlobalLogger().Errorf("Child not found: %d", id)
+			log.Warnf("Child with ID %d not found: %v", id, err)
 			return ErrNotFound
 		} else if errors.Is(err, data.ErrForeignKeyConstraint) {
+			log.Errorf("Foreign key constraint violation for child id %d: %v", id, err)
 			return ErrForeignKeyConstraint
 		}
-		logger.GetGlobalLogger().Errorf("Failed to delete child: %v", err)
+		log.Errorf("Failed to delete child: %v", err)
 		return ErrInternal
 	}
 	return nil

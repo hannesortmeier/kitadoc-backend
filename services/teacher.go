@@ -88,12 +88,15 @@ func (s *TeacherServiceImpl) UpdateTeacher(teacher *models.Teacher) error {
 func (s *TeacherServiceImpl) DeleteTeacher(id int) error {
 	err := s.teacherStore.Delete(id)
 	if err != nil {
-		logger.GetGlobalLogger().Errorf("Error deleting teacher with ID %d: %v", id, err)
+		log := logger.GetGlobalLogger()
 		if errors.Is(err, data.ErrNotFound) {
+			log.Warnf("Teacher with ID %d not found: %v", id, err)
 			return ErrNotFound
 		} else if errors.Is(err, data.ErrForeignKeyConstraint) {
+			log.Errorf("Foreign key constraint violation for teacher id %d: %v", id, err)
 			return ErrForeignKeyConstraint
 		}
+		log.Errorf("Error: %v", err)
 		return ErrInternal
 	}
 	return nil
