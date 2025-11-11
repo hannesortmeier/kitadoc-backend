@@ -110,6 +110,8 @@ func (s *CategoryServiceImpl) DeleteCategory(id int) error {
 		if errors.Is(err, data.ErrNotFound) {
 			logger.GetGlobalLogger().Errorf("Category not found: %d", id)
 			return ErrNotFound
+		} else if errors.Is(err, data.ErrForeignKeyConstraint) {
+			return ErrForeignKeyConstraint
 		}
 		logger.GetGlobalLogger().Errorf("Error deleting category: %v", err)
 		return ErrInternal

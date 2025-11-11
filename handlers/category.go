@@ -107,8 +107,12 @@ func (handler *CategoryHandler) DeleteCategory(writer http.ResponseWriter, reque
 
 	err = handler.CategoryService.DeleteCategory(id)
 	if err != nil {
-		if err == services.ErrNotFound {
+		switch err {
+		case services.ErrNotFound:
 			http.Error(writer, "Category not found", http.StatusNotFound)
+			return
+		case services.ErrForeignKeyConstraint:
+			http.Error(writer, "Cannot delete category: foreign key constraint violation", http.StatusConflict)
 			return
 		}
 		http.Error(writer, "Internal server error", http.StatusInternalServerError)

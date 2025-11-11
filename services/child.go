@@ -96,6 +96,8 @@ func (s *ChildServiceImpl) DeleteChild(id int) error {
 		if errors.Is(err, data.ErrNotFound) {
 			logger.GetGlobalLogger().Errorf("Child not found: %d", id)
 			return ErrNotFound
+		} else if errors.Is(err, data.ErrForeignKeyConstraint) {
+			return ErrForeignKeyConstraint
 		}
 		logger.GetGlobalLogger().Errorf("Failed to delete child: %v", err)
 		return ErrInternal

@@ -155,9 +155,13 @@ func (childHandler *ChildHandler) DeleteChild(writer http.ResponseWriter, reques
 
 	err = childHandler.ChildService.DeleteChild(id)
 	if err != nil {
-		if err == services.ErrNotFound {
+		switch err {
+		case services.ErrNotFound:
 			logger.Errorf("Child not found: %d", id)
 			http.Error(writer, "Child not found", http.StatusNotFound)
+			return
+		case services.ErrForeignKeyConstraint:
+			http.Error(writer, "Cannot delete child: foreign key constraint violation", http.StatusConflict)
 			return
 		}
 		logger.Errorf("Failed to delete child: %v", err)

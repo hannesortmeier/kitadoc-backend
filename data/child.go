@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"kitadoc-backend/models"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 // ChildStore defines the interface for Child data operations.
@@ -200,6 +202,11 @@ func (s *SQLChildStore) Delete(id int) error {
 	query := `DELETE FROM children WHERE child_id = ?`
 	result, err := s.db.Exec(query, id)
 	if err != nil {
+		// Check for foreign key constraint violation
+		var sqliteErr sqlite3.Error
+		if errors.As(err, &sqliteErr) && (sqliteErr.ExtendedCode == 1811 || sqliteErr.ExtendedCode == 787) {
+			return ErrForeignKeyConstraint
+		}
 		return err
 	}
 	rowsAffected, err := result.RowsAffected()
