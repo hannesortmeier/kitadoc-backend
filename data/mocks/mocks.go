@@ -356,26 +356,3 @@ func (m *MockCategoryStore) Delete(id int) error {
 	args := m.Called(id)
 	return args.Error(0)
 }
-
-// MockAudioRecordingStore is a mock implementation of data.AudioRecordingStore
-type MockAudioRecordingStore struct {
-	mock.Mock
-}
-
-func (m *MockAudioRecordingStore) Create(recording *models.AudioRecording) (int, error) {
-	args := m.Called(recording)
-	return args.Int(0), args.Error(1)
-}
-
-func (m *MockAudioRecordingStore) GetByID(id int) (*models.AudioRecording, error) {
-	args := m.Called(id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.AudioRecording), args.Error(1)
-}
-
-func (m *MockAudioRecordingStore) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
