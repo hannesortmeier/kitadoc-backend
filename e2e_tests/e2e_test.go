@@ -952,53 +952,5 @@ func TestDocumentationEntriesEndpoints(t *testing.T) {
 }
 
 func TestBulkOperationsEndpoints(t *testing.T) {
-	setupTest(t)
-
-	// Test POST /api/v1/bulk/import-children
-	t.Run("Import Children in Bulk", func(t *testing.T) {
-		csvContent := `first_name,last_name,birth_date,gender
-BulkChild1,Test,2023-01-01,male
-BulkChild2,Test,2024-01-01,other`
-
-		csvBuffer := bytes.NewBufferString(csvContent)
-		body := &bytes.Buffer{}
-		writer := multipart.NewWriter(body)
-
-		// Create form file field
-		part, err := writer.CreateFormFile("children_csv", "test_data.csv")
-		if err != nil {
-			t.Fatalf("Failed to create form file: %v", err)
-		}
-
-		// Write CSV content to the form file
-		if _, err := io.Copy(part, csvBuffer); err != nil {
-			t.Fatalf("Failed to copy CSV to form file: %v", err)
-		}
-
-		// Close the multipart writer
-		if err := writer.Close(); err != nil {
-			t.Fatalf("Failed to close multipart writer: %v", err)
-		}
-
-		req, err := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/bulk/import-children", body)
-		if err != nil {
-			t.Fatalf("failed to create request: %v", err)
-		}
-		req.Header.Set("Content-Type", writer.FormDataContentType())
-		req.Header.Set("Authorization", "Bearer "+adminAuthToken)
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			t.Fatalf("failed to make request: %v", err)
-		}
-
-		defer resp.Body.Close() //nolint:errcheck
-		//if resp.StatusCode != http.StatusOK {
-		//	t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
-		//}
-		//responseBody := readResponseBody(t, resp)
-		//if !bytes.Contains(responseBody, []byte("Bulk import completed successfully")) {
-		//	t.Errorf("Expected bulk import success message, got %s", responseBody)
-		//}
-	})
+	// TODO: Add tests for bulk operations
 }

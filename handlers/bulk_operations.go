@@ -85,12 +85,12 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 
 	// Define the mapping from German headers to Child struct fields
 	headerMapping := map[string]string{
-		"Vorname":             "FirstName",
-		"Nachname":            "LastName",
-		"Geburtsdatum":        "Birthdate",
-		"Entlassungsdatum":    "ExpectedSchoolEnrollment",
-		"Nachnahme (1. Erzb)": "Parent1Name",
-		"Nachnahme (2. Erzb)": "Parent2Name",
+		"Vorname":            "FirstName",
+		"Nachname":           "LastName",
+		"Geburtsdatum":       "Birthdate",
+		"Entlassungsdatum":   "ExpectedSchoolEnrollment",
+		"Nachname (1. Erzb)": "Parent1Name",
+		"Nachname (2. Erzb)": "Parent2Name",
 	}
 
 	// Build a map from column index to Child struct field name
