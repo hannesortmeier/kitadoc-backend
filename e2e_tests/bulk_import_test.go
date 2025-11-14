@@ -69,7 +69,7 @@ func TestBulkImportChildrenFromXLSX(t *testing.T) {
 
 	// Check the response body for success message
 	responseBody := readResponseBody(t, resp)
-	if !bytes.Contains(responseBody, []byte("Bulk import completed successfully")) {
+	if !bytes.Contains(responseBody, []byte("Massenimport erfolgreich abgeschlossen")) {
 		t.Errorf("Expected bulk import success message, got %s", responseBody)
 	}
 
