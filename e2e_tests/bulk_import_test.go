@@ -88,9 +88,8 @@ func TestBulkImportChildrenFromXLSX(t *testing.T) {
 			FirstName                string `json:"first_name"`
 			LastName                 string `json:"last_name"`
 			Birthdate                string `json:"birthdate"`
+			AdmissionDate            string `json:"admission_date"`
 			ExpectedSchoolEnrollment string `json:"expected_school_enrollment"`
-			Parent1Name              string `json:"parent1_name"`
-			Parent2Name              string `json:"parent2_name"`
 		}
 
 		err := json.Unmarshal(body, &children)
@@ -103,12 +102,11 @@ func TestBulkImportChildrenFromXLSX(t *testing.T) {
 			FirstName                string
 			LastName                 string
 			Birthdate                string
+			AdmissionDate            string
 			ExpectedSchoolEnrollment string
-			Parent1Name              string
-			Parent2Name              string
 		}{
-			{"l", "k", "18.11.2022", "31.07.2029", "k", "k"},
-			{"a", "a", "10.11.2020", "31.07.2027", "a", "a"},
+			{"l", "k", "18.11.2022", "01.08.2023", "31.07.2029"},
+			{"a", "a", "10.11.2020", "01.08.2023", "31.07.2027"},
 		}
 
 		for _, expected := range expectedChildren {

@@ -880,13 +880,8 @@ func TestGenerateChildReport(t *testing.T) {
 			ID:                       childID,
 			FirstName:                "Report",
 			LastName:                 "Child",
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            time.Now(),
-			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
-			Address:                  "123 Main St",
-			Parent1Name:              "Parent One",
-			Parent2Name:              "Parent Two",
+			AdmissionDate:            timePtr(time.Now()),
+			ExpectedSchoolEnrollment: timePtr(time.Now().AddDate(1, 0, 0)),
 		}
 		expectedEntries := []models.DocumentationEntry{
 			{ID: 1, ChildID: childID, CategoryID: 1, ObservationDate: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC), ObservationDescription: "Entry 1"},
@@ -910,13 +905,8 @@ func TestGenerateChildReport(t *testing.T) {
 			ID:                       childID,
 			FirstName:                "Report",
 			LastName:                 "Child",
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            time.Now(),
-			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
-			Address:                  "123 Main St",
-			Parent1Name:              "Parent One",
-			Parent2Name:              "Parent Two",
+			AdmissionDate:            timePtr(time.Now()),
+			ExpectedSchoolEnrollment: timePtr(time.Now().AddDate(1, 0, 0)),
 		}
 		expectedEntries := []models.DocumentationEntry{}
 

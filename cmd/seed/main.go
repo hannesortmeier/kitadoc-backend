@@ -78,14 +78,14 @@ func main() {
 
 	// Seed children
 	children := []models.Child{
-		{FirstName: "Anna", LastName: "Müller", Birthdate: parseDate("2019-03-15"), Gender: "weiblich", FamilyLanguage: "Deutsch", MigrationBackground: false, AdmissionDate: parseDate("2023-08-01"), ExpectedSchoolEnrollment: parseDate("2025-08-01"), Address: "Musterstraße 12, 12345 Berlin", Parent1Name: "Peter Johnson", Parent2Name: "Lisa Johnson"},
-		{FirstName: "Liam", LastName: "Kowalski", Birthdate: parseDate("2018-11-20"), Gender: "männlich", FamilyLanguage: "Polnisch", MigrationBackground: true, AdmissionDate: parseDate("2023-08-01"), ExpectedSchoolEnrollment: parseDate("2024-08-01"), Address: "Hauptstraße 45, 12345 Berlin", Parent1Name: "Jan Kowalski", Parent2Name: "Anna Kowalski"},
-		{FirstName: "Ben", LastName: "Springer", Birthdate: parseDate("2019-07-08"), Gender: "männlich", FamilyLanguage: "Spanisch", MigrationBackground: true, AdmissionDate: parseDate("2023-09-15"), ExpectedSchoolEnrollment: parseDate("2025-08-01"), Address: "Parkweg 23, 12345 Berlin", Parent1Name: "Carlos Martinez", Parent2Name: "Elena Martinez"},
-		{FirstName: "Noah", LastName: "Brown", Birthdate: parseDate("2019-01-12"), Gender: "männlich", FamilyLanguage: "Englisch", MigrationBackground: true, AdmissionDate: parseDate("2023-08-01"), ExpectedSchoolEnrollment: parseDate("2025-08-01"), Address: "Lindenallee 67, 12345 Berlin", Parent1Name: "James Brown", Parent2Name: "Emma Brown"},
-		{FirstName: "Mia", LastName: "Schneider", Birthdate: parseDate("2018-09-30"), Gender: "divers", FamilyLanguage: "Deutsch", MigrationBackground: false, AdmissionDate: parseDate("2023-08-01"), ExpectedSchoolEnrollment: parseDate("2024-08-01"), Address: "Rosenstraße 89, 12345 Berlin", Parent1Name: "Klaus Schneider", Parent2Name: "Petra Schneider"},
-		{FirstName: "Lucas", LastName: "Ahmed", Birthdate: parseDate("2019-05-22"), Gender: "männlich", FamilyLanguage: "Arabisch", MigrationBackground: true, AdmissionDate: parseDate("2023-10-01"), ExpectedSchoolEnrollment: parseDate("2025-08-01"), Address: "Friedensplatz 34, 12345 Berlin", Parent1Name: "Omar Ahmed", Parent2Name: "Fatima Ahmed"},
-		{FirstName: "Charlotte", LastName: "Becker", Birthdate: parseDate("2019-02-18"), Gender: "weiblich", FamilyLanguage: "Deutsch", MigrationBackground: false, AdmissionDate: parseDate("2023-08-01"), ExpectedSchoolEnrollment: parseDate("2025-08-01"), Address: "Kastanienweg 56, 12345 Berlin", Parent1Name: "Frank Becker", Parent2Name: "Sabine Becker"},
-		{FirstName: "Oliver", LastName: "Popovic", Birthdate: parseDate("2018-12-05"), Gender: "männlich", FamilyLanguage: "Serbisch", MigrationBackground: true, AdmissionDate: parseDate("2023-09-01"), ExpectedSchoolEnrollment: parseDate("2024-08-01"), Address: "Eichenstraße 78, 12345 Berlin", Parent1Name: "Marko Popovic", Parent2Name: "Milica Popovic"},
+		{FirstName: "Anna", LastName: "Müller", Birthdate: parseDate("2019-03-15"), AdmissionDate: timePtr(parseDate("2023-08-01")), ExpectedSchoolEnrollment: timePtr(parseDate("2025-08-01"))},
+		{FirstName: "Liam", LastName: "Kowalski", Birthdate: parseDate("2018-11-20"), AdmissionDate: timePtr(parseDate("2023-08-01")), ExpectedSchoolEnrollment: timePtr(parseDate("2024-08-01"))},
+		{FirstName: "Ben", LastName: "Springer", Birthdate: parseDate("2019-07-08"), AdmissionDate: timePtr(parseDate("2023-09-15")), ExpectedSchoolEnrollment: timePtr(parseDate("2025-08-01"))},
+		{FirstName: "Noah", LastName: "Brown", Birthdate: parseDate("2019-01-12"), AdmissionDate: timePtr(parseDate("2023-08-01")), ExpectedSchoolEnrollment: timePtr(parseDate("2025-08-01"))},
+		{FirstName: "Mia", LastName: "Schneider", Birthdate: parseDate("2018-09-30"), AdmissionDate: timePtr(parseDate("2023-08-01")), ExpectedSchoolEnrollment: timePtr(parseDate("2024-08-01"))},
+		{FirstName: "Lucas", LastName: "Ahmed", Birthdate: parseDate("2019-05-22"), AdmissionDate: timePtr(parseDate("2023-10-01")), ExpectedSchoolEnrollment: timePtr(parseDate("2025-08-01"))},
+		{FirstName: "Charlotte", LastName: "Becker", Birthdate: parseDate("2019-02-18"), AdmissionDate: timePtr(parseDate("2023-08-01")), ExpectedSchoolEnrollment: timePtr(parseDate("2025-08-01"))},
+		{FirstName: "Oliver", LastName: "Popovic", Birthdate: parseDate("2018-12-05"), AdmissionDate: timePtr(parseDate("2023-09-01")), ExpectedSchoolEnrollment: timePtr(parseDate("2024-08-01"))},
 	}
 
 	for i := range children {
@@ -142,3 +142,7 @@ func main() {
 }
 
 func intPtr(i int) *int { return &i }
+
+func timePtr(t time.Time) *time.Time {
+	return &t
+}

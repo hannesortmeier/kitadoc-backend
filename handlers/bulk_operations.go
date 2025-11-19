@@ -85,12 +85,11 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 
 	// Define the mapping from German headers to Child struct fields
 	headerMapping := map[string]string{
-		"Vorname":            "FirstName",
-		"Nachname":           "LastName",
-		"Geburtsdatum":       "Birthdate",
-		"Entlassungsdatum":   "ExpectedSchoolEnrollment",
-		"Nachname (1. Erzb)": "Parent1Name",
-		"Nachname (2. Erzb)": "Parent2Name",
+		"Vorname":          "FirstName",
+		"Nachname":         "LastName",
+		"Geburtsdatum":     "Birthdate",
+		"Aufnahmedatum":    "AdmissionDate",
+		"Entlassungsdatum": "ExpectedSchoolEnrollment",
 	}
 
 	// Build a map from column index to Child struct field name
@@ -110,13 +109,6 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 		var err error
 		child := &models.Child{}
 		childName := "" // To store child's name for error reporting
-
-		// Set dummy values for missing required fields
-		child.Gender = "DUMMY_GENDER"
-		child.FamilyLanguage = "DUMMY_LANGUAGE"
-		child.AdmissionDate = time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
-		child.Address = "DUMMY_ADDRESS"
-		child.MigrationBackground = false // Default to false if not provided
 
 		// Populate child struct from row data
 		for colIndex, cellValue := range row {
@@ -150,6 +142,18 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 					goto nextRow // Skip to the next row
 				}
 				child.Birthdate = birthdate
+			case "AdmissionDate":
+				// Assuming date format DD.MM.YYYY
+				admissionDate, err := time.Parse("02.01.2006", trimmedCellValue)
+				if err != nil {
+					importErrors = append(importErrors, map[string]string{
+						"child_name": childName,
+						"error":      fmt.Sprintf("Reihe %d: Ungültiges Format für Aufnahmedatum '%s': %v", i+14, trimmedCellValue, err),
+					})
+					log.Warnf("Row %d: Invalid AdmissionDate format for child %s: %v", i+14, childName, err)
+					goto nextRow // Skip to the next row
+				}
+				child.AdmissionDate = &admissionDate
 			case "ExpectedSchoolEnrollment":
 				// Assuming date format DD.MM.YYYY
 				enrollmentDate, err := time.Parse("02.01.2006", trimmedCellValue)
@@ -161,11 +165,7 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 					log.Warnf("Row %d: Invalid ExpectedSchoolEnrollment format for child %s: %v", i+14, childName, err)
 					goto nextRow // Skip to the next row
 				}
-				child.ExpectedSchoolEnrollment = enrollmentDate
-			case "Parent1Name":
-				child.Parent1Name = trimmedCellValue
-			case "Parent2Name":
-				child.Parent2Name = trimmedCellValue
+				child.ExpectedSchoolEnrollment = &enrollmentDate
 			}
 		}
 

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"reflect"
 	"time"
 
 	"kitadoc-backend/models"
@@ -34,109 +33,84 @@ func NewSQLChildStore(db *sql.DB, encryptionKey []byte) *SQLChildStore {
 
 // toChildDB converts a models.Child to a models.ChildDB and encrypts PII fields.
 func toChildDB(child *models.Child, key []byte) (*models.ChildDB, error) {
-	dbChild := &models.ChildDB{}
-
-	// Use reflection to iterate over the fields of the input struct.
-	childVal := reflect.ValueOf(child).Elem()
-	dbChildVal := reflect.ValueOf(dbChild).Elem()
-
-	for i := 0; i < childVal.NumField(); i++ {
-		childField := childVal.Field(i)
-		childTypeField := childVal.Type().Field(i)
-		// Find the corresponding field in the destination struct by name.
-		dbField := dbChildVal.FieldByName(childTypeField.Name)
-
-		// Skip if the field doesn't exist in the destination or cannot be set.
-		if !dbField.IsValid() || !dbField.CanSet() {
-			continue
-		}
-
-		// Check for the `pii:"true"` tag.
-		if tag := childTypeField.Tag.Get("pii"); tag == "true" {
-			var rawValue string
-			// Convert the field's value to a string for encryption.
-			switch childField.Kind() {
-			case reflect.String:
-				rawValue = childField.String()
-			case reflect.Struct:
-				// Handle time.Time fields specifically.
-				if childField.Type() == reflect.TypeOf(time.Time{}) {
-					rawValue = childField.Interface().(time.Time).Format(time.RFC3339Nano)
-				}
-			}
-
-			// Encrypt the string value.
-			encrypted, err := Encrypt(rawValue, key)
-			if err != nil {
-				return nil, fmt.Errorf("failed to encrypt field %s: %w", childTypeField.Name, err)
-			}
-			// Set the encrypted value on the destination struct's field.
-			dbField.SetString(encrypted)
-		} else {
-			// If not a PII field, copy the value directly if the types match.
-			if dbField.Type() == childField.Type() {
-				dbField.Set(childField)
-			}
-		}
+	encryptedFirstName, err := Encrypt(child.FirstName, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt FirstName: %w", err)
 	}
+
+	encryptedLastName, err := Encrypt(child.LastName, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt LastName: %w", err)
+	}
+
+	encryptedBirthdate, err := Encrypt(child.Birthdate.Format(time.RFC3339Nano), key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt Birthdate: %w", err)
+	}
+
+	dbChild := &models.ChildDB{
+		ID:        child.ID,
+		FirstName: encryptedFirstName,
+		LastName:  encryptedLastName,
+		Birthdate: encryptedBirthdate,
+		CreatedAt: child.CreatedAt,
+		UpdatedAt: child.UpdatedAt,
+	}
+
+	if child.AdmissionDate != nil {
+		dbChild.AdmissionDate = sql.NullTime{Time: *child.AdmissionDate, Valid: true}
+	} else {
+		dbChild.AdmissionDate = sql.NullTime{Valid: false}
+	}
+
+	if child.ExpectedSchoolEnrollment != nil {
+		dbChild.ExpectedSchoolEnrollment = sql.NullTime{Time: *child.ExpectedSchoolEnrollment, Valid: true}
+	} else {
+		dbChild.ExpectedSchoolEnrollment = sql.NullTime{Valid: false}
+	}
+
 	return dbChild, nil
 }
 
 // fromChildDB converts a models.ChildDB to a models.Child and decrypts PII fields.
 func fromChildDB(dbChild *models.ChildDB, key []byte) (*models.Child, error) {
-	child := &models.Child{}
-
-	// Use reflection to iterate over the fields of the input struct.
-	dbChildVal := reflect.ValueOf(dbChild).Elem()
-	childVal := reflect.ValueOf(child).Elem()
-	childType := childVal.Type()
-
-	for i := 0; i < dbChildVal.NumField(); i++ {
-		dbField := dbChildVal.Field(i)
-		dbTypeField := dbChildVal.Type().Field(i)
-		// Find the corresponding field in the destination struct by name.
-		childField := childVal.FieldByName(dbTypeField.Name)
-
-		// Skip if the field doesn't exist in the destination or cannot be set.
-		if !childField.IsValid() || !childField.CanSet() {
-			continue
-		}
-
-		// We need to check the tag on the destination struct (models.Child).
-		structField, found := childType.FieldByName(dbTypeField.Name)
-		if !found {
-			continue
-		}
-
-		// Check for the `pii:"true"` tag.
-		if tag := structField.Tag.Get("pii"); tag == "true" {
-			// Decrypt the string value from the database struct.
-			decrypted, err := Decrypt(dbField.String(), key)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decrypt field %s: %w", dbTypeField.Name, err)
-			}
-
-			// Convert the decrypted string back to the correct type.
-			switch childField.Kind() {
-			case reflect.String:
-				childField.SetString(decrypted)
-			case reflect.Struct:
-				// Handle time.Time fields specifically.
-				if childField.Type() == reflect.TypeOf(time.Time{}) {
-					parsedTime, err := time.Parse(time.RFC3339Nano, decrypted)
-					if err != nil {
-						return nil, fmt.Errorf("failed to parse decrypted time for field %s: %w", dbTypeField.Name, err)
-					}
-					childField.Set(reflect.ValueOf(parsedTime))
-				}
-			}
-		} else {
-			// If not a PII field, copy the value directly if the types match.
-			if childField.Type() == dbField.Type() {
-				childField.Set(dbField)
-			}
-		}
+	decryptedFirstName, err := Decrypt(dbChild.FirstName, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt FirstName: %w", err)
 	}
+
+	decryptedLastName, err := Decrypt(dbChild.LastName, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt LastName: %w", err)
+	}
+
+	decryptedBirthdate, err := Decrypt(dbChild.Birthdate, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt Birthdate: %w", err)
+	}
+
+	parsedBirthdate, err := time.Parse(time.RFC3339Nano, decryptedBirthdate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse Birthdate: %w", err)
+	}
+
+	child := &models.Child{
+		ID:        dbChild.ID,
+		FirstName: decryptedFirstName,
+		LastName:  decryptedLastName,
+		Birthdate: parsedBirthdate,
+		CreatedAt: dbChild.CreatedAt,
+		UpdatedAt: dbChild.UpdatedAt,
+	}
+
+	if dbChild.AdmissionDate.Valid {
+		child.AdmissionDate = &dbChild.AdmissionDate.Time
+	}
+
+	if dbChild.ExpectedSchoolEnrollment.Valid {
+		child.ExpectedSchoolEnrollment = &dbChild.ExpectedSchoolEnrollment.Time
+	}
+
 	return child, nil
 }
 
@@ -147,8 +121,8 @@ func (s *SQLChildStore) Create(child *models.Child) (int, error) {
 		return 0, err
 	}
 
-	query := `INSERT INTO children (first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	result, err := s.db.Exec(query, dbChild.FirstName, dbChild.LastName, dbChild.Birthdate, dbChild.Gender, dbChild.FamilyLanguage, dbChild.MigrationBackground, dbChild.AdmissionDate, dbChild.ExpectedSchoolEnrollment, dbChild.Address, dbChild.Parent1Name, dbChild.Parent2Name)
+	query := `INSERT INTO children (first_name, last_name, birthdate, admission_date, expected_school_enrollment) VALUES (?, ?, ?, ?, ?)`
+	result, err := s.db.Exec(query, dbChild.FirstName, dbChild.LastName, dbChild.Birthdate, dbChild.AdmissionDate, dbChild.ExpectedSchoolEnrollment)
 	if err != nil {
 		return 0, err
 	}
@@ -161,10 +135,10 @@ func (s *SQLChildStore) Create(child *models.Child) (int, error) {
 
 // GetByID fetches a child by ID from the database.
 func (s *SQLChildStore) GetByID(id int) (*models.Child, error) {
-	query := `SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`
+	query := `SELECT child_id, first_name, last_name, birthdate, admission_date, expected_school_enrollment, created_at, updated_at FROM children WHERE child_id = ?`
 	row := s.db.QueryRow(query, id)
 	dbChild := &models.ChildDB{}
-	err := row.Scan(&dbChild.ID, &dbChild.FirstName, &dbChild.LastName, &dbChild.Birthdate, &dbChild.Gender, &dbChild.FamilyLanguage, &dbChild.MigrationBackground, &dbChild.AdmissionDate, &dbChild.ExpectedSchoolEnrollment, &dbChild.Address, &dbChild.Parent1Name, &dbChild.Parent2Name, &dbChild.CreatedAt, &dbChild.UpdatedAt)
+	err := row.Scan(&dbChild.ID, &dbChild.FirstName, &dbChild.LastName, &dbChild.Birthdate, &dbChild.AdmissionDate, &dbChild.ExpectedSchoolEnrollment, &dbChild.CreatedAt, &dbChild.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
@@ -182,8 +156,8 @@ func (s *SQLChildStore) Update(child *models.Child) error {
 		return err
 	}
 
-	query := `UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, gender = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`
-	result, err := s.db.Exec(query, dbChild.FirstName, dbChild.LastName, dbChild.Birthdate, dbChild.Gender, dbChild.FamilyLanguage, dbChild.MigrationBackground, dbChild.AdmissionDate, dbChild.ExpectedSchoolEnrollment, dbChild.Address, dbChild.Parent1Name, dbChild.Parent2Name, dbChild.ID)
+	query := `UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, admission_date = ?, expected_school_enrollment = ? WHERE child_id = ?`
+	result, err := s.db.Exec(query, dbChild.FirstName, dbChild.LastName, dbChild.Birthdate, dbChild.AdmissionDate, dbChild.ExpectedSchoolEnrollment, dbChild.ID)
 	if err != nil {
 		return err
 	}
@@ -221,7 +195,7 @@ func (s *SQLChildStore) Delete(id int) error {
 
 // GetAll fetches all children with pagination and filtering options.
 func (s *SQLChildStore) GetAll() ([]models.Child, error) {
-	query := `SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`
+	query := `SELECT child_id, first_name, last_name, birthdate, admission_date, expected_school_enrollment, created_at, updated_at FROM children`
 
 	rows, err := s.db.Query(query)
 	if err != nil {
@@ -232,7 +206,7 @@ func (s *SQLChildStore) GetAll() ([]models.Child, error) {
 	var children []models.Child
 	for rows.Next() {
 		dbChild := &models.ChildDB{}
-		err := rows.Scan(&dbChild.ID, &dbChild.FirstName, &dbChild.LastName, &dbChild.Birthdate, &dbChild.Gender, &dbChild.FamilyLanguage, &dbChild.MigrationBackground, &dbChild.AdmissionDate, &dbChild.ExpectedSchoolEnrollment, &dbChild.Address, &dbChild.Parent1Name, &dbChild.Parent2Name, &dbChild.CreatedAt, &dbChild.UpdatedAt)
+		err := rows.Scan(&dbChild.ID, &dbChild.FirstName, &dbChild.LastName, &dbChild.Birthdate, &dbChild.AdmissionDate, &dbChild.ExpectedSchoolEnrollment, &dbChild.CreatedAt, &dbChild.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

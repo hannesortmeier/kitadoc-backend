@@ -14,6 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func timePtr(t time.Time) *time.Time {
+	return &t
+}
+
 func TestSQLChildStore_Create(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -27,19 +31,13 @@ func TestSQLChildStore_Create(t *testing.T) {
 		FirstName:                "John",
 		LastName:                 "Doe",
 		Birthdate:                time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC),
-		Gender:                   "Male",
-		FamilyLanguage:           "English",
-		MigrationBackground:      false,
-		AdmissionDate:            time.Date(2020, 9, 1, 0, 0, 0, 0, time.UTC),
-		ExpectedSchoolEnrollment: time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC),
-		Address:                  "123 Main St",
-		Parent1Name:              "Jane Doe",
-		Parent2Name:              "John Doe Sr.",
+		AdmissionDate:            timePtr(time.Date(2020, 9, 1, 0, 0, 0, 0, time.UTC)),
+		ExpectedSchoolEnrollment: timePtr(time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC)),
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO children (first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)).
-			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO children (first_name, last_name, birthdate, admission_date, expected_school_enrollment) VALUES (?, ?, ?, ?, ?)`)).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), *child.AdmissionDate, *child.ExpectedSchoolEnrollment).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		id, err := store.Create(child)
@@ -49,8 +47,8 @@ func TestSQLChildStore_Create(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO children (first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)).
-			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO children (first_name, last_name, birthdate, admission_date, expected_school_enrollment) VALUES (?, ?, ?, ?, ?)`)).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), *child.AdmissionDate, *child.ExpectedSchoolEnrollment).
 			WillReturnError(errors.New("db error"))
 
 		id, err := store.Create(child)
@@ -77,13 +75,8 @@ func TestSQLChildStore_GetByID(t *testing.T) {
 		FirstName:                "John",
 		LastName:                 "Doe",
 		Birthdate:                time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC),
-		FamilyLanguage:           "English",
-		MigrationBackground:      false,
-		AdmissionDate:            time.Date(2020, 9, 1, 0, 0, 0, 0, time.UTC),
-		ExpectedSchoolEnrollment: time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC),
-		Address:                  "123 Main St",
-		Parent1Name:              "Jane Doe",
-		Parent2Name:              "John Doe Sr.",
+		AdmissionDate:            timePtr(time.Date(2020, 9, 1, 0, 0, 0, 0, time.UTC)),
+		ExpectedSchoolEnrollment: timePtr(time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC)),
 		CreatedAt:                time.Now().Truncate(time.Second),
 		UpdatedAt:                time.Now().Truncate(time.Second),
 	}
@@ -92,14 +85,11 @@ func TestSQLChildStore_GetByID(t *testing.T) {
 		encryptedFirstName, _ := data.Encrypt(expectedChild.FirstName, key)
 		encryptedLastName, _ := data.Encrypt(expectedChild.LastName, key)
 		encryptedBirthdate, _ := data.Encrypt(expectedChild.Birthdate.Format(time.RFC3339Nano), key)
-		encryptedAddress, _ := data.Encrypt(expectedChild.Address, key)
-		encryptedParent1Name, _ := data.Encrypt(expectedChild.Parent1Name, key)
-		encryptedParent2Name, _ := data.Encrypt(expectedChild.Parent2Name, key)
 
-		rows := sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "gender", "family_language", "migration_background", "admission_date", "expected_school_enrollment", "address", "parent1_name", "parent2_name", "created_at", "updated_at"}).
-			AddRow(expectedChild.ID, encryptedFirstName, encryptedLastName, encryptedBirthdate, expectedChild.Gender, expectedChild.FamilyLanguage, expectedChild.MigrationBackground, expectedChild.AdmissionDate, expectedChild.ExpectedSchoolEnrollment, encryptedAddress, encryptedParent1Name, encryptedParent2Name, expectedChild.CreatedAt, expectedChild.UpdatedAt)
+		rows := sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "admission_date", "expected_school_enrollment", "created_at", "updated_at"}).
+			AddRow(expectedChild.ID, encryptedFirstName, encryptedLastName, encryptedBirthdate, *expectedChild.AdmissionDate, *expectedChild.ExpectedSchoolEnrollment, expectedChild.CreatedAt, expectedChild.UpdatedAt)
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, admission_date, expected_school_enrollment, created_at, updated_at FROM children WHERE child_id = ?`)).
 			WithArgs(childID).
 			WillReturnRows(rows)
 
@@ -110,20 +100,15 @@ func TestSQLChildStore_GetByID(t *testing.T) {
 		assert.Equal(t, expectedChild.FirstName, child.FirstName)
 		assert.Equal(t, expectedChild.LastName, child.LastName)
 		assert.WithinDuration(t, expectedChild.Birthdate, child.Birthdate, time.Second)
-		assert.Equal(t, expectedChild.FamilyLanguage, child.FamilyLanguage)
-		assert.Equal(t, expectedChild.MigrationBackground, child.MigrationBackground)
-		assert.WithinDuration(t, expectedChild.AdmissionDate, child.AdmissionDate, time.Second)
-		assert.WithinDuration(t, expectedChild.ExpectedSchoolEnrollment, child.ExpectedSchoolEnrollment, time.Second)
-		assert.Equal(t, expectedChild.Address, child.Address)
-		assert.Equal(t, expectedChild.Parent1Name, child.Parent1Name)
-		assert.Equal(t, expectedChild.Parent2Name, child.Parent2Name)
+		assert.WithinDuration(t, *expectedChild.AdmissionDate, *child.AdmissionDate, time.Second)
+		assert.WithinDuration(t, *expectedChild.ExpectedSchoolEnrollment, *child.ExpectedSchoolEnrollment, time.Second)
 		assert.WithinDuration(t, expectedChild.CreatedAt, child.CreatedAt, time.Second)
 		assert.WithinDuration(t, expectedChild.UpdatedAt, child.UpdatedAt, time.Second)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, admission_date, expected_school_enrollment, created_at, updated_at FROM children WHERE child_id = ?`)).
 			WithArgs(childID).
 			WillReturnError(sql.ErrNoRows)
 
@@ -135,7 +120,7 @@ func TestSQLChildStore_GetByID(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children WHERE child_id = ?`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, admission_date, expected_school_enrollment, created_at, updated_at FROM children WHERE child_id = ?`)).
 			WithArgs(childID).
 			WillReturnError(errors.New("db error"))
 
@@ -161,18 +146,13 @@ func TestSQLChildStore_Update(t *testing.T) {
 		FirstName:                "Updated John",
 		LastName:                 "Doe",
 		Birthdate:                time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC),
-		FamilyLanguage:           "German",
-		MigrationBackground:      true,
-		AdmissionDate:            time.Date(2020, 9, 1, 0, 0, 0, 0, time.UTC),
-		ExpectedSchoolEnrollment: time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC),
-		Address:                  "456 Oak Ave",
-		Parent1Name:              "Jane Doe",
-		Parent2Name:              "John Doe Sr.",
+		AdmissionDate:            timePtr(time.Date(2020, 9, 1, 0, 0, 0, 0, time.UTC)),
+		ExpectedSchoolEnrollment: timePtr(time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC)),
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, gender = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`)).
-			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), child.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, admission_date = ?, expected_school_enrollment = ? WHERE child_id = ?`)).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), *child.AdmissionDate, *child.ExpectedSchoolEnrollment, child.ID).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		err := store.Update(child)
@@ -181,8 +161,8 @@ func TestSQLChildStore_Update(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, gender = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`)).
-			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), child.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, admission_date = ?, expected_school_enrollment = ? WHERE child_id = ?`)).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), *child.AdmissionDate, *child.ExpectedSchoolEnrollment, child.ID).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err := store.Update(child)
@@ -192,8 +172,8 @@ func TestSQLChildStore_Update(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, gender = ?, family_language = ?, migration_background = ?, admission_date = ?, expected_school_enrollment = ?, address = ?, parent1_name = ?, parent2_name = ? WHERE child_id = ?`)).
-			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), child.ID).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE children SET first_name = ?, last_name = ?, birthdate = ?, admission_date = ?, expected_school_enrollment = ? WHERE child_id = ?`)).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), *child.AdmissionDate, *child.ExpectedSchoolEnrollment, child.ID).
 			WillReturnError(errors.New("db error"))
 
 		err := store.Update(child)
@@ -264,13 +244,8 @@ func TestSQLChildStore_GetAll(t *testing.T) {
 			FirstName:                "Child A",
 			LastName:                 "Last A",
 			Birthdate:                now.AddDate(-5, 0, 0),
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            now.AddDate(-2, 0, 0),
-			ExpectedSchoolEnrollment: now.AddDate(1, 0, 0),
-			Address:                  "Address A",
-			Parent1Name:              "Parent A1",
-			Parent2Name:              "Parent A2",
+			AdmissionDate:            timePtr(now.AddDate(-2, 0, 0)),
+			ExpectedSchoolEnrollment: timePtr(now.AddDate(1, 0, 0)),
 			CreatedAt:                now.AddDate(-3, 0, 0),
 			UpdatedAt:                now.AddDate(-3, 0, 0),
 		},
@@ -279,31 +254,23 @@ func TestSQLChildStore_GetAll(t *testing.T) {
 			FirstName:                "Child B",
 			LastName:                 "Last B",
 			Birthdate:                now.AddDate(-6, 0, 0),
-			FamilyLanguage:           "German",
-			MigrationBackground:      true,
-			AdmissionDate:            now.AddDate(-3, 0, 0),
-			ExpectedSchoolEnrollment: now.AddDate(0, 0, 0),
-			Address:                  "Address B",
-			Parent1Name:              "Parent B1",
-			Parent2Name:              "Parent B2",
+			AdmissionDate:            timePtr(now.AddDate(-3, 0, 0)),
+			ExpectedSchoolEnrollment: timePtr(now.AddDate(0, 0, 0)),
 			CreatedAt:                now.AddDate(-4, 0, 0),
 			UpdatedAt:                now.AddDate(-4, 0, 0),
 		},
 	}
 
 	t.Run("success", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "gender", "family_language", "migration_background", "admission_date", "expected_school_enrollment", "address", "parent1_name", "parent2_name", "created_at", "updated_at"})
+		rows := sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "admission_date", "expected_school_enrollment", "created_at", "updated_at"})
 		for _, child := range children {
 			encryptedFirstName, _ := data.Encrypt(child.FirstName, key)
 			encryptedLastName, _ := data.Encrypt(child.LastName, key)
 			encryptedBirthdate, _ := data.Encrypt(child.Birthdate.Format(time.RFC3339Nano), key)
-			encryptedAddress, _ := data.Encrypt(child.Address, key)
-			encryptedParent1Name, _ := data.Encrypt(child.Parent1Name, key)
-			encryptedParent2Name, _ := data.Encrypt(child.Parent2Name, key)
-			rows.AddRow(child.ID, encryptedFirstName, encryptedLastName, encryptedBirthdate, child.Gender, child.FamilyLanguage, child.MigrationBackground, child.AdmissionDate, child.ExpectedSchoolEnrollment, encryptedAddress, encryptedParent1Name, encryptedParent2Name, child.CreatedAt, child.UpdatedAt)
+			rows.AddRow(child.ID, encryptedFirstName, encryptedLastName, encryptedBirthdate, *child.AdmissionDate, *child.ExpectedSchoolEnrollment, child.CreatedAt, child.UpdatedAt)
 		}
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, admission_date, expected_school_enrollment, created_at, updated_at FROM children`)).
 			WillReturnRows(rows)
 
 		fetchedChildren, err := store.GetAll()
@@ -316,8 +283,8 @@ func TestSQLChildStore_GetAll(t *testing.T) {
 	})
 
 	t.Run("no children found", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`)).
-			WillReturnRows(sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "gender", "family_language", "migration_background", "admission_date", "expected_school_enrollment", "address", "parent1_name", "parent2_name", "created_at", "updated_at"}))
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, admission_date, expected_school_enrollment, created_at, updated_at FROM children`)).
+			WillReturnRows(sqlmock.NewRows([]string{"child_id", "first_name", "last_name", "birthdate", "admission_date", "expected_school_enrollment", "created_at", "updated_at"}))
 
 		fetchedChildren, err := store.GetAll()
 		assert.NoError(t, err)
@@ -326,7 +293,7 @@ func TestSQLChildStore_GetAll(t *testing.T) {
 	})
 
 	t.Run("db error", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, gender, family_language, migration_background, admission_date, expected_school_enrollment, address, parent1_name, parent2_name, created_at, updated_at FROM children`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT child_id, first_name, last_name, birthdate, admission_date, expected_school_enrollment, created_at, updated_at FROM children`)).
 			WillReturnError(errors.New("db error"))
 
 		fetchedChildren, err := store.GetAll()

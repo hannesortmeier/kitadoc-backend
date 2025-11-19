@@ -16,6 +16,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func timePtr(t time.Time) *time.Time {
+	return &t
+}
+
 func TestCreateChild(t *testing.T) {
 	mockChildStore := new(mocks.MockChildStore)
 	service := services.NewChildService(mockChildStore)
@@ -34,14 +38,8 @@ func TestCreateChild(t *testing.T) {
 			FirstName:                "John",
 			LastName:                 "Doe",
 			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:                   "male",
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            time.Now(),
-			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
-			Address:                  "123 Main St",
-			Parent1Name:              "Jane Doe",
-			Parent2Name:              "John Doe Sr.",
+			AdmissionDate:            timePtr(time.Now()),
+			ExpectedSchoolEnrollment: timePtr(time.Now().AddDate(1, 0, 0)),
 		}
 		mockChildStore.On("Create", mock.AnythingOfType("*models.Child")).Return(1, nil).Once()
 
@@ -59,7 +57,6 @@ func TestCreateChild(t *testing.T) {
 			FirstName: "", // Invalid empty first name
 			LastName:  "Doe",
 			Birthdate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "male",
 		}
 
 		createdChild, err := service.CreateChild(child)
@@ -76,14 +73,8 @@ func TestCreateChild(t *testing.T) {
 			FirstName:                "John",
 			LastName:                 "Doe",
 			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:                   "male",
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            time.Now(),
-			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
-			Address:                  "123 Main St",
-			Parent1Name:              "Jane Doe",
-			Parent2Name:              "John Doe Sr.",
+			AdmissionDate:            timePtr(time.Now()),
+			ExpectedSchoolEnrollment: timePtr(time.Now().AddDate(1, 0, 0)),
 		}
 		mockChildStore.On("Create", mock.AnythingOfType("*models.Child")).Return(0, errors.New("db error")).Once()
 
@@ -153,14 +144,8 @@ func TestUpdateChild(t *testing.T) {
 			FirstName:                "Updated John",
 			LastName:                 "Doe",
 			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:                   "male",
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            time.Now(),
-			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
-			Address:                  "123 Main St",
-			Parent1Name:              "Jane Doe",
-			Parent2Name:              "John Doe Sr.",
+			AdmissionDate:            timePtr(time.Now()),
+			ExpectedSchoolEnrollment: timePtr(time.Now().AddDate(1, 0, 0)),
 		}
 		mockChildStore.On("Update", mock.AnythingOfType("*models.Child")).Return(nil).Once()
 
@@ -177,7 +162,6 @@ func TestUpdateChild(t *testing.T) {
 			FirstName: "", // Invalid: empty first name
 			LastName:  "Doe",
 			Birthdate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "male",
 		}
 
 		err := service.UpdateChild(child)
@@ -194,14 +178,8 @@ func TestUpdateChild(t *testing.T) {
 			FirstName:                "Updated John",
 			LastName:                 "Doe",
 			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:                   "male",
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            time.Now(),
-			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
-			Address:                  "123 Main St",
-			Parent1Name:              "Jane Doe",
-			Parent2Name:              "John Doe Sr.",
+			AdmissionDate:            timePtr(time.Now()),
+			ExpectedSchoolEnrollment: timePtr(time.Now().AddDate(1, 0, 0)),
 		}
 		mockChildStore.On("Update", mock.AnythingOfType("*models.Child")).Return(data.ErrNotFound).Once()
 
@@ -219,14 +197,8 @@ func TestUpdateChild(t *testing.T) {
 			FirstName:                "Updated John",
 			LastName:                 "Doe",
 			Birthdate:                time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:                   "male",
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            time.Now(),
-			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
-			Address:                  "123 Main St",
-			Parent1Name:              "Jane Doe",
-			Parent2Name:              "John Doe Sr.",
+			AdmissionDate:            timePtr(time.Now()),
+			ExpectedSchoolEnrollment: timePtr(time.Now().AddDate(1, 0, 0)),
 		}
 		mockChildStore.On("Update", mock.AnythingOfType("*models.Child")).Return(errors.New("db error")).Once()
 

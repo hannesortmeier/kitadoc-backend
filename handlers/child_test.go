@@ -19,6 +19,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func timePtr(t time.Time) *time.Time {
+	return &t
+}
+
 func TestCreateChild(t *testing.T) {
 	t.Run("Successful Creation", func(t *testing.T) {
 		mockChildService := new(mocks.MockChildService)
@@ -28,14 +32,8 @@ func TestCreateChild(t *testing.T) {
 			FirstName:                "Test",
 			LastName:                 "Child",
 			Birthdate:                time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:                   "male",
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            time.Now(),
-			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
-			Address:                  "123 Main St",
-			Parent1Name:              "Parent One",
-			Parent2Name:              "Parent Two",
+			AdmissionDate:            timePtr(time.Now()),
+			ExpectedSchoolEnrollment: timePtr(time.Now().AddDate(1, 0, 0)),
 		}
 
 		returnedChild := models.Child{
@@ -43,14 +41,8 @@ func TestCreateChild(t *testing.T) {
 			FirstName:                "Test",
 			LastName:                 "Child",
 			Birthdate:                time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:                   "male",
-			FamilyLanguage:           "English",
-			MigrationBackground:      false,
-			AdmissionDate:            time.Now(),
-			ExpectedSchoolEnrollment: time.Now().AddDate(1, 0, 0),
-			Address:                  "123 Main St",
-			Parent1Name:              "Parent One",
-			Parent2Name:              "Parent Two",
+			AdmissionDate:            inputChild.AdmissionDate,
+			ExpectedSchoolEnrollment: inputChild.ExpectedSchoolEnrollment,
 			CreatedAt:                time.Now(),
 			UpdatedAt:                time.Now(),
 		}
@@ -65,22 +57,18 @@ func TestCreateChild(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, rr.Code)
 
-		var responseBody map[string]interface{}
+		var responseBody models.Child
 		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 
-		assert.Equal(t, float64(1), responseBody["id"])
-		assert.Equal(t, "Test", responseBody["first_name"])
-		assert.Equal(t, "Child", responseBody["last_name"])
-		assert.Equal(t, "male", responseBody["gender"])
-		assert.Equal(t, "Parent One", responseBody["parent1_name"])
-		assert.Equal(t, "Parent Two", responseBody["parent2_name"])
+		assert.Equal(t, 1, responseBody.ID)
+		assert.Equal(t, "Test", responseBody.FirstName)
+		assert.Equal(t, "Child", responseBody.LastName)
 
 		expectedTime, _ := time.Parse(time.RFC3339, "2020-01-01T00:00:00Z")
-		actualTime, _ := time.Parse(time.RFC3339, responseBody["birthdate"].(string))
-		assert.True(t, expectedTime.Equal(actualTime), "Birthdate mismatch")
+		assert.True(t, expectedTime.Equal(responseBody.Birthdate), "Birthdate mismatch")
 
-		assert.Contains(t, responseBody, "created_at")
-		assert.Contains(t, responseBody, "updated_at")
+		assert.NotNil(t, responseBody.CreatedAt)
+		assert.NotNil(t, responseBody.UpdatedAt)
 
 		mockChildService.AssertExpectations(t)
 	})
@@ -113,7 +101,6 @@ func TestCreateChild(t *testing.T) {
 		inputChild := models.Child{
 			FirstName: "Error",
 			Birthdate: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "Female",
 		}
 		mockChildService.On("CreateChild", mock.AnythingOfType("*models.Child")).Return(nil, errors.New("database error")).Once()
 
@@ -150,8 +137,8 @@ func TestGetAllChildren(t *testing.T) {
 		handler := NewChildHandler(mockChildService)
 
 		mockChildService.On("GetAllChildren").Return([]models.Child{
-			{ID: 1, FirstName: "Child A", Birthdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), Gender: "male"},
-			{ID: 2, FirstName: "Child B", Birthdate: time.Date(2022, 2, 2, 0, 0, 0, 0, time.UTC), Gender: "female"},
+			{ID: 1, FirstName: "Child A", Birthdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)},
+			{ID: 2, FirstName: "Child B", Birthdate: time.Date(2022, 2, 2, 0, 0, 0, 0, time.UTC)},
 		}, nil).Once()
 
 		req := httptest.NewRequest(http.MethodGet, "/children", nil)
@@ -164,8 +151,8 @@ func TestGetAllChildren(t *testing.T) {
 		var responseBody []models.Child
 		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 		assert.Equal(t, []models.Child{
-			{ID: 1, FirstName: "Child A", Birthdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), Gender: "male"},
-			{ID: 2, FirstName: "Child B", Birthdate: time.Date(2022, 2, 2, 0, 0, 0, 0, time.UTC), Gender: "female"},
+			{ID: 1, FirstName: "Child A", Birthdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)},
+			{ID: 2, FirstName: "Child B", Birthdate: time.Date(2022, 2, 2, 0, 0, 0, 0, time.UTC)},
 		}, responseBody)
 
 		mockChildService.AssertExpectations(t)
@@ -198,7 +185,6 @@ func TestGetChildByID(t *testing.T) {
 			ID:        1,
 			FirstName: "Test Child",
 			Birthdate: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			Gender:    "male",
 		}, nil).Once()
 
 		req := httptest.NewRequest(http.MethodGet, "/children/1", nil)
@@ -210,16 +196,14 @@ func TestGetChildByID(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 
-		var responseBody map[string]interface{}
+		var responseBody models.Child
 		json.Unmarshal(rr.Body.Bytes(), &responseBody) //nolint:errcheck
 
-		assert.Equal(t, float64(1), responseBody["id"])
-		assert.Equal(t, "Test Child", responseBody["first_name"])
-		assert.Equal(t, "male", responseBody["gender"])
+		assert.Equal(t, 1, responseBody.ID)
+		assert.Equal(t, "Test Child", responseBody.FirstName)
 
 		expectedTime, _ := time.Parse(time.RFC3339, "2020-01-01T00:00:00Z")
-		actualTime, _ := time.Parse(time.RFC3339, responseBody["birthdate"].(string))
-		assert.True(t, expectedTime.Equal(actualTime), "Birthdate mismatch")
+		assert.True(t, expectedTime.Equal(responseBody.Birthdate), "Birthdate mismatch")
 
 		mockChildService.AssertExpectations(t)
 	})
@@ -286,11 +270,9 @@ func TestUpdateChild(t *testing.T) {
 
 		childID := 1
 		inputChild := models.Child{
-			FirstName:   "Updated",
-			LastName:    "Child",
-			Birthdate:   time.Date(2019, 5, 10, 0, 0, 0, 0, time.UTC),
-			Gender:      "female",
-			Parent1Name: "New Parent",
+			FirstName: "Updated",
+			LastName:  "Child",
+			Birthdate: time.Date(2019, 5, 10, 0, 0, 0, 0, time.UTC),
 		}
 		mockChildService.On("UpdateChild", mock.AnythingOfType("*models.Child")).Return(nil).Once()
 

@@ -328,16 +328,12 @@ func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus
 	childInformationParagraph := document.AddEmptyParagraph()
 	childInformationParagraph.AddText(fmt.Sprintf("Name des Kindes: %s %s", child.FirstName, child.LastName)).AddBreak(&breaktype)
 	childInformationParagraph.AddText(fmt.Sprintf("Geburtsdatum: %s", child.Birthdate.Format("02.01.2006"))).AddBreak(&breaktype)
-	childInformationParagraph.AddText(fmt.Sprintf("Familiensprache: %s", child.FamilyLanguage)).AddBreak(&breaktype)
-	if child.MigrationBackground {
-		childInformationParagraph.AddText("Migrationshintergrund: Ja").AddBreak(&breaktype)
-	} else {
-		childInformationParagraph.AddText("Migrationshintergrund: Nein").AddBreak(&breaktype)
+	if child.AdmissionDate != nil {
+		childInformationParagraph.AddText(fmt.Sprintf("Aufnahmedatum: %s", child.AdmissionDate.Format("02.01.2006"))).AddBreak(&breaktype)
 	}
-	childInformationParagraph.AddText(fmt.Sprintf("Aufnahmedatum: %s", child.AdmissionDate.Format("02.01.2006"))).AddBreak(&breaktype)
-	childInformationParagraph.AddText(fmt.Sprintf("Voraussichtliche Einschulung: %s", child.ExpectedSchoolEnrollment.Format("02.01.2006"))).AddBreak(&breaktype)
-	childInformationParagraph.AddText(fmt.Sprintf("Adresse: %s", child.Address)).AddBreak(&breaktype)
-	childInformationParagraph.AddText(fmt.Sprintf("Namen der Erziehungsberechtigten: %s, %s", child.Parent1Name, child.Parent2Name)).AddBreak(&breaktype)
+	if child.ExpectedSchoolEnrollment != nil {
+		childInformationParagraph.AddText(fmt.Sprintf("Voraussichtliche Einschulung: %s", child.ExpectedSchoolEnrollment.Format("02.01.2006"))).AddBreak(&breaktype)
+	}
 	childInformationParagraph.AddText("Entwicklungsbegleiter/-innen, Fachkräfte (von - bis):").AddBreak(&breaktype)
 	for _, assignmentText := range assignmentsText {
 		childInformationParagraph.AddText(assignmentText).Style("List Bullet").AddBreak(&breaktype)
