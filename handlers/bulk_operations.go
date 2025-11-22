@@ -72,16 +72,8 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 		return
 	}
 
-	if len(rows) < 14 { // Need at least 13 rows for headers and 1 for data
-		log.Warnf("XLSX file has fewer than 14 rows. Found %d rows.", len(rows))
-		http.Error(writer, "XLSX file must contain at least 14 rows (13 for headers, 1 for data)", http.StatusBadRequest)
-		return
-	}
-
-	// Header row is at index 12 (13th row)
-	headerRow := rows[12]
-	// Data starts at index 13 (14th row)
-	dataRows := rows[13:]
+	headerRow := rows[0]
+	dataRows := rows[1:]
 
 	// Define the mapping from German headers to Child struct fields
 	headerMapping := map[string]string{
@@ -136,9 +128,9 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 				if err != nil {
 					importErrors = append(importErrors, map[string]string{
 						"child_name": childName,
-						"error":      fmt.Sprintf("Reihe %d: Ungültiges Format für Geburtsdatum '%s': %v", i+14, trimmedCellValue, err),
+						"error":      fmt.Sprintf("Reihe %d: Ungültiges Format für Geburtsdatum '%s'. Ein Datum im Format 02.01.2006 wird erwartet.", i+1, trimmedCellValue),
 					})
-					log.Warnf("Row %d: Invalid Birthdate format for child %s: %v", i+14, childName, err)
+					log.Warnf("Row %d: Invalid Birthdate format for child %s: %v", i+1, childName, err)
 					goto nextRow // Skip to the next row
 				}
 				child.Birthdate = birthdate
@@ -148,9 +140,9 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 				if err != nil {
 					importErrors = append(importErrors, map[string]string{
 						"child_name": childName,
-						"error":      fmt.Sprintf("Reihe %d: Ungültiges Format für Aufnahmedatum '%s': %v", i+14, trimmedCellValue, err),
+						"error":      fmt.Sprintf("Reihe %d: Ungültiges Format für Aufnahmedatum '%s'. Ein Datum im Format 02.01.2006 wird erwartet.", i+1, trimmedCellValue),
 					})
-					log.Warnf("Row %d: Invalid AdmissionDate format for child %s: %v", i+14, childName, err)
+					log.Warnf("Row %d: Invalid AdmissionDate format for child %s: %v", i+1, childName, err)
 					goto nextRow // Skip to the next row
 				}
 				child.AdmissionDate = &admissionDate
@@ -160,9 +152,9 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 				if err != nil {
 					importErrors = append(importErrors, map[string]string{
 						"child_name": childName,
-						"error":      fmt.Sprintf("Reihe %d: Ungültiges Format für Entlassungsdatum '%s': %v", i+14, trimmedCellValue, err),
+						"error":      fmt.Sprintf("Reihe %d: Ungültiges Format für Entlassungsdatum '%s'. Ein Datum im Format 02.01.2006 wird erwartet.", i+1, trimmedCellValue),
 					})
-					log.Warnf("Row %d: Invalid ExpectedSchoolEnrollment format for child %s: %v", i+14, childName, err)
+					log.Warnf("Row %d: Invalid ExpectedSchoolEnrollment format for child %s: %v", i+1, childName, err)
 					goto nextRow // Skip to the next row
 				}
 				child.ExpectedSchoolEnrollment = &enrollmentDate
@@ -173,9 +165,9 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 		if err = models.ValidateChild(*child); err != nil {
 			importErrors = append(importErrors, map[string]string{
 				"child_name": childName,
-				"error":      fmt.Sprintf("Reihe %d: Kind %s konnte nicht validiert werden: %v", i+14, childName, err),
+				"error":      fmt.Sprintf("Reihe %d: Kind %s konnte nicht erfolgreich importiert werden: %v", i+1, childName, err),
 			})
-			log.Warnf("Row %d: Child validation failed for child %s: %v", i+14, childName, err)
+			log.Warnf("Row %d: Child validation failed for child %s: %v", i+1, childName, err)
 			goto nextRow // Skip to the next row
 		}
 
@@ -187,9 +179,9 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 		if err != nil {
 			importErrors = append(importErrors, map[string]string{
 				"child_name": childName,
-				"error":      fmt.Sprintf("Reihe %d: Kind %s konnte nicht erstellt werden: %v", i+14, childName, err),
+				"error":      fmt.Sprintf("Reihe %d: Kind %s konnte nicht erstellt werden: %v", i+1, childName, err),
 			})
-			log.Errorf("Row %d: Failed to create child %s: %v", i+14, childName, err)
+			log.Errorf("Row %d: Failed to create child %s: %v", i+1, childName, err)
 			goto nextRow // Skip to the next row
 		}
 		importedChildren = append(importedChildren, createdChild)
@@ -201,7 +193,7 @@ func (bulkOperationsHandler *BulkOperationsHandler) ImportChildren(writer http.R
 	if len(importErrors) > 0 {
 		writer.WriteHeader(http.StatusPartialContent)
 		if err := json.NewEncoder(writer).Encode(map[string]interface{}{
-			"message":        "Massenimport teilweise erfolgreich abgeschlossen",
+			"message":        "Massenimport mit Fehlern abgeschlossen.",
 			"imported_count": len(importedChildren),
 			"errors":         importErrors,
 		}); err != nil {

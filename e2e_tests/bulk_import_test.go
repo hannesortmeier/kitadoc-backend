@@ -105,8 +105,8 @@ func TestBulkImportChildrenFromXLSX(t *testing.T) {
 			AdmissionDate            string
 			ExpectedSchoolEnrollment string
 		}{
-			{"l", "k", "18.11.2022", "01.08.2023", "31.07.2029"},
-			{"a", "a", "10.11.2020", "01.08.2023", "31.07.2027"},
+			{"Anna", "Musterkind", "18.11.2022", "18.11.2023", "31.07.2029"},
+			{"Bilbo", "Beutlin", "10.11.2020", "06.01.2023", "31.07.2027"},
 		}
 
 		for _, expected := range expectedChildren {
