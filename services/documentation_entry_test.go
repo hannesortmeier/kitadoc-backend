@@ -27,12 +27,14 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -69,12 +71,14 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -99,12 +103,14 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -135,12 +141,14 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -173,12 +181,14 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -213,12 +223,14 @@ func TestCreateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -255,12 +267,14 @@ func TestGetDocumentationEntryByID(t *testing.T) {
 	mockTeacherStore := new(datamocks.MockTeacherStore)
 	mockCategoryStore := new(datamocks.MockCategoryStore)
 	mockUserStore := new(datamocks.MockUserStore)
+	mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
 		mockTeacherStore,
 		mockCategoryStore,
 		mockUserStore,
+		mockKitaMasterdataStore,
 	)
 
 	logger := logrus.NewEntry(logrus.New())
@@ -319,12 +333,14 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -360,12 +376,14 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -391,12 +409,14 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -427,12 +447,14 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -465,12 +487,14 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -505,12 +529,14 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -547,12 +573,14 @@ func TestUpdateDocumentationEntry(t *testing.T) {
 		mockTeacherStore := new(datamocks.MockTeacherStore)
 		mockCategoryStore := new(datamocks.MockCategoryStore)
 		mockUserStore := new(datamocks.MockUserStore)
+		mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 		service := services.NewDocumentationEntryService(
 			mockDocumentationEntryStore,
 			mockChildStore,
 			mockTeacherStore,
 			mockCategoryStore,
 			mockUserStore,
+			mockKitaMasterdataStore,
 		)
 
 		entry := &models.DocumentationEntry{
@@ -589,12 +617,14 @@ func TestDeleteDocumentationEntry(t *testing.T) {
 	mockTeacherStore := new(datamocks.MockTeacherStore)
 	mockCategoryStore := new(datamocks.MockCategoryStore)
 	mockUserStore := new(datamocks.MockUserStore)
+	mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
 		mockTeacherStore,
 		mockCategoryStore,
 		mockUserStore,
+		mockKitaMasterdataStore,
 	)
 
 	logger := logrus.NewEntry(logrus.New())
@@ -642,12 +672,14 @@ func TestGetAllDocumentationForChild(t *testing.T) {
 	mockTeacherStore := new(datamocks.MockTeacherStore)
 	mockCategoryStore := new(datamocks.MockCategoryStore)
 	mockUserStore := new(datamocks.MockUserStore)
+	mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
 		mockTeacherStore,
 		mockCategoryStore,
 		mockUserStore,
+		mockKitaMasterdataStore,
 	)
 
 	logger := logrus.NewEntry(logrus.New())
@@ -724,12 +756,14 @@ func TestApproveDocumentationEntry(t *testing.T) {
 	mockTeacherStore := new(datamocks.MockTeacherStore)
 	mockCategoryStore := new(datamocks.MockCategoryStore)
 	mockUserStore := new(datamocks.MockUserStore)
+	mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
 		mockTeacherStore,
 		mockCategoryStore,
 		mockUserStore,
+		mockKitaMasterdataStore,
 	)
 
 	logger := logrus.NewEntry(logrus.New())
@@ -862,12 +896,14 @@ func TestGenerateChildReport(t *testing.T) {
 	mockTeacherStore := new(datamocks.MockTeacherStore)
 	mockCategoryStore := new(datamocks.MockCategoryStore)
 	mockUserStore := new(datamocks.MockUserStore)
+	mockKitaMasterdataStore := new(datamocks.MockKitaMasterdataStore)
 	service := services.NewDocumentationEntryService(
 		mockDocumentationEntryStore,
 		mockChildStore,
 		mockTeacherStore,
 		mockCategoryStore,
 		mockUserStore,
+		mockKitaMasterdataStore,
 	)
 
 	logger := logrus.NewEntry(logrus.New())
@@ -887,8 +923,19 @@ func TestGenerateChildReport(t *testing.T) {
 			{ID: 1, ChildID: childID, CategoryID: 1, ObservationDate: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC), ObservationDescription: "Entry 1"},
 			{ID: 2, ChildID: childID, CategoryID: 2, ObservationDate: time.Date(2023, 1, 2, 0, 0, 0, 0, time.UTC), ObservationDescription: "Entry 2"},
 		}
+		expectedMasterdata := &models.KitaMasterdata{
+			Name:        "Test Kita",
+			Street:      "Test Str",
+			HouseNumber: "1",
+			PostalCode:  "12345",
+			City:        "Test City",
+			PhoneNumber: "123456",
+			Email:       "test@example.com",
+		}
+
 		mockChildStore.On("GetByID", childID).Return(expectedChild, nil).Once()
 		mockDocumentationEntryStore.On("GetAllForChild", childID).Return(expectedEntries, nil).Once()
+		mockKitaMasterdataStore.On("Get").Return(expectedMasterdata, nil).Once()
 
 		reportBytes, err := service.GenerateChildReport(logger, ctx, childID, []models.Assignment{})
 
@@ -896,6 +943,7 @@ func TestGenerateChildReport(t *testing.T) {
 		assert.NotNil(t, reportBytes)
 		mockChildStore.AssertExpectations(t)
 		mockDocumentationEntryStore.AssertExpectations(t)
+		mockKitaMasterdataStore.AssertExpectations(t)
 	})
 
 	// Test case 2: Successful report generation with no entries
@@ -909,9 +957,19 @@ func TestGenerateChildReport(t *testing.T) {
 			ExpectedSchoolEnrollment: timePtr(time.Now().AddDate(1, 0, 0)),
 		}
 		expectedEntries := []models.DocumentationEntry{}
+		expectedMasterdata := &models.KitaMasterdata{
+			Name:        "Test Kita",
+			Street:      "Test Str",
+			HouseNumber: "1",
+			PostalCode:  "12345",
+			City:        "Test City",
+			PhoneNumber: "123456",
+			Email:       "test@example.com",
+		}
 
 		mockChildStore.On("GetByID", childID).Return(expectedChild, nil).Once()
 		mockDocumentationEntryStore.On("GetAllForChild", childID).Return(expectedEntries, nil).Once()
+		mockKitaMasterdataStore.On("Get").Return(expectedMasterdata, nil).Once()
 
 		reportBytes, err := service.GenerateChildReport(logger, ctx, childID, []models.Assignment{})
 
@@ -919,6 +977,7 @@ func TestGenerateChildReport(t *testing.T) {
 		assert.NotNil(t, reportBytes)
 		mockChildStore.AssertExpectations(t)
 		mockDocumentationEntryStore.AssertExpectations(t)
+		mockKitaMasterdataStore.AssertExpectations(t)
 	})
 
 	// Test case 3: Child not found

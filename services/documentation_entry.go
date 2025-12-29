@@ -36,6 +36,7 @@ type DocumentationEntryServiceImpl struct {
 	teacherStore            data.TeacherStore
 	categoryStore           data.CategoryStore
 	userStore               data.UserStore // For ApprovedByUserID validation
+	kitaMasterdataStore     data.KitaMasterdataStore
 	validate                *validator.Validate
 }
 
@@ -46,6 +47,7 @@ func NewDocumentationEntryService(
 	teacherStore data.TeacherStore,
 	categoryStore data.CategoryStore,
 	userStore data.UserStore,
+	kitaMasterdataStore data.KitaMasterdataStore,
 ) *DocumentationEntryServiceImpl {
 	validate := validator.New()
 	validate.RegisterValidation("iso8601date", models.ValidateISO8601Date) //nolint:errcheck
@@ -55,6 +57,7 @@ func NewDocumentationEntryService(
 		teacherStore:            teacherStore,
 		categoryStore:           categoryStore,
 		userStore:               userStore,
+		kitaMasterdataStore:     kitaMasterdataStore,
 		validate:                validate,
 	}
 }
@@ -293,6 +296,12 @@ func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus
 		return nil, ErrInternal
 	}
 
+	masterdata, err := service.kitaMasterdataStore.Get()
+	if err != nil {
+		logger.WithError(err).Error("Error fetching kita masterdata for report generation")
+		return nil, ErrInternal
+	}
+
 	document, err := godocx.NewDocument()
 	if err != nil {
 		logger.WithError(err).Error("Error creating new Word document for child report")
@@ -315,13 +324,12 @@ func (service *DocumentationEntryServiceImpl) GenerateChildReport(logger *logrus
 
 	document.AddEmptyParagraph()
 
-	// TODO(hannes) This needs to be dynamically set based on the kindergarten's details
 	addressParagraph := document.AddEmptyParagraph()
-	addressParagraph.AddText("Familienzentrum St. Jakobus Emsdetten").AddBreak(&breaktype)
-	addressParagraph.AddText("Heidberge 1").AddBreak(&breaktype)
-	addressParagraph.AddText("48282 Emsdetten").AddBreak(&breaktype)
-	addressParagraph.AddText("Telefonnummer: 02572-5671").AddBreak(&breaktype)
-	addressParagraph.AddText("E-Mail-Adresse: kita.stjakobus-emsdetten@bistum-muenster.de")
+	addressParagraph.AddText(masterdata.Name).AddBreak(&breaktype)
+	addressParagraph.AddText(fmt.Sprintf("%s %s", masterdata.Street, masterdata.HouseNumber)).AddBreak(&breaktype)
+	addressParagraph.AddText(fmt.Sprintf("%s %s", masterdata.PostalCode, masterdata.City)).AddBreak(&breaktype)
+	addressParagraph.AddText(fmt.Sprintf("Telefonnummer: %s", masterdata.PhoneNumber)).AddBreak(&breaktype)
+	addressParagraph.AddText(fmt.Sprintf("E-Mail-Adresse: %s", masterdata.Email))
 
 	document.AddEmptyParagraph()
 

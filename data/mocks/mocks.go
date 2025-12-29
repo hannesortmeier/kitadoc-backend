@@ -356,3 +356,21 @@ func (m *MockCategoryStore) Delete(id int) error {
 	args := m.Called(id)
 	return args.Error(0)
 }
+
+// MockKitaMasterdataStore is a mock implementation of data.KitaMasterdataStore
+type MockKitaMasterdataStore struct {
+	mock.Mock
+}
+
+func (m *MockKitaMasterdataStore) Get() (*models.KitaMasterdata, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.KitaMasterdata), args.Error(1)
+}
+
+func (m *MockKitaMasterdataStore) Update(data *models.KitaMasterdata) error {
+	args := m.Called(data)
+	return args.Error(0)
+}

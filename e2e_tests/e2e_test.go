@@ -954,3 +954,49 @@ func TestDocumentationEntriesEndpoints(t *testing.T) {
 func TestBulkOperationsEndpoints(t *testing.T) {
 	// TODO: Add tests for bulk operations
 }
+
+func TestKitaMasterdataEndpoints(t *testing.T) {
+	setupTest(t)
+
+	// Test GET /api/v1/kita-masterdata
+	t.Run("Get Kita Masterdata", func(t *testing.T) {
+		resp := makeAuthenticatedRequest(t, http.MethodGet, "/api/v1/kita-masterdata", authToken, nil, "application/json")
+		defer resp.Body.Close() //nolint:errcheck
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
+		}
+		body := readResponseBody(t, resp)
+		if !bytes.Contains(body, []byte("Test Kita")) {
+			t.Errorf("Expected Kita name in response, got %s", body)
+		}
+	})
+
+	// Test PUT /api/v1/kita-masterdata
+	t.Run("Update Kita Masterdata", func(t *testing.T) {
+		resp := makeAuthenticatedRequest(t, http.MethodPut, "/api/v1/kita-masterdata", adminAuthToken, map[string]string{
+			"name":         "Updated Kita",
+			"street":       "Main St",
+			"house_number": "10",
+			"postal_code":  "54321",
+			"city":         "Berlin",
+			"phone_number": "0987654321",
+			"email":        "updated@example.com",
+		}, "application/json")
+		defer resp.Body.Close() //nolint:errcheck
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, resp.StatusCode, readResponseBody(t, resp))
+		}
+		body := readResponseBody(t, resp)
+		if !bytes.Contains(body, []byte("successfully")) {
+			t.Errorf("Expected success message, got %s", body)
+		}
+
+		// Verify update
+		resp = makeAuthenticatedRequest(t, http.MethodGet, "/api/v1/kita-masterdata", authToken, nil, "application/json")
+		defer resp.Body.Close() //nolint:errcheck
+		body = readResponseBody(t, resp)
+		if !bytes.Contains(body, []byte("Updated Kita")) {
+			t.Errorf("Expected updated Kita name in response, got %s", body)
+		}
+	})
+}

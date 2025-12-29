@@ -138,6 +138,20 @@ func TestMain(m *testing.M) {
 		panic(fmt.Sprintf("failed to create normal user: %v", err))
 	}
 
+	// Insert default kita masterdata
+	defaultMasterdata := &models.KitaMasterdata{
+		Name:        "Test Kita",
+		Street:      "Test Str",
+		HouseNumber: "1",
+		PostalCode:  "12345",
+		City:        "Test City",
+		PhoneNumber: "123456",
+		Email:       "test@example.com",
+	}
+	if err := dal.KitaMasterdata.Update(defaultMasterdata); err != nil {
+		panic(fmt.Sprintf("failed to create default kita masterdata: %v", err))
+	}
+
 	// Initialize the application with test configuration and DAL
 	application = app.NewApplication(cfg, dal)
 

@@ -23,6 +23,7 @@ type Application struct {
 	AudioRecordingHandler     *handlers.AudioRecordingHandler
 	DocumentGenerationHandler *handlers.DocumentGenerationHandler
 	BulkOperationsHandler     *handlers.BulkOperationsHandler
+	KitaMasterdataHandler     *handlers.KitaMasterdataHandler
 	Router                    *http.ServeMux
 	Config                    config.Config
 }
@@ -35,8 +36,9 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	teacherService := services.NewTeacherService(dal.Teachers)
 	categoryService := services.NewCategoryService(dal.Categories)
 	assignmentService := services.NewAssignmentService(dal.Assignments, dal.Children, dal.Teachers)
-	documentationEntryService := services.NewDocumentationEntryService(dal.DocumentationEntries, dal.Children, dal.Teachers, dal.Categories, dal.Users)
+	documentationEntryService := services.NewDocumentationEntryService(dal.DocumentationEntries, dal.Children, dal.Teachers, dal.Categories, dal.Users, dal.KitaMasterdata)
 	audioAnalysisService := services.NewAudioAnalysisService(&http.Client{Timeout: 10 * time.Minute}, cfg.AudioProcServiceURL, dal.Children, dal.Categories)
+	kitaMasterdataService := services.NewKitaMasterdataService(dal.KitaMasterdata)
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userService)
@@ -48,6 +50,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	audioRecordingHandler := handlers.NewAudioRecordingHandler(audioAnalysisService, documentationEntryService, &cfg)
 	documentGenerationHandler := handlers.NewDocumentGenerationHandler(documentationEntryService, assignmentService)
 	bulkOperationsHandler := handlers.NewBulkOperationsHandler(childService)
+	kitaMasterdataHandler := handlers.NewKitaMasterdataHandler(kitaMasterdataService)
 
 	app := &Application{
 		AuthHandler:               authHandler,
@@ -59,6 +62,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 		AudioRecordingHandler:     audioRecordingHandler,
 		DocumentGenerationHandler: documentGenerationHandler,
 		BulkOperationsHandler:     bulkOperationsHandler,
+		KitaMasterdataHandler:     kitaMasterdataHandler,
 		Router:                    http.NewServeMux(),
 		Config:                    cfg,
 	}
@@ -141,6 +145,10 @@ func (app *Application) Routes() http.Handler {
 
 	// Bulk Operations Endpoints
 	app.Router.Handle("POST /api/v1/bulk/import-children", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.BulkOperationsHandler.ImportChildren)))))))
+
+	// Kita Masterdata Endpoints
+	app.Router.Handle("GET /api/v1/kita-masterdata", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.KitaMasterdataHandler.GetKitaMasterdata)))))))
+	app.Router.Handle("PUT /api/v1/kita-masterdata", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleAdmin)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.KitaMasterdataHandler.UpdateKitaMasterdata)))))))
 
 	// Apply CORS middleware globally
 	return middleware.CORS(app.Router)

@@ -99,6 +99,19 @@ CREATE TABLE IF NOT EXISTS audio_recordings (
     CONSTRAINT chk_file_path_not_empty CHECK (LENGTH(TRIM(file_path)) > 0)
 );
 
+-- Kita Masterdata table
+CREATE TABLE IF NOT EXISTS kita_masterdata (
+    name TEXT NOT NULL,
+    street TEXT NOT NULL,
+    house_number TEXT NOT NULL,
+    postal_code TEXT NOT NULL,
+    city TEXT NOT NULL,
+    phone_number TEXT NOT NULL,
+    email TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- =============================================================================
 -- INDEXES FOR PERFORMANCE
 -- =============================================================================
@@ -145,4 +158,12 @@ CREATE TRIGGER IF NOT EXISTS trg_users_updated_at
     FOR EACH ROW
 BEGIN
     UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE user_id = NEW.user_id;
+END;
+
+-- Trigger to update updated_at for kita_masterdata
+CREATE TRIGGER IF NOT EXISTS trg_kita_masterdata_updated_at
+    AFTER UPDATE ON kita_masterdata
+    FOR EACH ROW
+BEGIN
+    UPDATE kita_masterdata SET updated_at = CURRENT_TIMESTAMP WHERE name = NEW.name;
 END;
