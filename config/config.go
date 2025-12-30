@@ -49,7 +49,7 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("server.read_timeout", 5*time.Second)
 	v.SetDefault("server.write_timeout", 10*time.Second)
 	v.SetDefault("server.idle_timeout", 120*time.Second)
-	v.SetDefault("database.dsn", "file:test.db?_foreign_keys=on")
+	v.SetDefault("database.dsn", "file:test.db?_pragma=foreign_keys(1)")
 	v.SetDefault("log.level", "info")
 	v.SetDefault("log.format", "json") // Default to JSON format
 	v.SetDefault("file_storage.upload_dir", "uploads")

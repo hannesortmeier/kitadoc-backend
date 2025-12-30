@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
+	_ "modernc.org/sqlite"
 
 	"kitadoc-backend/app"
 	"kitadoc-backend/config"
@@ -93,7 +93,7 @@ func TestMain(m *testing.M) {
 			DSN           string `mapstructure:"dsn"`
 			EncryptionKey string `mapstructure:"encryption_key"`
 		}{
-			DSN:           "file:" + tmpDBFile.Name() + "?_foreign_keys=on", // Use file-backed DB in tmp
+			DSN:           "file:" + tmpDBFile.Name() + "?_pragma=foreign_keys(1)", // Use file-backed DB in tmp
 			EncryptionKey: "0123456789abcdef0123456789abcdef",
 		},
 		FileStorage: struct {
@@ -110,7 +110,7 @@ func TestMain(m *testing.M) {
 	logger.InitGlobalLogger(logLevel, &logrus.TextFormatter{FullTimestamp: true})
 
 	// Initialize the database connection directly
-	db, err = sql.Open("sqlite3", cfg.Database.DSN)
+	db, err = sql.Open("sqlite", cfg.Database.DSN)
 	if err != nil {
 		panic(fmt.Sprintf("failed to connect to test database: %v", err))
 	}

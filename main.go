@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
+	_ "modernc.org/sqlite"
 
 	"kitadoc-backend/app"
 	"kitadoc-backend/config"
@@ -53,7 +53,7 @@ func main() {
 	log.Infof("Application starting in %s environment...", cfg.Environment)
 
 	// Open SQLite database connection
-	db, err := sql.Open("sqlite3", cfg.Database.DSN)
+	db, err := sql.Open("sqlite", cfg.Database.DSN)
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}

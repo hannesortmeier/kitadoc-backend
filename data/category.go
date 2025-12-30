@@ -6,7 +6,7 @@ import (
 
 	"kitadoc-backend/models"
 
-	"github.com/mattn/go-sqlite3"
+	"modernc.org/sqlite"
 )
 
 // CategoryStore defines the interface for Category data operations.
@@ -81,9 +81,11 @@ func (s *SQLCategoryStore) Delete(id int) error {
 	result, err := s.db.Exec(query, id)
 	if err != nil {
 		// Check for foreign key constraint violation
-		var sqliteErr sqlite3.Error
-		if errors.As(err, &sqliteErr) && (sqliteErr.ExtendedCode == 1811 || sqliteErr.ExtendedCode == 787) {
-			return ErrForeignKeyConstraint
+		if liteErr, ok := err.(*sqlite.Error); ok {
+			code := liteErr.Code()
+			if code == 1811 || code == 787 {
+				return ErrForeignKeyConstraint
+			}
 		}
 		return err
 	}

@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 
 	"kitadoc-backend/data"
 	"kitadoc-backend/migrations"
@@ -15,11 +15,11 @@ import (
 )
 
 func main() {
-	dsn := flag.String("dsn", "file:test.db?_foreign_keys=on", "SQLite DSN")
+	dsn := flag.String("dsn", "file:test.db?_pragma=foreign_keys(1)", "SQLite DSN")
 	key := flag.String("key", "0123456789abcdef0123456789abcdef", "32-byte hex encryption key (raw string)")
 	flag.Parse()
 
-	db, err := sql.Open("sqlite3", *dsn)
+	db, err := sql.Open("sqlite", *dsn)
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
