@@ -14,6 +14,7 @@ type DAL struct {
 	Assignments          AssignmentStore
 	DocumentationEntries DocumentationEntryStore
 	KitaMasterdata       KitaMasterdataStore
+	Processes            ProcessStore
 }
 
 // NewDAL creates a new DAL instance.
@@ -26,6 +27,7 @@ func NewDAL(db *sql.DB, encryptionKey []byte) *DAL {
 		Assignments:          NewSQLAssignmentStore(db),
 		DocumentationEntries: NewSQLDocumentationEntryStore(db, encryptionKey),
 		KitaMasterdata:       NewSQLKitaMasterdataStore(db),
+		Processes:            NewSQLProcessStore(db),
 	}
 }
 

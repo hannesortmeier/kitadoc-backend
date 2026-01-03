@@ -24,6 +24,7 @@ type Application struct {
 	DocumentGenerationHandler *handlers.DocumentGenerationHandler
 	BulkOperationsHandler     *handlers.BulkOperationsHandler
 	KitaMasterdataHandler     *handlers.KitaMasterdataHandler
+	ProcessHandler            *handlers.ProcessHandler
 	Router                    *http.ServeMux
 	Config                    config.Config
 }
@@ -39,6 +40,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	documentationEntryService := services.NewDocumentationEntryService(dal.DocumentationEntries, dal.Children, dal.Teachers, dal.Categories, dal.Users, dal.KitaMasterdata)
 	audioAnalysisService := services.NewAudioAnalysisService(&http.Client{Timeout: 10 * time.Minute}, cfg.AudioProcServiceURL, dal.Children, dal.Categories)
 	kitaMasterdataService := services.NewKitaMasterdataService(dal.KitaMasterdata)
+	processService := services.NewProcessService(dal.Processes)
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userService)
@@ -51,6 +53,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	documentGenerationHandler := handlers.NewDocumentGenerationHandler(documentationEntryService, assignmentService)
 	bulkOperationsHandler := handlers.NewBulkOperationsHandler(childService)
 	kitaMasterdataHandler := handlers.NewKitaMasterdataHandler(kitaMasterdataService)
+	processHandler := handlers.NewProcessHandler(processService)
 
 	app := &Application{
 		AuthHandler:               authHandler,
@@ -63,6 +66,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 		DocumentGenerationHandler: documentGenerationHandler,
 		BulkOperationsHandler:     bulkOperationsHandler,
 		KitaMasterdataHandler:     kitaMasterdataHandler,
+		ProcessHandler:            processHandler,
 		Router:                    http.NewServeMux(),
 		Config:                    cfg,
 	}
@@ -139,6 +143,9 @@ func (app *Application) Routes() http.Handler {
 
 	// Audio Recordings Endpoints
 	app.Router.Handle("POST /api/v1/audio/upload", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.AudioRecordingHandler.UploadAudio)))))))
+
+	// Process Endpoints
+	app.Router.Handle("GET /api/v1/process/{process_id}/status", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.ProcessHandler.GetStatus)))))))
 
 	// Document Generation Endpoints
 	app.Router.Handle("GET /api/v1/documents/child-report/{child_id}", middleware.RequestIDMiddleware(authMiddleware(middleware.Authorize(data.RoleTeacher)(middleware.RequestLogger(middleware.Recovery(http.HandlerFunc(app.DocumentGenerationHandler.GenerateChildReport)))))))
