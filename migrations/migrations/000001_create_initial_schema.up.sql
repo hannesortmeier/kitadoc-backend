@@ -87,16 +87,10 @@ CREATE TABLE IF NOT EXISTS documentation_entries (
     CONSTRAINT chk_observation_description_not_empty CHECK (LENGTH(TRIM(observation_description)) > 0)
 );
 
--- Audio Recordings Table
-CREATE TABLE IF NOT EXISTS audio_recordings (
-    audio_recording_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    documentation_entry_id INTEGER NOT NULL,
-    file_path VARCHAR(255) NOT NULL,
-    duration_seconds INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (documentation_entry_id) REFERENCES documentation_entries(entry_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT chk_duration_positive CHECK (duration_seconds > 0),
-    CONSTRAINT chk_file_path_not_empty CHECK (LENGTH(TRIM(file_path)) > 0)
+-- Processes Table
+CREATE TABLE IF NOT EXISTS processes (
+    process_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    status VARCHAR(100) NOT NULL
 );
 
 -- Kita Masterdata table
