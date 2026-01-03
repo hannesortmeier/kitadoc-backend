@@ -116,7 +116,6 @@ CREATE INDEX IF NOT EXISTS idx_documentation_child ON documentation_entries(chil
 CREATE INDEX IF NOT EXISTS idx_documentation_date ON documentation_entries(observation_date);
 CREATE INDEX IF NOT EXISTS idx_documentation_approved ON documentation_entries(approved);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username_hmac);
-CREATE INDEX IF NOT EXISTS idx_audio_recordings_entry ON audio_recordings(documentation_entry_id);
 
 -- =============================================================================
 -- TRIGGERS FOR AUTOMATIC TIMESTAMP UPDATES
