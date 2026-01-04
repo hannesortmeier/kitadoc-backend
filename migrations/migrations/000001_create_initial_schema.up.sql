@@ -90,7 +90,8 @@ CREATE TABLE IF NOT EXISTS documentation_entries (
 -- Processes Table
 CREATE TABLE IF NOT EXISTS processes (
     process_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    status VARCHAR(100) NOT NULL
+    status VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Kita Masterdata table
