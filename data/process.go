@@ -27,6 +27,7 @@ func NewSQLProcessStore(db *sql.DB) *SQLProcessStore {
 }
 
 // Creates a new process. Returns the new newly created process.
+// Warning: Does not return the correct created_at timestamp
 func (s *SQLProcessStore) Create(process *models.Process) (*models.Process, error) {
 	query := `INSERT INTO processes (status) VALUES (?)`
 	result, err := s.db.Exec(query, process.Status)
@@ -45,10 +46,10 @@ func (s *SQLProcessStore) Create(process *models.Process) (*models.Process, erro
 
 // GetByID fetches a process by ID from the database.
 func (s *SQLProcessStore) GetByID(id int) (*models.Process, error) {
-	query := `SELECT process_id, status FROM processes WHERE process_id = ?`
+	query := `SELECT process_id, status, created_at FROM processes WHERE process_id = ?`
 	row := s.db.QueryRow(query, id)
 	process := &models.Process{}
-	err := row.Scan(&process.ProcessId, &process.Status)
+	err := row.Scan(&process.ProcessId, &process.Status, &process.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			logger.GetGlobalLogger().Errorf("Process not found: %d", id)
