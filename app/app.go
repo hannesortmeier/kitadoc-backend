@@ -37,8 +37,22 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	teacherService := services.NewTeacherService(dal.Teachers)
 	categoryService := services.NewCategoryService(dal.Categories)
 	assignmentService := services.NewAssignmentService(dal.Assignments, dal.Children, dal.Teachers)
-	documentationEntryService := services.NewDocumentationEntryService(dal.DocumentationEntries, dal.Children, dal.Teachers, dal.Categories, dal.Users, dal.KitaMasterdata)
-	audioAnalysisService := services.NewAudioAnalysisService(&http.Client{Timeout: 10 * time.Minute}, cfg.AudioProcServiceURL, dal.Children, dal.Categories)
+	documentationEntryService := services.NewDocumentationEntryService(
+		dal.DocumentationEntries,
+		dal.Children,
+		dal.Teachers,
+		dal.Categories,
+		dal.Users,
+		dal.KitaMasterdata,
+	)
+	audioAnalysisService := services.NewAudioAnalysisService(
+		&http.Client{Timeout: 10 * time.Minute},
+		cfg.TranscriptionServiceURL,
+		cfg.LLMAnalysisServiceURL,
+		dal.Children,
+		dal.Categories,
+		dal.Processes,
+	)
 	kitaMasterdataService := services.NewKitaMasterdataService(dal.KitaMasterdata)
 	processService := services.NewProcessService(dal.Processes)
 
@@ -49,7 +63,7 @@ func NewApplication(cfg config.Config, dal *data.DAL) *Application {
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	assignmentHandler := handlers.NewAssignmentHandler(assignmentService)
 	documentationEntryHandler := handlers.NewDocumentationEntryHandler(documentationEntryService)
-	audioRecordingHandler := handlers.NewAudioRecordingHandler(audioAnalysisService, documentationEntryService, &cfg)
+	audioRecordingHandler := handlers.NewAudioRecordingHandler(audioAnalysisService, documentationEntryService, processService, &cfg)
 	documentGenerationHandler := handlers.NewDocumentGenerationHandler(documentationEntryService, assignmentService)
 	bulkOperationsHandler := handlers.NewBulkOperationsHandler(childService)
 	kitaMasterdataHandler := handlers.NewKitaMasterdataHandler(kitaMasterdataService)
