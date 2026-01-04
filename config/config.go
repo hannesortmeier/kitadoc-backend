@@ -36,7 +36,8 @@ type Config struct {
 		MaxSizeMB    int      `mapstructure:"max_size_mb"`
 		AllowedTypes []string `mapstructure:"allowed_types"`
 	} `mapstructure:"file_storage"`
-	AudioProcServiceURL string `mapstructure:"audio_proc_service_url"`
+	TranscriptionServiceURL string `mapstructure:"transcription_service_url"`
+	LLMAnalysisServiceURL   string `mapstructure:"llm_analysis_service_url"`
 }
 
 // LoadConfig loads configuration from file and environment variables.
@@ -55,7 +56,8 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("file_storage.upload_dir", "uploads")
 	v.SetDefault("file_storage.max_size_mb", 10)
 	v.SetDefault("file_storage.allowed_types", []string{"audio/mpeg", "audio/wav"})
-	v.SetDefault("audio_proc_service_url", "http://127.0.0.1:8000/analyze-audio")
+	v.SetDefault("transcription_service_url", "http://127.0.0.1:8000/api/v1/audio/transcribe")
+	v.SetDefault("llm_analysis_service_url", "http://127.0.0.1:8000/api/v1/analyze")
 
 	// Set config file name and path
 	v.SetConfigName("config")   // name of config file (without extension)
@@ -110,8 +112,11 @@ func LoadConfig() (*Config, error) {
 	if err := v.BindEnv("file_storage.allowed_types", "KINDERGARTEN_FILE_STORAGE_ALLOWED_TYPES"); err != nil {
 		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_FILE_STORAGE_ALLOWED_TYPES: %w", err)
 	}
-	if err := v.BindEnv("audio_proc_service_url", "KINDERGARTEN_AUDIO_PROC_SERVICE_URL"); err != nil {
-		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_AUDIO_PROC_SERVICE_URL: %w", err)
+	if err := v.BindEnv("transcription_service_url", "KINDERGARTEN_TRANSCRIPTION_SERVICE_URL"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_TRANSCRIPTION_SERVICE_URL: %w", err)
+	}
+	if err := v.BindEnv("llm_analysis_service_url", "KINDERGARTEN_LLM_ANALYSIS_SERVICE_URL"); err != nil {
+		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_LLM_ANALYSIS_SERVICE_URL: %w", err)
 	}
 	if err := v.BindEnv("admin_user.username", "KINDERGARTEN_ADMIN_USERNAME"); err != nil {
 		return nil, fmt.Errorf("failed to bind env var KINDERGARTEN_ADMIN_USERNAME: %w", err)
