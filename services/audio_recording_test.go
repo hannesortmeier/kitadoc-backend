@@ -11,13 +11,24 @@ import (
 	"kitadoc-backend/models"
 	"kitadoc-backend/services"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
+		transcriptionResult := "hello world foo bar"
+		mockTranscriptionService := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusCreated)
+			w.Header().Set("Content-Type", "application/json")
+			err := json.NewEncoder(w).Encode(transcriptionResult)
+			assert.NoError(t, err)
+		}))
+		t.Cleanup(func() { mockTranscriptionService.Close() })
+
 		analysisResult := models.AnalysisResult{
 			NumberOfEntries: 1,
 			AnalysisResults: []models.ChildAnalysisObject{
@@ -33,33 +44,45 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 				},
 			},
 		}
-		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockLLMAnalysisService := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			err := json.NewEncoder(w).Encode(analysisResult)
 			assert.NoError(t, err)
 		}))
-		t.Cleanup(func() { mockServer.Close() })
+		t.Cleanup(func() { mockLLMAnalysisService.Close() })
 
 		mockChildStore := new(mocks.MockChildStore)
 		mockCategoryStore := new(mocks.MockCategoryStore)
+		mockProcessStore := new(mocks.MockProcessStore)
 
 		mockChildStore.On("GetAll").Return([]models.Child{{ID: 1, FirstName: "John", LastName: "Doe"}}, nil)
 		description := ""
 		mockCategoryStore.On("GetAll").Return([]models.Category{{ID: 1, Name: "General", Description: &description}}, nil)
 
-		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL, mockChildStore, mockCategoryStore)
+		mockProcessStore.On("Update", mock.MatchedBy(func(p *models.Process) bool {
+			return p.ProcessId == 42 && p.Status == "transcribing"
+		})).Return(nil)
+
+		mockProcessStore.On("Update", mock.MatchedBy(func(p *models.Process) bool {
+			return p.ProcessId == 42 && p.Status == "analysing"
+		})).Return(nil)
+
+		service := services.NewAudioAnalysisService(
+			mockLLMAnalysisService.Client(),
+			mockTranscriptionService.URL,
+			mockLLMAnalysisService.URL,
+			mockChildStore,
+			mockCategoryStore,
+			mockProcessStore,
+		)
 
 		fileContent := []byte("dummy audio data")
-		filename := "test.wav"
+		processId := 42
 
-		result, err := service.AnalyzeAudio(ctx, fileContent, filename)
+		result, err := service.ProcessAudio(ctx, logrus.NewEntry(logrus.New()), processId, fileContent)
 
 		assert.NoError(t, err)
 		assert.Equal(t, analysisResult, result)
-	})
-
-	t.Run("http request creation failed", func(t *testing.T) {
-		// This is hard to test in isolation, more of an integration test concern.
 	})
 
 	t.Run("http client do failed", func(t *testing.T) {
@@ -70,46 +93,88 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 
 		mockChildStore := new(mocks.MockChildStore)
 		mockCategoryStore := new(mocks.MockCategoryStore)
+		mockProcessStore := new(mocks.MockProcessStore)
 
 		mockChildStore.On("GetAll").Return([]models.Child{}, nil)
 		mockCategoryStore.On("GetAll").Return([]models.Category{}, nil)
 
-		service := services.NewAudioAnalysisService(mockServer.Client(), "http://invalid-url", mockChildStore, mockCategoryStore)
+		mockProcessStore.On("Update", mock.MatchedBy(func(p *models.Process) bool {
+			return p.ProcessId == 42 && p.Status == "transcribing"
+		})).Return(nil)
+
+		service := services.NewAudioAnalysisService(
+			mockServer.Client(),
+			"http://invalid-url",
+			"http://invalid-url2",
+			mockChildStore,
+			mockCategoryStore,
+			mockProcessStore,
+		)
 
 		fileContent := []byte("dummy audio data")
-		filename := "test.wav"
+		processId := 42
 
-		result, err := service.AnalyzeAudio(ctx, fileContent, filename)
+		result, err := service.ProcessAudio(ctx, logrus.NewEntry(logrus.New()), processId, fileContent)
 
 		assert.Error(t, err)
 		assert.Equal(t, models.AnalysisResult{NumberOfEntries: 0, AnalysisResults: []models.ChildAnalysisObject(nil)}, result)
 	})
 
-	t.Run("audio-proc service returned non-ok status", func(t *testing.T) {
-		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	t.Run("llm analysis service returned non-ok status", func(t *testing.T) {
+		// Mock Transcription Service (Success)
+		transcriptionResult := "hello world"
+		mockTranscriptionService := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusCreated)
+			w.Header().Set("Content-Type", "application/json")
+			err := json.NewEncoder(w).Encode(transcriptionResult)
+			assert.NoError(t, err)
+		}))
+		t.Cleanup(func() { mockTranscriptionService.Close() })
+
+		// Mock LLM Analysis Service (Failure)
+		mockLLMAnalysisService := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
-		t.Cleanup(func() { mockServer.Close() })
+		t.Cleanup(func() { mockLLMAnalysisService.Close() })
 
 		mockChildStore := new(mocks.MockChildStore)
 		mockCategoryStore := new(mocks.MockCategoryStore)
+		mockProcessStore := new(mocks.MockProcessStore)
 
+		// Expectations for AnalyzeTranscription
 		mockChildStore.On("GetAll").Return([]models.Child{}, nil)
 		mockCategoryStore.On("GetAll").Return([]models.Category{}, nil)
 
-		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL, mockChildStore, mockCategoryStore)
+		// Expect process updates
+		mockProcessStore.On("Update", mock.MatchedBy(func(p *models.Process) bool {
+			return p.ProcessId == 42 && p.Status == "transcribing"
+		})).Return(nil)
+		mockProcessStore.On("Update", mock.MatchedBy(func(p *models.Process) bool {
+			return p.ProcessId == 42 && p.Status == "analysing"
+		})).Return(nil)
+
+		service := services.NewAudioAnalysisService(
+			mockTranscriptionService.Client(),
+			mockTranscriptionService.URL,
+			mockLLMAnalysisService.URL,
+			mockChildStore,
+			mockCategoryStore,
+			mockProcessStore,
+		)
 
 		fileContent := []byte("dummy audio data")
-		filename := "test.wav"
+		processId := 42
 
-		result, err := service.AnalyzeAudio(ctx, fileContent, filename)
+		result, err := service.ProcessAudio(ctx, logrus.NewEntry(logrus.New()), processId, fileContent)
 
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "llm analysis service returned status 500")
 		assert.Equal(t, models.AnalysisResult{NumberOfEntries: 0, AnalysisResults: []models.ChildAnalysisObject(nil)}, result)
 	})
 
-	t.Run("failed to decode response", func(t *testing.T) {
+	t.Run("failed to decode response from transcription service", func(t *testing.T) {
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusCreated)
 			w.Header().Set("Content-Type", "application/json")
 			_, err := w.Write([]byte("invalid json"))
 			assert.NoError(t, err)
@@ -118,18 +183,29 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 
 		mockChildStore := new(mocks.MockChildStore)
 		mockCategoryStore := new(mocks.MockCategoryStore)
+		mockProcessStore := new(mocks.MockProcessStore)
 
-		mockChildStore.On("GetAll").Return([]models.Child{}, nil)
-		mockCategoryStore.On("GetAll").Return([]models.Category{}, nil)
+		// Process status update expected for transcription
+		mockProcessStore.On("Update", mock.MatchedBy(func(p *models.Process) bool {
+			return p.ProcessId == 42 && p.Status == "transcribing"
+		})).Return(nil)
 
-		service := services.NewAudioAnalysisService(mockServer.Client(), mockServer.URL, mockChildStore, mockCategoryStore)
+		service := services.NewAudioAnalysisService(
+			mockServer.Client(),
+			mockServer.URL,
+			"http://unused-url",
+			mockChildStore,
+			mockCategoryStore,
+			mockProcessStore,
+		)
 
 		fileContent := []byte("dummy audio data")
-		filename := "test.wav"
+		processId := 42
 
-		result, err := service.AnalyzeAudio(ctx, fileContent, filename)
+		result, err := service.ProcessAudio(ctx, logrus.NewEntry(logrus.New()), processId, fileContent)
 
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to decode response")
 		assert.Equal(t, models.AnalysisResult{NumberOfEntries: 0, AnalysisResults: []models.ChildAnalysisObject(nil)}, result)
 	})
 }

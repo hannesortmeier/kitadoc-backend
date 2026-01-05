@@ -374,3 +374,42 @@ func (m *MockKitaMasterdataStore) Update(data *models.KitaMasterdata) error {
 	args := m.Called(data)
 	return args.Error(0)
 }
+
+// MockProcessStore is a mock implementation of data.ProcessStore
+type MockProcessStore struct {
+	mock.Mock
+}
+
+func (m *MockProcessStore) Create(process *models.Process) (*models.Process, error) {
+	args := m.Called(process)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Process), args.Error(1)
+}
+
+func (m *MockProcessStore) GetByID(id int) (*models.Process, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Process), args.Error(1)
+}
+
+func (m *MockProcessStore) Update(process *models.Process) error {
+	args := m.Called(process)
+	return args.Error(0)
+}
+
+func (m *MockProcessStore) Delete(id int) error {
+	args := m.Called(id)
+	return args.Error(0)
+}
+
+func (m *MockProcessStore) GetAll() ([]models.Process, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Process), args.Error(1)
+}

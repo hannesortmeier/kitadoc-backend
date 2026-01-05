@@ -5,6 +5,7 @@ import (
 
 	"kitadoc-backend/models"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -13,9 +14,9 @@ type MockAudioAnalysisService struct {
 	mock.Mock
 }
 
-// AnalyzeAudio is a mock of the AnalyzeAudio method.
-func (m *MockAudioAnalysisService) AnalyzeAudio(ctx context.Context, fileContent []byte, filename string) (models.AnalysisResult, error) {
-	args := m.Called(ctx, fileContent, filename)
+// ProcessAudio is a mock of the ProcessAudio method.
+func (m *MockAudioAnalysisService) ProcessAudio(ctx context.Context, logger *logrus.Entry, processId int, fileContent []byte) (models.AnalysisResult, error) {
+	args := m.Called(ctx, logger, processId, fileContent)
 	if args.Get(0) == nil {
 		return models.AnalysisResult{}, args.Error(1)
 	}
