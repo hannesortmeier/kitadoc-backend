@@ -27,7 +27,8 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockAudioAnalysisService := &services_mocks.MockAudioAnalysisService{}
 		mockDocEntryService := &mocks.MockDocumentationEntryService{}
-		h := handlers.NewAudioRecordingHandler(mockAudioAnalysisService, mockDocEntryService, &config.Config{
+		mockProcessService := &mocks.MockProcessService{}
+		h := handlers.NewAudioRecordingHandler(mockAudioAnalysisService, mockDocEntryService, mockProcessService, &config.Config{
 			FileStorage: struct {
 				MaxSizeMB    int      `mapstructure:"max_size_mb"`
 				AllowedTypes []string `mapstructure:"allowed_types"`
@@ -66,22 +67,36 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 					FirstName:            "John",
 					LastName:             "Doe",
 					TranscriptionSummary: "Test transcription summary",
-					Category:             models.AnalysisCategory{},
+					Category: models.AnalysisCategory{
+						AnalysisCategoryID: 1,
+					},
 				},
 			},
 		}
 
 		done := make(chan bool, 1)
 
-		mockAudioAnalysisService.On("AnalyzeAudio", mock.MatchedBy(func(ctx context.Context) bool { return true }), []byte("dummy audio data"), "test.wav").Return(mockResponse, nil).Once()
+		processID := 42
+		mockProcessService.On("Create", "starting").Return(&models.Process{ProcessId: processID, Status: "starting"}, nil).Once()
+
+		mockAudioAnalysisService.On("ProcessAudio", mock.Anything, mock.AnythingOfType("*logrus.Entry"), processID, []byte("dummy audio data")).Return(mockResponse, nil).Once()
+
+		mockProcessService.On("Update", mock.MatchedBy(func(p *models.Process) bool {
+			return p.ProcessId == processID && p.Status == "creating documentation entry"
+		})).Return(nil).Once()
+
 		mockDocEntryService.On("CreateDocumentationEntry", mock.Anything, mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.Anything).Return(nil, nil).Run(func(args mock.Arguments) {
 			done <- true
 		}).Once()
 
+		mockProcessService.On("Update", mock.MatchedBy(func(p *models.Process) bool {
+			return p.ProcessId == processID && p.Status == "completed"
+		})).Return(nil).Once()
+
 		rr := httptest.NewRecorder()
 		h.UploadAudio(rr, req.WithContext(ctx))
 
-		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, http.StatusAccepted, rr.Code)
 
 		// Wait for the goroutine to complete
 		select {
@@ -91,14 +106,19 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 			t.Fatal("timed out waiting for documentation entry creation")
 		}
 
+		// Allow a small window for the final status update
+		time.Sleep(50 * time.Millisecond)
+
 		mockAudioAnalysisService.AssertExpectations(t)
 		mockDocEntryService.AssertExpectations(t)
+		mockProcessService.AssertExpectations(t)
 	})
 
 	t.Run("service error", func(t *testing.T) {
 		mockAudioAnalysisService := &services_mocks.MockAudioAnalysisService{}
 		mockDocEntryService := &mocks.MockDocumentationEntryService{}
-		h := handlers.NewAudioRecordingHandler(mockAudioAnalysisService, mockDocEntryService, &config.Config{
+		mockProcessService := &mocks.MockProcessService{}
+		h := handlers.NewAudioRecordingHandler(mockAudioAnalysisService, mockDocEntryService, mockProcessService, &config.Config{
 			FileStorage: struct {
 				MaxSizeMB    int      `mapstructure:"max_size_mb"`
 				AllowedTypes []string `mapstructure:"allowed_types"`
@@ -132,5 +152,65 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		h.UploadAudio(rr, req.WithContext(ctx))
 
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
+	})
+
+	t.Run("analysis service error", func(t *testing.T) {
+		mockAudioAnalysisService := &services_mocks.MockAudioAnalysisService{}
+		mockDocEntryService := &mocks.MockDocumentationEntryService{}
+		mockProcessService := &mocks.MockProcessService{}
+		h := handlers.NewAudioRecordingHandler(mockAudioAnalysisService, mockDocEntryService, mockProcessService, &config.Config{
+			FileStorage: struct {
+				MaxSizeMB    int      `mapstructure:"max_size_mb"`
+				AllowedTypes []string `mapstructure:"allowed_types"`
+			}{
+				MaxSizeMB:    10,
+				AllowedTypes: []string{"audio/wav", "audio/mpeg"},
+			},
+		})
+
+		body := new(bytes.Buffer)
+		writer := multipart.NewWriter(body)
+		header := make(textproto.MIMEHeader)
+		header.Set("Content-Disposition", `form-data; name="audio"; filename="test.wav"`)
+		header.Set("Content-Type", "audio/wav")
+		part, _ := writer.CreatePart(header)
+		_, err := part.Write([]byte("dummy audio data"))
+		assert.NoError(t, err)
+		assert.NoError(t, writer.Close())
+
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/audio/upload", body)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+
+		form := url.Values{}
+		form.Add("teacher_id", "1")
+		form.Add("timestamp", time.Now().Format(time.RFC3339))
+		req.PostForm = form
+
+		done := make(chan bool, 1)
+		processID := 124
+		mockProcessService.On("Create", "starting").Return(&models.Process{ProcessId: processID, Status: "starting"}, nil).Once()
+
+		mockAudioAnalysisService.On("ProcessAudio", mock.Anything, mock.AnythingOfType("*logrus.Entry"), processID, []byte("dummy audio data")).Return(models.AnalysisResult{}, assert.AnError).Once()
+
+		mockProcessService.On("Update", mock.MatchedBy(func(p *models.Process) bool {
+			return p.ProcessId == processID && p.Status == "failed"
+		})).Return(nil).Run(func(args mock.Arguments) {
+			done <- true
+		}).Once()
+
+		rr := httptest.NewRecorder()
+		h.UploadAudio(rr, req.WithContext(ctx))
+
+		assert.Equal(t, http.StatusAccepted, rr.Code)
+
+		select {
+		case <-done:
+			// Success
+		case <-time.After(2 * time.Second):
+			t.Fatal("timed out waiting for process status update to failed")
+		}
+
+		mockAudioAnalysisService.AssertExpectations(t)
+		mockProcessService.AssertExpectations(t)
 	})
 }

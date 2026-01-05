@@ -646,46 +646,90 @@ func TestChildTeacherAssignmentsEndpoints(t *testing.T) {
 func TestAudioRecordingsEndpoints(t *testing.T) {
 	setupTest(t)
 
-	// Test POST /api/v1/audio/upload
-	// Create a category for documentation entry
-	t.Run("Setup Category for Documentation", func(t *testing.T) {
-		respCategory := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/categories", adminAuthToken, map[string]string{
-			"name": "DocCategory",
+	// 1. Setup Prerequisites
+	// Create a teacher
+	var teacherID int
+	t.Run("Setup Teacher for Audio Upload", func(t *testing.T) {
+		resp := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/teachers", adminAuthToken, map[string]string{
+			"first_name": "Audio",
+			"last_name":  "Teacher",
+			"username":   "audioteacher",
 		}, "application/json")
-		defer respCategory.Body.Close() //nolint:errcheck
+		defer resp.Body.Close() //nolint:errcheck
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("Failed to create teacher: %s", readResponseBody(t, resp))
+		}
+		var teacherResp struct {
+			ID int `json:"id"`
+		}
+		if err := json.Unmarshal(readResponseBody(t, resp), &teacherResp); err != nil {
+			t.Fatalf("Failed to unmarshal teacher response: %v", err)
+		}
+		teacherID = teacherResp.ID
 	})
 
+	// Create children to ensure we have child with ID 2 (as mocked in main_test.go)
+	t.Run("Setup Children for Audio Upload", func(t *testing.T) {
+		for i := 0; i < 2; i++ {
+			resp := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/children", authToken, map[string]interface{}{
+				"first_name":                 fmt.Sprintf("AudioChild%d", i+1),
+				"last_name":                  "Test",
+				"birthdate":                  time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC),
+				"gender":                     "other",
+				"migration_background":       false,
+				"family_language":            "Deutsch",
+				"parent1_name":               "Parent",
+				"parent2_name":               "Parent",
+				"address":                    "Address",
+				"admission_date":             time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
+				"expected_school_enrollment": time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC),
+			}, "application/json")
+			defer resp.Body.Close() //nolint:errcheck
+			if resp.StatusCode != http.StatusCreated {
+				t.Fatalf("Failed to create child %d: %s", i+1, readResponseBody(t, resp))
+			}
+		}
+	})
+
+	// Create a category (ID 1 as mocked)
+	t.Run("Setup Category for Audio Upload", func(t *testing.T) {
+		resp := makeAuthenticatedRequest(t, http.MethodPost, "/api/v1/categories", adminAuthToken, map[string]string{
+			"name":        "DocCategory",
+			"description": "Test Category",
+		}, "application/json")
+		defer resp.Body.Close() //nolint:errcheck
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("Failed to create category: %s", readResponseBody(t, resp))
+		}
+	})
+
+	var processID int
+
+	// 2. Upload Audio
 	t.Run("Upload Audio Recording", func(t *testing.T) {
-		// Create a buffer to hold the multipart form data
+		t.Logf("processID: %d", processID)
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
 
-		// Add a test audio file to the form
 		part, err := writer.CreateFormFile("audio", "test_audio.mp3")
 		if err != nil {
 			t.Fatalf("Failed to create form file: %v", err)
 		}
-
-		// Create a small dummy audio content
-		dummyAudioContent := []byte("This is a test audio file content")
-		if _, err := part.Write(dummyAudioContent); err != nil {
+		if _, err := part.Write([]byte("This is a test audio file content")); err != nil {
 			t.Fatalf("Failed to write to form file: %v", err)
 		}
 
-		// Add teacher_id and timestamp fields
-		if err := writer.WriteField("teacher_id", "2"); err != nil {
+		if err := writer.WriteField("teacher_id", strconv.Itoa(teacherID)); err != nil {
 			t.Fatalf("Failed to write field: %v", err)
 		}
 		if err := writer.WriteField("timestamp", time.Now().Format(time.RFC3339)); err != nil {
 			t.Fatalf("Failed to write field: %v", err)
 		}
 
-		// Close the multipart writer
 		if err := writer.Close(); err != nil {
 			t.Fatalf("Failed to close multipart writer: %v", err)
 		}
 
-		// Create the request manually
 		req, err := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/audio/upload", body)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
@@ -693,16 +737,77 @@ func TestAudioRecordingsEndpoints(t *testing.T) {
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 		req.Header.Set("Authorization", "Bearer "+authToken)
 
-		// Send the request
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
 		defer resp.Body.Close() //nolint:errcheck
 
-		// Verify response
+		// Expect 202 Accepted
+		if resp.StatusCode != http.StatusAccepted {
+			t.Errorf("Expected status %d, got %d. Response: %s", http.StatusAccepted, resp.StatusCode, readResponseBody(t, resp))
+		}
+
+		var respBody struct {
+			ProcessID int `json:"process_id"`
+		}
+		if err := json.Unmarshal(readResponseBody(t, resp), &respBody); err != nil {
+			t.Fatalf("Failed to unmarshal response: %v", err)
+		}
+		processID = respBody.ProcessID
+		if processID == 0 {
+			t.Fatal("Expected valid process_id in response")
+		}
+	})
+
+	// 3. Poll Process Status
+	t.Run("Poll Process Status", func(t *testing.T) {
+		deadline := time.Now().Add(5 * time.Second)
+		status := "starting"
+		for time.Now().Before(deadline) {
+			resp := makeAuthenticatedRequest(t, http.MethodGet, fmt.Sprintf("/api/v1/process/%d/status", processID), authToken, nil, "application/json")
+
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("Failed to get process status: %d", resp.StatusCode)
+			}
+
+			var processResp struct {
+				Status string `json:"status"`
+			}
+			if err := json.Unmarshal(readResponseBody(t, resp), &processResp); err != nil {
+				resp.Body.Close() //nolint:errcheck
+				t.Fatalf("Failed to unmarshal process status: %v", err)
+			}
+			resp.Body.Close() //nolint:errcheck
+
+			status = processResp.Status
+			t.Logf("Current process status: %s", status)
+			if status == "completed" {
+				break
+			}
+			if status == "failed" {
+				t.Fatal("Process failed")
+			}
+			time.Sleep(200 * time.Millisecond)
+		}
+
+		if status != "completed" {
+			t.Fatalf("Process did not complete in time. Last status: %s", status)
+		}
+	})
+
+	// 4. Verify Result
+	t.Run("Verify Documentation Entry", func(t *testing.T) {
+		resp := makeAuthenticatedRequest(t, http.MethodGet, "/api/v1/documentation/child/2", authToken, nil, "application/json")
+		defer resp.Body.Close() //nolint:errcheck
+
 		if resp.StatusCode != http.StatusOK {
-			t.Errorf("Expected status %d, got %d", http.StatusOK, resp.StatusCode)
+			t.Fatalf("Failed to get documentation entries: %d", resp.StatusCode)
+		}
+
+		body := readResponseBody(t, resp)
+		if !bytes.Contains(body, []byte("Anna spielt mit Tom Fangeln im Sandkasten.")) {
+			t.Errorf("Expected transcription summary not found in response: %s", body)
 		}
 	})
 }

@@ -23,14 +23,30 @@ import (
 )
 
 var (
-	application *app.Application
-	ts          *httptest.Server
-	db          *sql.DB
+	application       *app.Application
+	ts                *httptest.Server
+	db                *sql.DB
+	mockTranscription *httptest.Server
+	mockLLMAnalysis   *httptest.Server
 )
 
 func TestMain(m *testing.M) {
-	// Create a mock server for the audio-proc service
-	mockAudioProc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Create a mock server for the transcription service
+	mockTranscription = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Sleep 1 second to simulate processing time
+		time.Sleep(1 * time.Second)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode("Anna spielt mit Tom Fangeln im Sandkasten."); err != nil {
+			panic(fmt.Sprintf("failed to encode transcription response: %v", err))
+		}
+	}))
+	defer mockTranscription.Close()
+
+	// Create a mock server for the llm analysis service
+	mockLLMAnalysis = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Sleep 1 second to simulate processing time
+		time.Sleep(1 * time.Second)
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"number_of_entries": 1,
@@ -47,10 +63,10 @@ func TestMain(m *testing.M) {
 				},
 			},
 		}); err != nil {
-			panic(fmt.Sprintf("failed to encode response: %v", err))
+			panic(fmt.Sprintf("failed to encode analysis response: %v", err))
 		}
 	}))
-	defer mockAudioProc.Close()
+	defer mockLLMAnalysis.Close()
 
 	// Create temporary directory for uploads
 	if err := os.MkdirAll("test_uploads", os.ModePerm); err != nil {
@@ -103,7 +119,8 @@ func TestMain(m *testing.M) {
 			MaxSizeMB:    10, // Set a small limit for testing
 			AllowedTypes: []string{"audio/mpeg", "audio/wav", "audio/ogg", "application/octet-stream"},
 		},
-		AudioProcServiceURL: mockAudioProc.URL,
+		TranscriptionServiceURL: mockTranscription.URL,
+		LLMAnalysisServiceURL:   mockLLMAnalysis.URL,
 	}
 
 	logLevel, _ := logrus.ParseLevel("debug")
@@ -115,6 +132,8 @@ func TestMain(m *testing.M) {
 		panic(fmt.Sprintf("failed to connect to test database: %v", err))
 	}
 	defer db.Close() //nolint:errcheck
+
+	db.SetMaxOpenConns(1)
 
 	// Run migrations
 	if err := data.MigrateDB(db, migrations.Files); err != nil {
