@@ -29,18 +29,15 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 		}))
 		t.Cleanup(func() { mockTranscriptionService.Close() })
 
-		analysisResult := models.AnalysisResult{
-			NumberOfEntries: 1,
-			AnalysisResults: []models.ChildAnalysisObject{
-				{
-					ChildID:              1,
-					FirstName:            "John",
-					LastName:             "Doe",
-					TranscriptionSummary: "hello world",
-					Category: models.AnalysisCategory{
-						AnalysisCategoryID:   1,
-						AnalysisCategoryName: "General",
-					},
+		analysisResult := []models.ChildAnalysisObject{
+			{
+				ChildID:              1,
+				FirstName:            "John",
+				LastName:             "Doe",
+				TranscriptionSummary: "hello world",
+				Category: models.AnalysisCategory{
+					AnalysisCategoryID:   1,
+					AnalysisCategoryName: "General",
 				},
 			},
 		}
@@ -117,7 +114,7 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 		result, err := service.ProcessAudio(ctx, logrus.NewEntry(logrus.New()), processId, fileContent)
 
 		assert.Error(t, err)
-		assert.Equal(t, models.AnalysisResult{NumberOfEntries: 0, AnalysisResults: []models.ChildAnalysisObject(nil)}, result)
+		assert.Equal(t, []models.ChildAnalysisObject{}, result)
 	})
 
 	t.Run("llm analysis service returned non-ok status", func(t *testing.T) {
@@ -169,7 +166,7 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "llm analysis service returned status 500")
-		assert.Equal(t, models.AnalysisResult{NumberOfEntries: 0, AnalysisResults: []models.ChildAnalysisObject(nil)}, result)
+		assert.Equal(t, []models.ChildAnalysisObject{}, result)
 	})
 
 	t.Run("failed to decode response from transcription service", func(t *testing.T) {
@@ -206,6 +203,6 @@ func TestAudioAnalysisService_AnalyzeAudio(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to decode response")
-		assert.Equal(t, models.AnalysisResult{NumberOfEntries: 0, AnalysisResults: []models.ChildAnalysisObject(nil)}, result)
+		assert.Equal(t, []models.ChildAnalysisObject{}, result)
 	})
 }

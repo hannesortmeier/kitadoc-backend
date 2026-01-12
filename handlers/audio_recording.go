@@ -181,13 +181,13 @@ func (handler *AudioRecordingHandler) UploadAudio(writer http.ResponseWriter, re
 			return
 		}
 
-		if analysisResult.NumberOfEntries == 0 {
+		if len(analysisResult) == 0 {
 			logger.Warn("No analysis results found")
 			handler.UpdateProcessStatus(logger, processId, "failed")
 			return
 		}
 
-		for _, childAnalysis := range analysisResult.AnalysisResults {
+		for _, childAnalysis := range analysisResult {
 			docEntry := models.DocumentationEntry{
 				TeacherID:              teacherIDInt,
 				ObservationDate:        timestamp,

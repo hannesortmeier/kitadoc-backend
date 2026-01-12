@@ -4,12 +4,6 @@ import (
 	_ "github.com/go-playground/validator/v10"
 )
 
-// AnalysisResult represents the response from a request to kitadoc-audioproc.
-type AnalysisResult struct {
-	NumberOfEntries int                   `json:"number_of_entries" validate:"required"`
-	AnalysisResults []ChildAnalysisObject `json:"analysis_results" validate:"required,dive"`
-}
-
 // ChildAnalysisObject represents the analysis result for a child.
 type ChildAnalysisObject struct {
 	ChildID              int              `json:"child_id" validate:"required"`

@@ -18,7 +18,7 @@ import (
 
 // AudioAnalysisService defines the interface for audio analysis operations.
 type AudioAnalysisService interface {
-	ProcessAudio(ctx context.Context, logger *logrus.Entry, processId int, fileContent []byte) (models.AnalysisResult, error)
+	ProcessAudio(ctx context.Context, logger *logrus.Entry, processId int, fileContent []byte) ([]models.ChildAnalysisObject, error)
 }
 
 // AudioAnalysisServiceImpl implements AudioAnalysisService.
@@ -58,14 +58,14 @@ func (service *AudioAnalysisServiceImpl) ProcessAudio(
 	logger *logrus.Entry,
 	processId int,
 	fileContent []byte,
-) (models.AnalysisResult, error) {
+) ([]models.ChildAnalysisObject, error) {
 	logger.Info("Starting audio transcription")
 
 	service.UpdateProcessStatus(logger, processId, "transcribing")
 	transcription, err := service.transcribeAudio(ctx, logger, fileContent)
 	if err != nil {
 		logger.WithError(err).Error("Failed to transcribe audio")
-		return models.AnalysisResult{}, fmt.Errorf("failed to transcribe audio: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to transcribe audio: %w", err)
 	}
 
 	logger.Debugf("Transcription result: %s", transcription)
@@ -75,7 +75,7 @@ func (service *AudioAnalysisServiceImpl) ProcessAudio(
 	analysis, err := service.analyseTranscription(ctx, logger, transcription)
 	if err != nil {
 		logger.WithError(err).Error("Failed to analyse transcription")
-		return models.AnalysisResult{}, fmt.Errorf("failed to analyse transcription: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to analyse transcription: %w", err)
 	}
 
 	logger.Info("Completed audio processing")
@@ -154,7 +154,11 @@ func (service *AudioAnalysisServiceImpl) transcribeAudio(ctx context.Context, lo
 	return transcription, nil
 }
 
-func (service *AudioAnalysisServiceImpl) analyseTranscription(ctx context.Context, logger *logrus.Entry, transcription string) (models.AnalysisResult, error) {
+func (service *AudioAnalysisServiceImpl) analyseTranscription(
+	ctx context.Context,
+	logger *logrus.Entry,
+	transcription string,
+) ([]models.ChildAnalysisObject, error) {
 	// Create a new multipart writer.
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -163,20 +167,20 @@ func (service *AudioAnalysisServiceImpl) analyseTranscription(ctx context.Contex
 	transcriptionPart, err := writer.CreateFormField("transcription")
 	if err != nil {
 		logger.WithError(err).Error("Failed to create form field for transcription")
-		return models.AnalysisResult{}, fmt.Errorf("failed to create form field for transcription string: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to create form field for transcription string: %w", err)
 	}
 
 	_, err = transcriptionPart.Write([]byte(transcription))
 	if err != nil {
 		logger.WithError(err).Error("Failed to write transcription to form field")
-		return models.AnalysisResult{}, fmt.Errorf("failed to write transcription to form field: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to write transcription to form field: %w", err)
 	}
 
 	// Fetch children data
 	children, err := service.childStore.GetAll()
 	if err != nil {
 		logger.WithError(err).Error("Failed to get all children")
-		return models.AnalysisResult{}, fmt.Errorf("failed to get all children: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to get all children: %w", err)
 	}
 
 	type ChildData struct {
@@ -197,25 +201,25 @@ func (service *AudioAnalysisServiceImpl) analyseTranscription(ctx context.Contex
 	childrenJSON, err := json.Marshal(childrenData)
 	if err != nil {
 		logger.WithError(err).Error("Failed to marshal children data")
-		return models.AnalysisResult{}, fmt.Errorf("failed to marshal children data: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to marshal children data: %w", err)
 	}
 
 	childrenPart, err := writer.CreateFormField("children_data")
 	if err != nil {
 		logger.WithError(err).Error("Failed to create form field for children data")
-		return models.AnalysisResult{}, fmt.Errorf("failed to create form field for children: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to create form field for children: %w", err)
 	}
 	_, err = childrenPart.Write(childrenJSON)
 	if err != nil {
 		logger.WithError(err).Error("Failed to write children data to form field")
-		return models.AnalysisResult{}, fmt.Errorf("failed to write children data to form field: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to write children data to form field: %w", err)
 	}
 
 	// Fetch category data
 	categories, err := service.categoryStore.GetAll()
 	if err != nil {
 		logger.WithError(err).Error("Failed to get all categories")
-		return models.AnalysisResult{}, fmt.Errorf("failed to get all categories: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to get all categories: %w", err)
 	}
 
 	type CategoryData struct {
@@ -240,25 +244,25 @@ func (service *AudioAnalysisServiceImpl) analyseTranscription(ctx context.Contex
 	categoryJSON, err := json.Marshal(categoryData)
 	if err != nil {
 		logger.WithError(err).Error("Failed to marshal category data")
-		return models.AnalysisResult{}, fmt.Errorf("failed to marshal category data: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to marshal category data: %w", err)
 	}
 
 	categoryPart, err := writer.CreateFormField("category_data")
 	if err != nil {
 		logger.WithError(err).Error("Failed to create form field for category data")
-		return models.AnalysisResult{}, fmt.Errorf("failed to create form field for category: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to create form field for category: %w", err)
 	}
 	_, err = categoryPart.Write(categoryJSON)
 	if err != nil {
 		logger.WithError(err).Error("Failed to write category data to form field")
-		return models.AnalysisResult{}, fmt.Errorf("failed to write category data to form field: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to write category data to form field: %w", err)
 	}
 
 	// Close the multipart writer.
 	err = writer.Close()
 	if err != nil {
 		logger.WithError(err).Error("Failed to close multipart writer")
-		return models.AnalysisResult{}, fmt.Errorf("failed to close multipart writer: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to close multipart writer: %w", err)
 	}
 
 	logger.Debugf("Request body size: %d", body.Len())
@@ -267,7 +271,7 @@ func (service *AudioAnalysisServiceImpl) analyseTranscription(ctx context.Contex
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, service.llmAnalysisServiceURL, body)
 	if err != nil {
 		logger.WithError(err).Error("Failed to create request to llm analysis service")
-		return models.AnalysisResult{}, fmt.Errorf("failed to create request to llm analysis: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to create request to llm analysis: %w", err)
 	}
 
 	// Set the content type for the request.
@@ -277,7 +281,7 @@ func (service *AudioAnalysisServiceImpl) analyseTranscription(ctx context.Contex
 	resp, err := service.httpClient.Do(req)
 	if err != nil {
 		logger.WithError(err).Error("Failed to send request to llm analysis service")
-		return models.AnalysisResult{}, fmt.Errorf("failed to send request to llm analysis service: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to send request to llm analysis service: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -292,14 +296,14 @@ func (service *AudioAnalysisServiceImpl) analyseTranscription(ctx context.Contex
 			"status_code": resp.StatusCode,
 			"response":    string(bodyBytes),
 		}).Error("Received non-OK response from llm analysis service")
-		return models.AnalysisResult{}, fmt.Errorf("llm analysis service returned status %d: %s", resp.StatusCode, string(bodyBytes))
+		return []models.ChildAnalysisObject{}, fmt.Errorf("llm analysis service returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	// Decode the JSON response.
-	var analysisResult models.AnalysisResult
+	var analysisResult []models.ChildAnalysisObject
 	if err := json.NewDecoder(resp.Body).Decode(&analysisResult); err != nil {
 		logger.WithError(err).Error("Failed to decode response from llm analysis service")
-		return models.AnalysisResult{}, fmt.Errorf("failed to decode response: %w", err)
+		return []models.ChildAnalysisObject{}, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	logger.Info("Successfully received analysis from llm analysis service")

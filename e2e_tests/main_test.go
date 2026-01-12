@@ -48,21 +48,19 @@ func TestMain(m *testing.M) {
 		// Sleep 1 second to simulate processing time
 		time.Sleep(1 * time.Second)
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(map[string]interface{}{
-			"number_of_entries": 1,
-			"analysis_results": []map[string]interface{}{
-				{
-					"child_id":              2,
-					"first_name":            "Anna",
-					"last_name":             "Müller",
-					"transcription_summary": "Anna spielt mit Tom Fangeln im Sandkasten.",
-					"analysis_category": map[string]interface{}{
-						"category_id":   2,
-						"category_name": "Soziale Entwicklung",
-					},
+		if err := json.NewEncoder(w).Encode([]map[string]interface{}{
+			{
+				"child_id":              2,
+				"first_name":            "Anna",
+				"last_name":             "Müller",
+				"transcription_summary": "Anna spielt mit Tom Fangeln im Sandkasten.",
+				"analysis_category": map[string]interface{}{
+					"category_id":   2,
+					"category_name": "Soziale Entwicklung",
 				},
 			},
-		}); err != nil {
+		},
+		); err != nil {
 			panic(fmt.Sprintf("failed to encode analysis response: %v", err))
 		}
 	}))

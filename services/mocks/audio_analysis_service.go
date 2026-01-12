@@ -15,10 +15,15 @@ type MockAudioAnalysisService struct {
 }
 
 // ProcessAudio is a mock of the ProcessAudio method.
-func (m *MockAudioAnalysisService) ProcessAudio(ctx context.Context, logger *logrus.Entry, processId int, fileContent []byte) (models.AnalysisResult, error) {
+func (m *MockAudioAnalysisService) ProcessAudio(
+	ctx context.Context,
+	logger *logrus.Entry,
+	processId int,
+	fileContent []byte,
+) ([]models.ChildAnalysisObject, error) {
 	args := m.Called(ctx, logger, processId, fileContent)
 	if args.Get(0) == nil {
-		return models.AnalysisResult{}, args.Error(1)
+		return []models.ChildAnalysisObject{}, args.Error(1)
 	}
-	return args.Get(0).(models.AnalysisResult), args.Error(1)
+	return args.Get(0).([]models.ChildAnalysisObject), args.Error(1)
 }

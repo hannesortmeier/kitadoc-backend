@@ -59,17 +59,14 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		form.Add("timestamp", time.Now().Format(time.RFC3339))
 		req.PostForm = form
 
-		mockResponse := models.AnalysisResult{
-			NumberOfEntries: 1,
-			AnalysisResults: []models.ChildAnalysisObject{
-				{
-					ChildID:              1,
-					FirstName:            "John",
-					LastName:             "Doe",
-					TranscriptionSummary: "Test transcription summary",
-					Category: models.AnalysisCategory{
-						AnalysisCategoryID: 1,
-					},
+		mockResponse := []models.ChildAnalysisObject{
+			{
+				ChildID:              1,
+				FirstName:            "John",
+				LastName:             "Doe",
+				TranscriptionSummary: "Test transcription summary",
+				Category: models.AnalysisCategory{
+					AnalysisCategoryID: 1,
 				},
 			},
 		}
@@ -190,7 +187,7 @@ func TestAudioRecordingHandler_UploadAudio(t *testing.T) {
 		processID := 124
 		mockProcessService.On("Create", "starting").Return(&models.Process{ProcessId: processID, Status: "starting"}, nil).Once()
 
-		mockAudioAnalysisService.On("ProcessAudio", mock.Anything, mock.AnythingOfType("*logrus.Entry"), processID, []byte("dummy audio data")).Return(models.AnalysisResult{}, assert.AnError).Once()
+		mockAudioAnalysisService.On("ProcessAudio", mock.Anything, mock.AnythingOfType("*logrus.Entry"), processID, []byte("dummy audio data")).Return([]models.ChildAnalysisObject{}, assert.AnError).Once()
 
 		mockProcessService.On("Update", mock.MatchedBy(func(p *models.Process) bool {
 			return p.ProcessId == processID && p.Status == "failed"
